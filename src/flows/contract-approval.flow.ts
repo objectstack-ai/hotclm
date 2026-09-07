@@ -29,7 +29,15 @@ import { CLM_POSITION } from '../sharing/positions.js';
  * ## The rungs
  *
  *  1. **Direct manager** — `{ type: 'manager' }`, always, no flag. The engine
- *     resolves it from the submitter's `sys_user.manager_id`.
+ *     resolves it from the CONTRACT OWNER's `sys_user.manager_id`, not the
+ *     submitter's: with no `value` on the approver, `expandApprovers` reads
+ *     `record[value] ?? record.owner_id` and looks up that user's manager.
+ *     MEASURED on 17.3.0 — a contract owned by a requester whose manager is
+ *     set, submitted by a DIFFERENT user who has no manager at all, opened
+ *     rung 1 on the owner's manager. That is the right subject for this
+ *     ladder (the contract belongs to its owner, and §04 scopes the requester
+ *     window by `owner_id`), but it means a contract whose owner has no
+ *     manager resolves to nobody — see `RUNG_POLICY.onEmptyApprovers`.
  *  2. **Legal head and/or finance controller** — three shapes, selected by the
  *     two flags: both ⇒ ONE node with `behavior: 'per_group'` (会签 — the
  *     legal group and the finance group must each clear it, and one rejection
@@ -157,10 +165,30 @@ const RUNG_POLICY = {
   // Explicit even though `admin_rescue` is the schema default: an unstaffed
   // position resolving to an empty slate is the failure this ladder is most
   // exposed to (five of its six rungs route to positions), and the policy that
-  // handles it is authored, not inherited. `auto_approve` would wave the
-  // contract through a rung nobody sat on; `fail` would abandon a locked
-  // record. `admin_rescue` opens the request and warns, and an admin can
-  // reassign it (#3424).
+  // handles it is authored, not inherited. `auto_approve` would wave a
+  // contract through a rung nobody sat on — the worst outcome an approval
+  // ladder has; `fail` would abandon a locked record with no request at all.
+  //
+  // MEASURED end to end on 17.3.0, by unstaffing `clm_general_manager` and
+  // driving a routed contract into `gm_signoff`: the request OPENS with
+  // `pending_approvers = ['position:clm_general_manager']` — an unresolvable
+  // literal, nobody's inbox — and the boot log carries both warnings
+  // (`approver 'position:clm_general_manager' expanded to nobody` and
+  // `resolved to no concrete approver — the request is decidable only by a
+  // privileged admin`). The record stays locked: a PATCH answers 409
+  // RECORD_LOCKED even for the platform admin. The recovery is real — a
+  // platform admin's `POST /api/v1/approvals/requests/<id>/approve` answered
+  // 200, resumed the run and carried the contract to `approved`, while the
+  // same call from a non-approver non-admin answered 403 FORBIDDEN — but it
+  // is API-ONLY in Console 17.3.0: neither the inbox's All tab nor the
+  // request record page renders an approve/reject/reassign control for the
+  // override actor (#3424). That residual is a platform gap, recorded in the
+  // PR rather than papered over here: the lint's suggested fallback
+  // (`{ type: 'org_membership_level', value: 'owner' }`) would seat the org
+  // owner on the legal, finance, executive and GM rungs as a silent
+  // co-approver, and DESIGN.md §03 fixes the ladder at five NAMED rungs with
+  // the matrix deciding only which are climbed (§13 Q3 puts an extra approver
+  // in the customer overlay, not the standard product).
   onEmptyApprovers: 'admin_rescue' as const,
   lockRecord: true,
   approvalStatusField: 'approval_status',

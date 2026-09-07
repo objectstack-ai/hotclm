@@ -1,4 +1,4 @@
-import { P } from '@objectstack/spec';
+import { P, expression } from '@objectstack/spec';
 import type { Flow } from '@objectstack/spec/automation';
 import { Signature } from '../objects/signature.object.js';
 
@@ -46,12 +46,22 @@ import { Signature } from '../objects/signature.object.js';
  *
  * The update-leg start condition is `status == "completed"`, NOT "entered
  * completed this write". That is deliberate and is what makes the wet-ink
- * path work: records or legal tick `formalities_done` on an already-completed
- * round, and each of those writes re-runs the comparison until the set is
- * covered. Idempotence is the contract's own `executed_at` — the covered
- * branch is gated on it being empty, so the `final_signed` version is created
- * once no matter how many times the round is edited afterwards. The flow
- * never writes `clm_signature`, so it cannot re-trigger itself.
+ * path work: records or legal tick `formalities_done` and upload the executed
+ * copy on an already-completed round, in either order, and each of those
+ * writes re-runs the comparison. The flow never writes `clm_signature`, so it
+ * cannot re-trigger itself.
+ *
+ * Each of the two outcomes carries its OWN idempotence key, because they are
+ * reached on different writes:
+ *
+ *  - the `executed_at` stamp is keyed on `executed_at` being empty, so the
+ *    timestamp never moves once set;
+ *  - the `final_signed` version is keyed on whether one already exists
+ *    (`get_final_version`, read live) — never on `executed_at`. Keying it on
+ *    the stamp is what broke the wet-ink order in the first place; the
+ *    measurement is on `FILED` below;
+ *  - the missing-copy notice is keyed on the stamp having happened on THIS
+ *    run, so it is sent once rather than on every later edit of the round.
  *
  * `runAs: 'system'` (DESIGN.md §06, the closing line): `executed_at` is
  * `readonly` on `clm_contract` and field-level security makes it read-only
@@ -140,6 +150,58 @@ export function signatureExecution({ input }: { input: Record<string, unknown> }
   };
 }
 
+/**
+ * The edge vocabulary. Every decision below is written as an explicitly
+ * partitioning set of edges in opposite polarity: a decision's out-edges are
+ * evaluated independently and an unevaluable one ABORTS the step rather than
+ * skipping it, so nothing is left to a default edge and every read is
+ * `has()`-guarded and null-guarded before it is dereferenced.
+ */
+const COVERED = 'has(vars.execution) && vars.execution.covered == true';
+const NOT_COVERED = 'has(vars.execution) && vars.execution.covered != true';
+
+/**
+ * `vars.contractRecord` is the snapshot `get_contract` took at the top of the
+ * run, so `contractRecord.executed_at` reads EMPTY for the whole of the run
+ * that stamps it and non-empty on every later run. That is what separates
+ * "the formalities completed just now" from "they completed some time ago",
+ * and it is the only thing keeping the missing-copy notice from repeating on
+ * every subsequent edit of the round.
+ */
+const NOT_STAMPED = '(!has(vars.contractRecord.executed_at) || vars.contractRecord.executed_at == null || vars.contractRecord.executed_at == "")';
+const ALREADY_STAMPED = '(has(vars.contractRecord.executed_at) && vars.contractRecord.executed_at != null && vars.contractRecord.executed_at != "")';
+const JUST_STAMPED = NOT_STAMPED;
+
+/**
+ * Whether a `final_signed` version already exists — read live by
+ * `get_final_version`, NOT inferred from `executed_at`.
+ *
+ * This is the idempotence key, and which key it is decides whether the
+ * wet-ink path works at all. MEASURED on 17.3.0: with the guard on
+ * `executed_at`, a round whose formalities were ticked BEFORE the executed
+ * copy was uploaded — the exact order DESIGN.md §06 F7 prescribes for wet ink
+ * ("法务或档案岗在签署记录上传执行副本并勾选形式") — stamped `executed_at` on the
+ * tick, and every later run short-circuited on "already executed", so the
+ * upload filed nothing and no `final_signed` version was ever created. §03's
+ * `signing → active` guard requires that version, and `executed_at` is
+ * `readonly`, so the contract could not be activated and there was no
+ * in-product way back. Keying on the version itself makes the two writes
+ * independent: the stamp happens once, the filing happens when the copy
+ * arrives, in either order.
+ */
+const FILED = '(has(vars.existingFinal) && vars.existingFinal != null && has(vars.existingFinal.id))';
+const NOT_FILED = '(!has(vars.existingFinal) || vars.existingFinal == null || !has(vars.existingFinal.id))';
+
+/** A file field READS as `{ id, name, size, mimeType, url }`; absent is null. */
+const HAS_FILE = '(has(vars.signatureRecord.executed_file) && vars.signatureRecord.executed_file != null && has(vars.signatureRecord.executed_file.id))';
+const NO_FILE = '(!has(vars.signatureRecord.executed_file) || vars.signatureRecord.executed_file == null || !has(vars.signatureRecord.executed_file.id))';
+
+const HAS_RECIPIENT = '(has(vars.execution.recipient) && vars.execution.recipient != null && vars.execution.recipient != "")';
+const NO_RECIPIENT = '(!has(vars.execution.recipient) || vars.execution.recipient == null || vars.execution.recipient == "")';
+
+/** One decision's clauses, as a CEL predicate envelope. */
+const when = (...clauses: string[]) => expression(clauses.join(' && '));
+
 export const SignatureRecordFlow: Flow = {
   name: 'signature_record',
   label: 'Signature Completed — Execution Check',
@@ -217,6 +279,20 @@ export const SignatureRecordFlow: Flow = {
         fields: { executed_at: '{signatureRecord.completed_at}' },
       },
     },
+    {
+      id: 'get_final_version',
+      type: 'get_record',
+      label: 'Existing Final Signed Version?',
+      // The live idempotence key (see `FILED`). `findOne` sets the variable to
+      // null when nothing matches, which is why every read of it is null-
+      // guarded rather than only `has()`-guarded.
+      config: {
+        objectName: 'clm_contract_version',
+        filter: { contract: '{contractRecord.id}', kind: 'final_signed' },
+        fields: ['id', 'version_no'],
+        outputVariable: 'existingFinal',
+      },
+    },
     { id: 'decision_executed_file', type: 'decision', label: 'Executed Copy Attached?' },
     {
       id: 'create_final_version',
@@ -291,42 +367,48 @@ export const SignatureRecordFlow: Flow = {
     { id: 'e3', source: 'get_contract', target: 'compare_formalities', type: 'default' },
     { id: 'e4', source: 'compare_formalities', target: 'decision_covered', type: 'default' },
 
-    // Partitioned in opposite polarity, and gated on `executed_at` being
-    // EMPTY: the flow re-runs on every edit of a completed round (see the
-    // header), and this is what keeps the second run from filing a second
-    // final_signed version. A contract already stamped falls through to `end`.
+    // Three-way, partitioned: the two `covered` branches differ only in
+    // whether the contract was ALREADY stamped when this run started, and
+    // both continue to the executed-copy check. `vars.contractRecord` is the
+    // snapshot `get_contract` read at the top of the run, so
+    // `contractRecord.executed_at` still reads EMPTY throughout the run that
+    // stamps it — which is what makes it usable as "stamped on this run"
+    // further down (`JUST_STAMPED`).
     {
-      id: 'e5', source: 'decision_covered', target: 'stamp_executed', type: 'default', label: 'Covered',
-      condition: P`has(vars.execution) && vars.execution.covered == true
-        && (!has(vars.contractRecord.executed_at) || vars.contractRecord.executed_at == null || vars.contractRecord.executed_at == "")`,
+      id: 'e5', source: 'decision_covered', target: 'stamp_executed', type: 'default', label: 'Covered — stamp it',
+      condition: when(COVERED, NOT_STAMPED),
     },
     {
       id: 'e6', source: 'decision_covered', target: 'decision_recipient', type: 'default', label: 'Short',
-      condition: P`has(vars.execution) && vars.execution.covered != true`,
+      condition: when(NOT_COVERED),
     },
     {
-      id: 'e7', source: 'decision_covered', target: 'end', type: 'default', label: 'Already executed',
-      condition: P`has(vars.execution) && vars.execution.covered == true
-        && has(vars.contractRecord.executed_at) && vars.contractRecord.executed_at != null && vars.contractRecord.executed_at != ""`,
+      id: 'e7', source: 'decision_covered', target: 'get_final_version', type: 'default', label: 'Covered — already stamped',
+      condition: when(COVERED, ALREADY_STAMPED),
     },
 
-    { id: 'e8', source: 'stamp_executed', target: 'decision_executed_file', type: 'default' },
-    // The `file` field is REQUIRED on clm_contract_version, so a round with no
-    // executed copy cannot produce one: creating it anyway would fail the run
-    // AFTER `executed_at` was already stamped. Say so instead.
+    { id: 'e8', source: 'stamp_executed', target: 'get_final_version', type: 'default' },
+    { id: 'e8b', source: 'get_final_version', target: 'decision_executed_file', type: 'default' },
+
+    // Four-way, partitioned. The `file` field is REQUIRED on
+    // clm_contract_version, so a round with no executed copy cannot produce
+    // one: creating it anyway would fail the run AFTER `executed_at` was
+    // stamped. Say so instead — once.
+    {
+      id: 'e8c', source: 'decision_executed_file', target: 'end', type: 'default', label: 'Already filed',
+      condition: when(FILED),
+    },
     {
       id: 'e9', source: 'decision_executed_file', target: 'create_final_version', type: 'default', label: 'Attached',
-      condition: P`has(vars.signatureRecord.executed_file) && vars.signatureRecord.executed_file != null && has(vars.signatureRecord.executed_file.id)`,
+      condition: when(NOT_FILED, HAS_FILE),
     },
     {
-      id: 'e10', source: 'decision_executed_file', target: 'notify_executed_file_missing', type: 'default', label: 'Missing',
-      condition: P`(!has(vars.signatureRecord.executed_file) || vars.signatureRecord.executed_file == null || !has(vars.signatureRecord.executed_file.id))
-        && has(vars.execution.recipient) && vars.execution.recipient != null && vars.execution.recipient != ""`,
+      id: 'e10', source: 'decision_executed_file', target: 'notify_executed_file_missing', type: 'default', label: 'Missing — tell them once',
+      condition: when(NOT_FILED, NO_FILE, JUST_STAMPED, HAS_RECIPIENT),
     },
     {
-      id: 'e11', source: 'decision_executed_file', target: 'end', type: 'default', label: 'Missing, nobody to tell',
-      condition: P`(!has(vars.signatureRecord.executed_file) || vars.signatureRecord.executed_file == null || !has(vars.signatureRecord.executed_file.id))
-        && (!has(vars.execution.recipient) || vars.execution.recipient == null || vars.execution.recipient == "")`,
+      id: 'e11', source: 'decision_executed_file', target: 'end', type: 'default', label: 'Missing — already told, or nobody to tell',
+      condition: when(NOT_FILED, NO_FILE, `(${ALREADY_STAMPED} || ${NO_RECIPIENT})`),
     },
     { id: 'e12', source: 'create_final_version', target: 'end', type: 'default' },
     { id: 'e13', source: 'notify_executed_file_missing', target: 'end', type: 'default' },
@@ -337,11 +419,11 @@ export const SignatureRecordFlow: Flow = {
     // sends rather than failing a run over an unassignable notification.
     {
       id: 'e14', source: 'decision_recipient', target: 'notify_missing', type: 'default', label: 'Notify',
-      condition: P`has(vars.execution.recipient) && vars.execution.recipient != null && vars.execution.recipient != ""`,
+      condition: when(HAS_RECIPIENT),
     },
     {
       id: 'e15', source: 'decision_recipient', target: 'end', type: 'default', label: 'Nobody to tell',
-      condition: P`!has(vars.execution.recipient) || vars.execution.recipient == null || vars.execution.recipient == ""`,
+      condition: when(NO_RECIPIENT),
     },
     { id: 'e16', source: 'notify_missing', target: 'end', type: 'default' },
   ],

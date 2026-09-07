@@ -72,13 +72,14 @@ export default defineStack({
   // the matching branch label. MEASURED on 17.3.0, both directions, each boot
   // from a freshly built artifact (a stale `dist/objectstack.json` carries the
   // OLD `requires` and answers this question wrong): declared ⇒
-  // `ApprovalsServicePlugin` is in the boot roster; omitted ⇒ it is absent,
-  // and the ladder's first rung dies with `NO_EXECUTOR: No executor registered
-  // for node type 'approval'`. That failure is invisible from the outside —
-  // the submitting PATCH still answers 200 and the contract sits in
-  // `in_approval` with `approval_status: not_required`, no request, no lock,
-  // no approver — which is exactly why the token is declared rather than
-  // discovered.
+  // `ApprovalsServicePlugin` is in the boot roster (36 plugins); omitted ⇒ it
+  // is absent (35), and the ladder's first rung dies with the flow-run error
+  // `No executor registered for node type 'approval'`. That failure is
+  // invisible to the caller — the submitting PATCH still answers 200 and the
+  // contract sits in `in_approval` with `approval_status: not_required`, no
+  // `sys_approval_request` row, no lock, no approver; only the run history
+  // and the server log carry it — which is exactly why the token is declared
+  // rather than discovered.
   //
   // `messaging` backs the `notify` node (ADR-0012) — F5 tells the contract
   // owner about both terminal outcomes, F7 names the missing execution
