@@ -1,6 +1,9 @@
 import { definePermissionSet } from '@objectstack/spec/security';
 import { Contract } from '../objects/contract.object.js';
-import { CONTRACT_STAMPED_FIELDS, readOnly } from './_grants.js';
+import { Party } from '../objects/party.object.js';
+import { Review } from '../objects/review.object.js';
+import { Signature } from '../objects/signature.object.js';
+import { CONTRACT_STAMPED_FIELDS, openAllExcept, open, readOnly } from './_grants.js';
 
 /**
  * `clm_admin` — the CLM administrator (DESIGN.md §04): RCUD on every object,
@@ -14,6 +17,12 @@ import { CONTRACT_STAMPED_FIELDS, readOnly } from './_grants.js';
  * rather than implied). The super-user bits also bypass business row-level
  * security, which is why this set carries none of the write-window policies
  * the other four do — one here would be inert metadata.
+ *
+ * The super-user bits do NOT bypass field-level security, and field masks
+ * merge most permissively only among the sets that declare a field
+ * (`_grants.ts`, `open`): an administrator also holds `clm_requester`, whose
+ * masks would otherwise apply to them. Every field another set locks or hides
+ * is opened here explicitly.
  *
  * What even the administrator may not do by hand is write the fields §04 locks
  * for every position: the routing flags, the stage timestamps and the AI
@@ -50,6 +59,10 @@ export const AdminSet = definePermissionSet({
     clm_approval_rule:    config,
   },
   fields: {
+    ...openAllExcept(Contract, CONTRACT_STAMPED_FIELDS),
     ...readOnly(Contract, CONTRACT_STAMPED_FIELDS),
+    ...openAllExcept(Signature, []),
+    ...open(Review, ['internal_note']),
+    ...open(Party, ['bank_account', 'contact_phone']),
   },
 });

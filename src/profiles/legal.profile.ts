@@ -1,7 +1,10 @@
 import { definePermissionSet } from '@objectstack/spec/security';
 import { Contract } from '../objects/contract.object.js';
+import { Party } from '../objects/party.object.js';
+import { Review } from '../objects/review.object.js';
+import { Signature } from '../objects/signature.object.js';
 import { CONTRACT_STATUSES, OBLIGATION_STATUSES, REVIEW_STAGES } from '../sharing/_lifecycle.js';
-import { CONTRACT_STAMPED_FIELDS, inList, readOnly } from './_grants.js';
+import { CONTRACT_STAMPED_FIELDS, inList, openAllExcept, open, readOnly } from './_grants.js';
 
 /**
  * `clm_legal` — legal counsel and the head of legal (DESIGN.md §04).
@@ -25,6 +28,17 @@ import { CONTRACT_STAMPED_FIELDS, inList, readOnly } from './_grants.js';
  * inherit the requester's window and lose the ability to edit a contract in
  * review — the OR-merge trap. Each policy below is therefore the whole
  * vocabulary of the field it names, read from the object.
+ *
+ * ## Why this set spells out fields it could have left alone
+ *
+ * Field permissions merge the same way, most permissively — but only among
+ * the sets that DECLARE the field (`_grants.ts`, `open`). `clm_requester`
+ * hides `clm_party.bank_account`, `contact_phone` and `clm_review.internal_note`
+ * and locks `risk_level` / `liability_cap`; `clm_records` locks every contract
+ * and signature field but its own two. A legal user holds the first always
+ * and may hold the second, and would inherit those locks by silence. Every
+ * contract, signature, review and party field legal edits is therefore opened
+ * here explicitly, with the §04 stamps kept read-only on top.
  *
  * `manage_clauses` (clause RCU is legal's alone), `terminate_contract` (legal
  * and admin are the only sets that may write `status` on an active contract:
@@ -51,7 +65,11 @@ export const LegalSet = definePermissionSet({
     clm_approval_rule:    { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
   },
   fields: {
+    ...openAllExcept(Contract, CONTRACT_STAMPED_FIELDS),
     ...readOnly(Contract, CONTRACT_STAMPED_FIELDS),
+    ...openAllExcept(Signature, []),
+    ...open(Review, ['internal_note']),
+    ...open(Party, ['bank_account', 'contact_phone']),
   },
   rowLevelSecurity: [
     {

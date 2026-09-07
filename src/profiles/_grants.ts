@@ -61,6 +61,29 @@ export function editableOnly(object: ObjectLike, editable: readonly string[]): F
   return readOnly(object, locked);
 }
 
+/**
+ * Readable AND editable, declared explicitly.
+ *
+ * Field permissions merge MOST PERMISSIVELY across the sets a person holds,
+ * but only the sets that DECLARE a field vote: a set that says nothing about
+ * `clm_party.bank_account` does not out-vote a co-held set that hides it
+ * (`getFieldPermissions`, plugin-security 17.3.0 — measured on card 04: a
+ * legal user who also held `clm_requester` lost the bank account and was
+ * refused `internal_note`). So a set that must see or edit what another
+ * co-holdable set locks says so here, in so many words — the same discipline
+ * HotCRM adopted for its manager sets (#488).
+ */
+export function open(object: ObjectLike, fields: readonly string[]): FieldSecurity {
+  assertFields(object, fields, 'open');
+  return Object.fromEntries(fields.map((field) => [`${object.name}.${field}`, { readable: true, editable: true }]));
+}
+
+/** Every authored field of the object except `except` is {@link open}. */
+export function openAllExcept(object: ObjectLike, except: readonly string[]): FieldSecurity {
+  assertFields(object, except, 'openAllExcept');
+  return open(object, Object.keys(object.fields).filter((field) => !except.includes(field)));
+}
+
 /** The names of the object's fields whose `group` is one of `groups`. */
 export function fieldsInGroups(object: ObjectLike, groups: readonly string[]): string[] {
   const names = Object.entries(object.fields)
