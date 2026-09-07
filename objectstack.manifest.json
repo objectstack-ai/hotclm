@@ -8,14 +8,14 @@
   },
   "manifestId": "app.objectstack.hotclm",
   "displayName": "HotCLM",
-  "description": "Contract lifecycle management for the ObjectStack marketplace — intake, clause playbook, approval matrix, sealing and e-signature, obligations, payment schedules, renewals and archive.",
+  "description": "Contract lifecycle management for the ObjectStack marketplace — intake, clause playbook, approval matrix, e-signature and execution formalities, obligations, payment schedules, renewals and archive. AI-assisted under governance.",
   "tagline": "Contracts as data — from intake to archive.",
   "category": "contracts",
   "isStarter": false,
   "publisher": "objectstack",
   "license": "Apache-2.0",
   "homepageUrl": "https://github.com/objectstack-ai/hotclm",
-  "tags": ["clm", "contracts", "legal", "approvals", "obligations", "sealing", "e-signature"],
+  "tags": ["clm", "contracts", "legal", "approvals", "obligations", "e-signature", "ai"],
   "skills": [
     "objectstack-platform",
     "objectstack-data",
@@ -27,7 +27,7 @@
   "translations": {
     "zh-CN": {
       "displayName": "HotCLM 合同管理",
-      "description": "ObjectStack 市场的合同全生命周期管理：发起、条款库、审批矩阵、用印与电子签、履约义务、收付款计划、续签与归档。",
+      "description": "ObjectStack 市场的合同全生命周期管理：发起、条款库、审批矩阵、电子签与执行形式、履约义务、收付款计划、续签与归档。AI 在治理下参与。",
       "tagline": "合同即数据 —— 从发起到归档。"
     }
   }

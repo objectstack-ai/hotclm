@@ -7,7 +7,9 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  * HotCRM is installed alongside, `crm_account` links the two records.
  *
  * Party master data only: qualification, scoring and onboarding are an SRM's
- * job, not this object's (DESIGN.md §01 范围外).
+ * job, not this object's (DESIGN.md §01 范围外). Screening (sanctions,
+ * registry lookup) is an optional connector that stamps the two screening
+ * fields; the object never calls anything itself.
  */
 export const Party = ObjectSchema.create({
   name: 'clm_party',
@@ -18,7 +20,7 @@ export const Party = ObjectSchema.create({
 
   sharingModel: 'public_read',
   nameField: 'name',
-  highlightFields: ['name', 'party_kind', 'registration_no', 'risk_flag'],
+  highlightFields: ['name', 'party_kind', 'country_code', 'risk_flag'],
 
   fieldGroups: [
     { key: 'identity', label: 'Identity',  icon: 'building-2' },
@@ -46,12 +48,18 @@ export const Party = ObjectSchema.create({
         { label: 'Other',       value: 'other' },
       ],
     }),
+    country_code: Field.text({
+      label: 'Country',
+      group: 'identity',
+      maxLength: 2,
+      description: 'ISO 3166-1 alpha-2 country code of the party (e.g. US, DE, CN). Drives governing-law defaults and screening.',
+    }),
     registration_no: Field.text({
-      label: 'Registration No.',
+      label: 'Registration / Tax ID',
       group: 'identity',
       searchable: true,
       maxLength: 40,
-      description: 'Unified registration or tax identifier. Unique per organization when present.',
+      description: 'Company registration number, VAT/tax ID or equivalent national identifier. Unique per organization when present.',
     }),
     legal_representative: Field.text({
       label: 'Legal Representative',
@@ -105,10 +113,20 @@ export const Party = ObjectSchema.create({
       label: 'Risk Note',
       group: 'risk',
     }),
-    verified_at: Field.datetime({
-      label: 'Verified At',
+    screening_status: Field.select({
+      label: 'Screening',
       group: 'risk',
-      description: 'Stamped by the registry verification connector when one is configured (DESIGN.md §08).',
+      required: true,
+      description: 'Result of the last sanctions / registry screening. Written by the screening connector when one is configured (DESIGN.md §08), otherwise by legal.',
+      options: [
+        { label: 'Not screened', value: 'not_screened', color: '#94A3B8', default: true },
+        { label: 'Clear',        value: 'clear',        color: '#2F7D5B' },
+        { label: 'Hit',          value: 'hit',          color: '#EF4444' },
+      ],
+    }),
+    screened_at: Field.datetime({
+      label: 'Screened At',
+      group: 'risk',
     }),
     is_active: Field.boolean({
       label: 'Active',

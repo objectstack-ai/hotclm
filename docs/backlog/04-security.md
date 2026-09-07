@@ -10,8 +10,8 @@ Milestone: M1 · Labels: `pm:queue` · Blocked-by: 02, 03
 ## Spec — DESIGN.md §04, verbatim
 Positions, sets, the permission matrix, the seven sharing rules and the FLS table are pinned there.
 Capabilities granted via `systemPermissions`: `clm_requester.access` · `clm_legal.access` · `clm_finance.access`
-· `clm_seal.access` · `clm_archive.access` · `clm_admin.access`; action gates `approve_contract` ·
-`seal_contract` · `archive_contract` · `terminate_contract` · `manage_clauses` · `manage_approval_rules`.
+· `clm_records.access` · `clm_admin.access`; action gates `approve_contract` ·
+`execute_contract` · `archive_contract` · `terminate_contract` · `manage_clauses` · `manage_approval_rules`.
 `contract_manager_reports` uses `writeScope: 'own_and_reports'` **only if** declaring it does not require the
 `hierarchy-security` capability at validate time; if it does, declare the capability (it is safe on an
 open-edition boot — see HotCRM's `objectstack.config.ts` note) and record the edition boundary in the PR.

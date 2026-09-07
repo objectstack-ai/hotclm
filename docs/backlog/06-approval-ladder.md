@@ -1,9 +1,9 @@
-# F5 approval ladder · F7 seal request approval
+# F5 approval ladder · F7 signature record and execution formalities
 
 Milestone: M2 · Labels: `pm:queue` · Blocked-by: 04
 
 ## Scope
-`src/flows/contract-approval.flow.ts` (F5), `src/flows/seal-request-approval.flow.ts` (F7).
+`src/flows/contract-approval.flow.ts` (F5), `src/flows/signature-record.flow.ts` (F7).
 Adds `requires: ['approvals', 'messaging']`.
 
 ## Spec — DESIGN.md §06 F5/F7
@@ -15,8 +15,7 @@ neither → skip. Decision `route_executive` → position `clm_executive`. Decis
 `clm_general_manager`. `lockRecord: true`, `approvalStatusField: 'approval_status'`. Out-edges: approve →
 `update_record` status `approved` + `approved_at`; reject → `rejected`; send-back → `draft`. `notify` the
 owner on every terminal outcome (inbox). Approving is gated on `approve_contract`.
-F7: `record_change` on `clm_seal_request` create → approval by `clm_legal_head` → `approved` + notify
-`clm_seal_keeper` holders; keeper's transition to `sealed` stamps the parent's `sealed_at` (hook).
+F7: `record_change` on `clm_signature` reaching `completed` → hook checks `formalities_done` against the type's `execution_formalities`; when covered, stamp the parent's `executed_at` and create the `final_signed` version from `executed_file`; when a formality is missing, notify legal (`clm_legal_counsel` owner) naming it. Wet-ink path: legal uploads the executed copy on the signature record and ticks the formalities.
 
 ## Acceptance
 - Gates green; `os lint` shows no `approval-approver-not-membership-tier`.
