@@ -7,6 +7,9 @@ import * as profiles from './src/profiles/index.js';
 import { ClmPositions, ClmSharingRules } from './src/sharing/index.js';
 import { registerClmPositionBindings, type BindHostContext } from './src/security/index.js';
 import { clmSeeds } from './src/data/index.js';
+import * as apps from './src/apps/index.js';
+import * as pages from './src/pages/index.js';
+import * as views from './src/views/index.js';
 
 /**
  * HotCLM — contract lifecycle management on ObjectStack.
@@ -110,6 +113,9 @@ export default defineStack({
   requires: ['ui', 'auth', 'sharing', 'hierarchy-security', 'automation', 'triggers', 'approvals', 'messaging'],
 
   objects: Object.values(objects),
+  apps: Object.values(apps),
+  views: Object.values(views),
+  pages: Object.values(pages),
   // Lifecycle hooks (numbering, type-derived stamps, the state machines and
   // the display_name mirrors). A metadata `Hook` is only registered from
   // here — `hooks` is a top-level stack key, not an object key.
