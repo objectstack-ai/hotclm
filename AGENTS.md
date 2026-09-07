@@ -36,6 +36,32 @@ pnpm typecheck
 located, corrective message. **Never report a change as done, and never open a PR, until all three pass.**
 Paste the three green tails into the PR body.
 
+### ⛔ And then open it in a browser
+
+Green gates prove the metadata parses. They prove nothing about whether a person can use the thing.
+Every card that changes a surface a human touches — an object a user lists or edits, a view, a page,
+an app, a flow with a screen, an action with a button — is **not done until it has been driven in a
+real browser** and the PR carries the evidence.
+
+```bash
+pnpm dev --seed-admin          # http://localhost:3000/_console/ · admin@objectos.ai / admin123
+```
+
+Drive it with Playwright against the pre-installed Chromium
+(`executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`; do **not** run
+`playwright install`). Sign in, reach the surface the card changed, and do the thing a user would do.
+The PR body records what you clicked, what you saw, and what the browser console reported — a
+screenshot when the finding is visual.
+
+Two rules about what that evidence may claim:
+
+- **A boot that logs warnings is not a passing boot.** Read the startup banner. `System started with
+  degraded capabilities`, `no such table`, or a plugin that failed to load each mean the app is
+  running as something other than the product; a card that ships on top of that state has not been
+  verified. This is not hypothetical — see the fixture in `pnpm-workspace.yaml`.
+- **Report what the browser did, not what you expect it to do.** "The list should render" is not
+  evidence. `GET /api/v1/data/clm_contract → 200 {"total":0}` is.
+
 ## Naming — binding
 
 | Context | Convention | Example |
@@ -93,7 +119,9 @@ docs/backlog/           work cards                     docs/requirements/       
 | Release notes | **None per PR.** `CHANGELOG.md` is written at release time by the maintainer. |
 | Files a code PR never touches | `LICENSE` · `CHANGELOG.md` · `DESIGN.md` §01–§04 without a `needs-user-decision` first |
 | Gates | `pnpm validate && pnpm lint && pnpm typecheck`. |
-| Merge policy | Maintainer merges, **squash**. No self-merge, no auto-merge, no merging red or unreviewed PRs. |
+| Merge policy | **The loop merges its own green work** (maintainer, 2026-09-07, verbatim: 「你自己派发自己合并」 and 「改策略，让循环真的无人值守」). The PM seat squash-merges a PR when **all** of: CI green on the head · an ACCEPT review recorded on the issue · the diff touches no governed surface · it is not a second REWORK round. Anything else still goes to the maintainer. |
+| Governed surface (maintainer merges) | `DESIGN.md` §01–§04 · `AGENTS.md` · `CLAUDE.md` · `LICENSE` · `CHANGELOG.md` · `docs/design/**`. A PR touching any of these is ACCEPTed and left open with a `## 维护者速读` comment. |
+| Decisions stay with the maintainer | The merge authorization covers **merging**, not deciding. Product semantics, `DESIGN.md` §01–§04 wording, and anything on the escalation ladder still becomes a `needs-user-decision` card. |
 | Capability expansion | **Tight.** No new runtime dependency, plugin, `requires:` capability or external service unless the card says so. Propose via `needs_decision`. |
 | Platform gaps | **Report, never patch.** A platform limitation goes to objectstack-ai/objectstack as an issue (symptom, minimal repro, expected capability, platform version) and is appended to its `docs/PLATFORM_GAPS_FROM_TEMPLATES.md`. The app may carry an env-gated temporary fixture that names the platform issue. |
 | Scope | Deliver the card, whole. Out-of-scope findings become new unassigned issues, not riders. |

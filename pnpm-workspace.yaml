@@ -76,3 +76,40 @@ peerDependencyRules:
     '@better-auth/oauth-provider>@better-auth/utils': '0.5.0'
     '@better-auth/scim>@better-auth/utils': '0.5.0'
     '@better-auth/sso>@better-auth/utils': '0.5.0'
+
+# ─── TEMPORARY FIXTURE — remove when objectstack-ai/objectstack#16186 lands ───
+#
+# `@objectstack/plugin-auth@17.3.0` imports `createLocalAccountIssuer` from
+# `@better-auth/core/db` and declares the range `^1.7.2`. Upstream dropped that
+# export in the 1.7.3 PATCH, so the caret range resolves to a version the plugin
+# cannot load against. Measured on this app, 2026-09-07:
+#
+#   ⚠ AuthPlugin failed to load: The requested module '@better-auth/core/db'
+#     does not provide an export named 'createLocalAccountIssuer'
+#
+# Consequence with the plugin dead: every `/api/v1/auth/*` route 404s, the
+# Console login answers "Auth request failed with status 404", no platform table
+# is created (`no such table: sys_organization`), and declared sharing rules are
+# never seeded. The server still prints a ready banner.
+#
+# Verified: 1.7.2 exports the symbol, 1.7.3 does not (npm tarball grep).
+# This override pins it back so the app can be signed into and browser-verified.
+# It is OURS to delete the moment the platform ships a fix — do not generalise it,
+# do not add siblings to it without re-measuring.
+# The whole family must move together: pinning core alone surfaced the mirror
+# break one layer down — `@better-auth/kysely-adapter@1.7.3` imports
+# `checksSchema` from `@better-auth/core/db/internal`, which 1.7.2 does not
+# export. Measured, not assumed. So every `@better-auth/*` sibling the tree
+# resolves is pinned to the same 1.7.2 line as `core`.
+overrides:
+  'better-auth': '1.7.2'
+  '@better-auth/core': '1.7.2'
+  '@better-auth/kysely-adapter': '1.7.2'
+  '@better-auth/memory-adapter': '1.7.2'
+  '@better-auth/drizzle-adapter': '1.7.2'
+  '@better-auth/mongo-adapter': '1.7.2'
+  '@better-auth/prisma-adapter': '1.7.2'
+  '@better-auth/oauth-provider': '1.7.2'
+  '@better-auth/scim': '1.7.2'
+  '@better-auth/sso': '1.7.2'
+  '@better-auth/telemetry': '1.7.2'

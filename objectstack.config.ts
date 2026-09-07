@@ -23,12 +23,20 @@ export default defineStack({
     engines: { protocol: '^17' },
   },
 
-  // `ui` serves the Console so the app can be browsed as soon as it boots.
-  // The remaining capabilities arrive with the cards that need them
-  // (DESIGN.md §06: `automation` + `triggers` + `approvals` + `messaging`
-  // for F1–F15, `sharing` for §04, `analytics` for §09). Capability
-  // expansion is tight — a card names the token it adds (AGENTS.md).
-  requires: ['ui'],
+  // `ui` serves the Console; `auth` mounts the login surface and the platform
+  // bootstrap that creates `sys_organization`. Both are required for the app to
+  // be *browsable at all* — measured, not assumed: with `ui` alone the boot
+  // logs "System started with degraded capabilities. Missing core services:
+  // auth", the sharing seeder cannot enumerate organizations ("no such table:
+  // sys_organization"), and the Console has no way to sign in. DESIGN.md §11
+  // already prescribed `auth`; this is the implementation catching up, not a
+  // capability expansion.
+  //
+  // The rest arrive with the cards that need them (DESIGN.md §06:
+  // `automation` + `triggers` + `approvals` + `messaging` for F1–F15,
+  // `sharing` for §04, `analytics` for §09). Capability expansion stays tight
+  // — a card names the token it adds (AGENTS.md).
+  requires: ['ui', 'auth'],
 
   objects: Object.values(objects),
   // Lifecycle hooks (numbering, type-derived stamps, the state machines and
