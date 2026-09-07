@@ -19,9 +19,14 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  *     §07: AI proposes, a person adopts, the field is written on adoption);
  *   - `is_backfilled` — the F16 `executed_upload` action only (§13 Q8).
  *
- * Roll-ups (`version_count`, `open_deviation_count`, `planned_amount`,
- * `actual_amount`, `overdue_obligation_count`) are card 03 and deliberately
- * absent here.
+ * The five roll-ups (`version_count`, `open_deviation_count`,
+ * `overdue_obligation_count`, `planned_amount`, `actual_amount`) are a sixth
+ * such family: `summary` fields the ENGINE recomputes on every child insert,
+ * update and delete (`ObjectQL.recomputeSummaries`, under an elevated system
+ * context, which is why `readonly: true` does not lock the engine out).
+ * Deliberately NOT `formula`: a formula is derived per read and cannot be
+ * filtered, sorted or listed on, and the two filtered counts here exist to be
+ * filtered and sorted on.
  */
 export const Contract = ObjectSchema.create({
   name: 'clm_contract',
@@ -45,6 +50,7 @@ export const Contract = ObjectSchema.create({
     { key: 'routing',    label: 'Routing & Approval',  icon: 'route',    defaultExpanded: false },
     { key: 'lifecycle',  label: 'Lifecycle',           icon: 'history',  defaultExpanded: false },
     { key: 'ai',         label: 'AI Review',           icon: 'sparkles', defaultExpanded: false },
+    { key: 'rollup',     label: 'Roll-ups',            icon: 'sigma',    defaultExpanded: false },
   ],
 
   fields: {
@@ -421,6 +427,93 @@ export const Contract = ObjectSchema.create({
       label: 'AI Reviewed At',
       group: 'ai',
       readonly: true,
+    }),
+
+    // ─── Roll-ups — recomputed by the engine on every child write ──────
+    //
+    // `relationshipField` is declared on all five although the engine can
+    // infer it: inference takes the FIRST lookup/master_detail field on the
+    // child that points back here, so it is order-dependent on a key nothing
+    // else about the child pins. Naming it makes the roll-up survive a field
+    // being re-ordered or a second reference to `clm_contract` being added.
+    //
+    // None of them declares `max`. On an authored number a bound is a
+    // guardrail; on a derived one it is a trap — `min`/`max` are checked on
+    // the written value, so a count that outgrew its ceiling would have the
+    // engine's own recompute write refused, and the roll-up would then sit
+    // silently stale (the recompute failure is logged, not raised) while
+    // every child write kept reporting success.
+    version_count: Field.summary({
+      label: 'Versions',
+      group: 'rollup',
+      readonly: true,
+      scale: 0,
+      min: 0,
+      description: 'Count of clm_contract_version rows on this contract.',
+      summaryOperations: {
+        object: 'clm_contract_version',
+        relationshipField: 'contract',
+        function: 'count',
+        field: 'id',
+      },
+    }),
+    open_deviation_count: Field.summary({
+      label: 'Open Deviations',
+      group: 'rollup',
+      readonly: true,
+      scale: 0,
+      min: 0,
+      description: 'Count of clm_deviation rows still open. The in_review → in_approval guard reads the children directly (a guard must not trust a cached aggregate); this is the number people list and sort on.',
+      summaryOperations: {
+        object: 'clm_deviation',
+        relationshipField: 'contract',
+        function: 'count',
+        field: 'id',
+        filter: { status: 'open' },
+      },
+    }),
+    overdue_obligation_count: Field.summary({
+      label: 'Overdue Obligations',
+      group: 'rollup',
+      readonly: true,
+      scale: 0,
+      min: 0,
+      description: 'Count of clm_obligation rows in arrears. Moves only when the daily job (card 09) flips a child to overdue — the roll-up is recomputed by that write like any other.',
+      summaryOperations: {
+        object: 'clm_obligation',
+        relationshipField: 'contract',
+        function: 'count',
+        field: 'id',
+        filter: { status: 'overdue' },
+      },
+    }),
+    planned_amount: Field.summary({
+      label: 'Planned Amount',
+      group: 'rollup',
+      readonly: true,
+      scale: 2,
+      min: 0,
+      description: 'Sum of clm_payment_plan.planned_amount, in the contract currency. Compare with `amount`: that is the negotiated total, this is what the schedule actually adds up to.',
+      summaryOperations: {
+        object: 'clm_payment_plan',
+        relationshipField: 'contract',
+        function: 'sum',
+        field: 'planned_amount',
+      },
+    }),
+    actual_amount: Field.summary({
+      label: 'Actual Amount',
+      group: 'rollup',
+      readonly: true,
+      scale: 2,
+      min: 0,
+      description: 'Sum of clm_payment_plan.actual_amount, in the contract currency — what has actually arrived against the schedule.',
+      summaryOperations: {
+        object: 'clm_payment_plan',
+        relationshipField: 'contract',
+        function: 'sum',
+        field: 'actual_amount',
+      },
     }),
   },
 

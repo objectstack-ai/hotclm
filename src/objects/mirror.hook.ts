@@ -2,7 +2,7 @@ import type { Hook, HookContext } from '@objectstack/spec/data';
 import type { HookApi } from './_hook-api.js';
 
 /**
- * Stored `display_name` mirrors for the four contract children (DESIGN.md
+ * Stored `display_name` mirrors for the six contract children (DESIGN.md
  * §03). Each child's title is a STORED text field — never a formula, because
  * a formula is not searchable and cannot be a `nameField` — so something has
  * to write it. These hooks do, on insert and whenever one of the inputs the
@@ -12,11 +12,16 @@ import type { HookApi } from './_hook-api.js';
  *   clm_review            "<stage> · <reviewer>"
  *   clm_deviation         "<clause title> · <status>"
  *   clm_signature         "<method> · <status>"
+ *   clm_obligation        "<title>"
+ *   clm_payment_plan      "#<seq> · <planned_date>"
  *
  * The English option labels are repeated inline (a lowered hook body has no
  * module scope, and cannot read the object's own option list). A stored
  * title is untranslatable by nature; English is the source language
- * (DESIGN.md §01).
+ * (DESIGN.md §01) — which is why the payment mirror is `#<seq>` and not a
+ * localized instalment word: a value stamped once cannot be re-rendered for
+ * the next reader, so the localized form belongs to the zh-CN bundle
+ * (card 11), never to the stored column.
  *
  * `display_name` is `readonly`: the engine keeps a key a before-hook assigned,
  * so the stamp survives the read-only strip while a hand-typed value does not.
@@ -141,4 +146,55 @@ const signatureDisplayName: Hook = {
   },
 };
 
-export default [contractVersionDisplayName, reviewDisplayName, deviationDisplayName, signatureDisplayName];
+const obligationDisplayName: Hook = {
+  name: 'obligation_display_name',
+  object: 'clm_obligation',
+  events: ['beforeInsert', 'beforeUpdate'],
+  priority: 300,
+  description: 'Stamp display_name as the obligation title.',
+  handler: async (ctx: HookContext) => {
+    const { event, input } = ctx;
+    const previous = ctx.previous ?? {};
+    const stale = event === 'beforeInsert' || input.title !== undefined || !previous.display_name;
+    if (!stale) return;
+    const title = input.title !== undefined ? input.title : previous.title;
+    const label = typeof title === 'string' ? title.trim() : '';
+    input.display_name = label || 'Obligation';
+  },
+};
+
+const paymentPlanDisplayName: Hook = {
+  name: 'payment_plan_display_name',
+  object: 'clm_payment_plan',
+  events: ['beforeInsert', 'beforeUpdate'],
+  priority: 300,
+  description: 'Stamp display_name as "#<seq> · <planned_date>" (ASCII; the localized form belongs to the zh-CN bundle).',
+  handler: async (ctx: HookContext) => {
+    const { event, input } = ctx;
+    const previous = ctx.previous ?? {};
+    const stale = event === 'beforeInsert' || input.seq !== undefined || input.planned_date !== undefined || !previous.display_name;
+    if (!stale) return;
+    const seq = input.seq !== undefined ? input.seq : previous.seq;
+    const plannedDate = input.planned_date !== undefined ? input.planned_date : previous.planned_date;
+    // A date field reaches a hook as an ISO string from REST and as a Date
+    // from an in-process write; both render to the calendar day, never to a
+    // timestamp, so the mirror does not shift with the reader's clock.
+    let dateLabel = '';
+    if (plannedDate instanceof Date) {
+      dateLabel = plannedDate.toISOString().slice(0, 10);
+    } else if (typeof plannedDate === 'string' && plannedDate) {
+      dateLabel = plannedDate.slice(0, 10);
+    }
+    const seqLabel = seq === undefined || seq === null || seq === '' ? '?' : String(seq);
+    input.display_name = dateLabel ? `#${seqLabel} · ${dateLabel}` : `#${seqLabel}`;
+  },
+};
+
+export default [
+  contractVersionDisplayName,
+  reviewDisplayName,
+  deviationDisplayName,
+  signatureDisplayName,
+  obligationDisplayName,
+  paymentPlanDisplayName,
+];

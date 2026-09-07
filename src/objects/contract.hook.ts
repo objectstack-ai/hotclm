@@ -14,7 +14,11 @@ import type { HookApi } from './_hook-api.js';
  * - `contract_state_machine` (beforeUpdate on `status`): the transition table
  *   and every guard of §03 状态机, refusing with a structured error rather
  *   than coercing, and stamping the stage timestamp on each entry.
- * - `deviation_state_machine`, `signature_state_machine`: the child machines.
+ * - `deviation_state_machine`, `signature_state_machine`,
+ *   `obligation_state_machine`, `payment_plan_state_machine`: the child
+ *   machines. The last two also hold the `overdue` reservation — that state
+ *   has exactly one writer, the daily job of card 09, and a write to it from
+ *   a person is refused on BOTH write paths rather than hidden in the form.
  *
  * ## Why every helper lives INSIDE its handler
  *
@@ -398,4 +402,136 @@ const signatureStateMachine: Hook = {
   },
 };
 
-export default [contractTypeStamp, contractStateMachine, deviationStateMachine, signatureStateMachine];
+const obligationStateMachine: Hook = {
+  name: 'obligation_state_machine',
+  object: 'clm_obligation',
+  events: ['beforeInsert', 'beforeUpdate'],
+  priority: 200,
+  description: 'Obligation transitions: pending → in_progress / done / waived / overdue, in_progress → done / waived, overdue → done / waived; overdue is reserved for the daily job; stamp completed_at on done.',
+  handler: async (ctx: HookContext) => {
+    function refuse(message: string, code: string, status: number): Error {
+      const err = new Error(message) as Error & { code: string; status: number };
+      err.code = code;
+      err.status = status;
+      return err;
+    }
+    const { event, input } = ctx;
+    const previous = ctx.previous ?? {};
+    const to = input.status;
+    if (typeof to !== 'string') return;
+
+    // `overdue` is a MEASUREMENT, not an opinion: the daily job (card 09)
+    // reads due_date and writes it. Guarding only the update path would leave
+    // the insert path open — a row can be created straight into arrears — so
+    // both events run through here.
+    if (to === 'overdue' && ctx.session?.isSystem !== true) {
+      throw refuse(
+        'Only the daily obligation job marks an obligation overdue; it is measured from due_date, not typed in. Leave it pending or in_progress, or record the outcome as done or waived.',
+        'INVALID_STATE',
+        422,
+      );
+    }
+    if (event === 'beforeInsert') return;
+
+    const from = typeof previous.status === 'string' ? previous.status : 'pending';
+    if (to === from) return;
+
+    // DESIGN.md §03 状态机 — done and waived are terminal. in_progress has no
+    // edge to overdue there; an obligation being worked on is reported through
+    // its due date, not by moving it into arrears.
+    const TRANSITIONS: Record<string, string[]> = {
+      pending:     ['in_progress', 'done', 'waived', 'overdue'],
+      in_progress: ['done', 'waived'],
+      overdue:     ['done', 'waived'],
+      done:        [],
+      waived:      [],
+    };
+    const allowed = TRANSITIONS[from] ?? [];
+    if (!allowed.includes(to)) {
+      throw refuse(
+        allowed.length === 0
+          ? `A ${from} obligation is closed; its status cannot change to ${to}. Record a new obligation instead.`
+          : `Obligation status cannot go from ${from} to ${to}. Allowed from ${from}: ${allowed.join(', ')}.`,
+        'INVALID_STATE',
+        422,
+      );
+    }
+
+    if (to === 'done') {
+      const completedAt = input.completed_at !== undefined ? input.completed_at : previous.completed_at;
+      if (completedAt === undefined || completedAt === null || completedAt === '') {
+        input.completed_at = new Date().toISOString();
+      }
+    }
+  },
+};
+
+const paymentPlanStateMachine: Hook = {
+  name: 'payment_plan_state_machine',
+  object: 'clm_payment_plan',
+  events: ['beforeInsert', 'beforeUpdate'],
+  priority: 200,
+  description: 'Payment instalment transitions: planned → due, due → partial / paid / overdue, overdue → partial / paid; overdue is reserved for the daily job; stamp actual_date on partial and paid.',
+  handler: async (ctx: HookContext) => {
+    function refuse(message: string, code: string, status: number): Error {
+      const err = new Error(message) as Error & { code: string; status: number };
+      err.code = code;
+      err.status = status;
+      return err;
+    }
+    const { event, input } = ctx;
+    const previous = ctx.previous ?? {};
+    const to = input.status;
+    if (typeof to !== 'string') return;
+
+    if (to === 'overdue' && ctx.session?.isSystem !== true) {
+      throw refuse(
+        'Only the daily payment job marks an instalment overdue; it is measured from planned_date, not typed in. Record what arrived as partial or paid instead.',
+        'INVALID_STATE',
+        422,
+      );
+    }
+    if (event === 'beforeInsert') return;
+
+    const from = typeof previous.status === 'string' ? previous.status : 'planned';
+    if (to === from) return;
+
+    // DESIGN.md §03 状态机, transcribed edge for edge. `partial` and `paid`
+    // carry no outgoing edge there — see the PR's 验收备注: whether a partial
+    // instalment may later be completed to `paid` is a §03 question, and §03
+    // is a governed surface this card does not get to widen.
+    const TRANSITIONS: Record<string, string[]> = {
+      planned: ['due'],
+      due:     ['partial', 'paid', 'overdue'],
+      overdue: ['partial', 'paid'],
+      partial: [],
+      paid:    [],
+    };
+    const allowed = TRANSITIONS[from] ?? [];
+    if (!allowed.includes(to)) {
+      throw refuse(
+        allowed.length === 0
+          ? `A ${from} instalment is settled; its status cannot change to ${to}. Record a further instalment instead.`
+          : `Payment instalment status cannot go from ${from} to ${to}. Allowed from ${from}: ${allowed.join(', ')}.`,
+        'INVALID_STATE',
+        422,
+      );
+    }
+
+    if (to === 'partial' || to === 'paid') {
+      const actualDate = input.actual_date !== undefined ? input.actual_date : previous.actual_date;
+      if (actualDate === undefined || actualDate === null || actualDate === '') {
+        input.actual_date = new Date().toISOString().slice(0, 10);
+      }
+    }
+  },
+};
+
+export default [
+  contractTypeStamp,
+  contractStateMachine,
+  deviationStateMachine,
+  signatureStateMachine,
+  obligationStateMachine,
+  paymentPlanStateMachine,
+];
