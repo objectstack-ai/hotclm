@@ -6,6 +6,7 @@ import { allFlows, flowFunctions } from './src/flows/index.js';
 import * as profiles from './src/profiles/index.js';
 import { ClmPositions, ClmSharingRules } from './src/sharing/index.js';
 import { registerClmPositionBindings, type BindHostContext } from './src/security/index.js';
+import { clmSeeds } from './src/data/index.js';
 
 /**
  * HotCLM — contract lifecycle management on ObjectStack.
@@ -132,6 +133,13 @@ export default defineStack({
   positions: ClmPositions,
   permissions: Object.values(profiles),
   sharingRules: ClmSharingRules,
+
+  // The demo dataset (DESIGN.md §10, card 08). EMPTY unless `CLM_DEMO_SEED`
+  // asked for it at compile time — `pnpm demo` sets it, `pnpm dev` does not,
+  // and `src/data/index.ts` states why a sellable standard product does not
+  // install somebody else's contract book into every fresh deployment.
+  // `OS_SEED_LOCALE` chooses which language the fixture is written in.
+  data: clmSeeds,
 });
 
 /**
