@@ -5,4 +5,10 @@ export { ApprovalRule } from './approval-rule.object.js';
 export { Party } from './party.object.js';
 
 // Contract domain — card 02.
+export { Contract } from './contract.object.js';
+export { ContractVersion } from './contract-version.object.js';
+export { Review } from './review.object.js';
+export { Deviation } from './deviation.object.js';
+export { Signature } from './signature.object.js';
+
 // Post-signature domain — card 03.
