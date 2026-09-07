@@ -66,18 +66,38 @@ export default defineStack({
   // `launch_contract` action is refused at dispatch (503, "flow action
   // unavailable"), because the automation service is never resolved.
   //
-  // `triggers` is deliberately NOT declared yet. It installs the record-change
-  // and schedule PROVIDERS that launch `record_change` / `schedule` flows;
-  // this card's flow is a `screen` flow launched by its action, and F2 / F6
-  // are hooks, not flows — so nothing here is ever fired by a trigger. The
-  // token arrives with the first card that authors a flow a trigger launches
-  // (F5 in card 06, the daily jobs in card 09), the same way `sharing` and
-  // `hierarchy-security` arrived with card 04: measured, then declared.
+  // `approvals` is the Approval NODE (ADR-0019): `@objectstack/plugin-approvals`
+  // registers the executor that opens `sys_approval_request`, holds the
+  // record lock, mirrors the decision onto `approval_status` and resumes the
+  // run down the matching branch label. Without it the ladder's six approval
+  // nodes have no executor. Card 06.
   //
-  // The rest arrive with the cards that need them (DESIGN.md §06:
-  // `approvals` + `messaging` for F5–F15, `analytics` for §09). Capability
-  // expansion stays tight — a card names the token it adds (AGENTS.md).
-  requires: ['ui', 'auth', 'sharing', 'hierarchy-security', 'automation'],
+  // `messaging` backs the `notify` node (ADR-0012) — F5 tells the contract
+  // owner about both terminal outcomes, F7 names the missing execution
+  // formality to the legal owner. Measured on 17.3.0, and the measurement is
+  // worth recording because it cuts the other way from the rest of this list:
+  // `messaging` is in `PLATFORM_ALWAYS_ON_CAPABILITIES`, which `serve` appends
+  // to `requires` for every non-`minimal` preset — so omitting it would have
+  // changed NOTHING on a local boot and the notify nodes would have delivered
+  // anyway. It is declared because the app must state what it means (a runtime
+  // that does not carry that always-on slate would degrade the notify node to
+  // a logged no-op), not because a gate caught it.
+  //
+  // `triggers` was the token card 05's note deferred to "the first card that
+  // authors a flow a trigger launches (F5 in card 06)" — and this is that
+  // card. It installs the record-change PROVIDER that binds a `record_change`
+  // flow to the ObjectQL lifecycle hooks. Not optional and not silent:
+  // `defineStack` REFUSES the stack without it, once per flow — "flow
+  // 'contract_approval' declares a 'record_change' trigger but `requires` does
+  // not include 'triggers' — no 'record_change' trigger would be registered,
+  // so the flow would never auto-launch" (measured: `pnpm validate` exits 1
+  // with three such issues). `approvals` additionally pulls `job` + `queue`
+  // in ahead of itself, so its SLA escalation has durable scheduling.
+  //
+  // The rest arrive with the cards that need them (`analytics` for §09).
+  // Capability expansion stays tight — a card names the token it adds
+  // (AGENTS.md).
+  requires: ['ui', 'auth', 'sharing', 'hierarchy-security', 'automation', 'triggers', 'approvals', 'messaging'],
 
   objects: Object.values(objects),
   // Lifecycle hooks (numbering, type-derived stamps, the state machines and
@@ -85,10 +105,14 @@ export default defineStack({
   // here — `hooks` is a top-level stack key, not an object key.
   hooks: allHooks,
 
-  // Automation (DESIGN.md §06, card 05): the intake screen flow (F1) and the
-  // action that launches it. The routing (F2) and the deviation gate (F6)
-  // are hooks above. `functions` holds the one callable a `script` node
-  // names — the refusal that fails a run with a message.
+  // Automation (DESIGN.md §06, cards 05 + 06): the intake screen flow (F1) and
+  // the action that launches it, the approval ladder (F5), and the
+  // signature/execution check (F7) with its insert-time twin. The routing (F2)
+  // and the deviation gate (F6) are hooks above — F5 READS the `route_*` flags
+  // F2 stamps and never re-derives them. `functions` holds the callables a
+  // `script` node names by string, each pure: the intake refusal that fails a
+  // run with a message, the routing-flag normaliser, and the
+  // execution-formalities comparison.
   flows: allFlows,
   actions: Object.values(actions),
   functions: flowFunctions,
