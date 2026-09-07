@@ -103,7 +103,7 @@ clm_party         [public_read] clm_deviation         [MD]
 | `clm_clause` `public_read` | title* · category `liability/payment/termination/confidentiality/ip/warranty/dispute/other` · standard_text* richtext · fallback_text richtext · position_note（不可接受的底线，文字）· risk_level `low/medium/high` · applies_to multiselect（合同 category）· requires_legal_head boolean（偏离即需法务负责人）· is_active |
 | `clm_approval_rule` `public_read` | name* · applies_to multiselect（合同 category）· direction `sales/purchase/other/any` · amount_min currency · amount_max currency · only_with_deviation boolean · route_legal_head boolean · route_finance boolean · route_executive boolean · route_gm boolean · priority number · is_active |
 | `clm_party` `public_read` | name* · party_kind `company/individual/government/other` · registration_no（统一登记号）· legal_representative · contact_name · _contact_phone_ · contact_email · address · bank_name · _bank_account_ · crm_account lookup（跨包，可选）· risk_flag `none/watch/blocked` · risk_note · verified_at · is_active。唯一索引 `(registration_no)` scope organization |
-| `clm_contract` `private` | contract_number autonumber `CT-{00000}` · title* · contract_type* lookup · category（自类型盖戳，只读）· direction（同上）· party* lookup · our_entity select（签约主体，种子）· department select（种子）· owner_id（业务承办）· legal_owner lookup user · amount currency · currency_code（种子：`USD` 默认、`EUR`、`GBP`、`CNY`、`JPY`）· is_amount_estimated boolean · start_date · end_date · term_months · auto_renew boolean · renewal_notice_days · renewed_from lookup clm_contract · parent_contract lookup clm_contract（框架合同 / 补充协议的主合同）· **status**（§状态机）· risk_level `low/medium/high` · summary richtext · governing_law · jurisdiction · contract_language select（种子，默认 `en`）· payment_terms select · confidentiality_term_months · liability_cap currency · current_turn `internal/counterparty/none` · turn_since datetime · route_legal_head / route_finance / route_executive / route_gm boolean（hook 盖戳，只读）· approval_status（审批节点镜像）· submitted_at · review_started_at · approved_at · signed_at · activated_at · closed_at · execution_formalities multiselect（自类型盖戳，只读）· executed_at datetime · ai_summary richtext · ai_risk_score number（0–100）· ai_risk_rationale textarea · ai_reviewed_at datetime（四个 AI 字段只由「采纳建议」动作写入，§07）· is_expiring boolean（日任务盖戳）· archive_no · archived_at · crm_contract lookup（跨包，可选）· 汇总：version_count · open_deviation_count · overdue_obligation_count · planned_amount · actual_amount |
+| `clm_contract` `private` | contract_number text（hook 生成 `<type.code>-<YYYY>-<0000>`，按类型按年流水，提交时盖戳后只读，唯一索引 scope organization；§13 Q5）· is_backfilled boolean（补录的已签合同，§13 Q8）· title* · contract_type* lookup · category（自类型盖戳，只读）· direction（同上）· party* lookup · our_entity select（签约主体，种子）· department select（种子）· owner_id（业务承办）· legal_owner lookup user · amount currency · currency_code（种子：`USD` 默认、`EUR`、`GBP`、`CNY`、`JPY`）· is_amount_estimated boolean · start_date · end_date · term_months · auto_renew boolean · renewal_notice_days · renewed_from lookup clm_contract · parent_contract lookup clm_contract（框架合同 / 补充协议的主合同）· **status**（§状态机）· risk_level `low/medium/high` · summary richtext · governing_law · jurisdiction · contract_language select（种子，默认 `en`）· payment_terms select · confidentiality_term_months · liability_cap currency · current_turn `internal/counterparty/none` · turn_since datetime · route_legal_head / route_finance / route_executive / route_gm boolean（hook 盖戳，只读）· approval_status（审批节点镜像）· submitted_at · review_started_at · approved_at · signed_at · activated_at · closed_at · execution_formalities multiselect（自类型盖戳，只读）· executed_at datetime · ai_summary richtext · ai_risk_score number（0–100）· ai_risk_rationale textarea · ai_reviewed_at datetime（四个 AI 字段只由「采纳建议」动作写入，§07）· is_expiring boolean（日任务盖戳）· archive_no · archived_at · crm_contract lookup（跨包，可选）· 汇总：version_count · open_deviation_count · overdue_obligation_count · planned_amount · actual_amount |
 | `clm_contract_version` `by parent` | display_name（存储镜像 "v<n> · <kind>"，nameField）· contract* MD cascade · version_no* · kind* `draft/internal_redline/counterparty_redline/clean/final_signed` · file* · submitted_by user · turn `internal/counterparty` · notes · is_current boolean |
 | `clm_review` `by parent` | display_name（镜像 "<stage> · <reviewer>"）· contract* MD cascade · reviewer* user · stage* `legal/finance/compliance/business` · decision `pending/approved/changes_requested/rejected` · risk_level_assessed · comments richtext（对发起人可见）· _internal_note_ richtext（仅法务）· started_at · decided_at |
 | `clm_deviation` `by parent` | display_name（镜像 "<clause> · <status>"）· contract* MD cascade · clause* lookup · deviation_text* · requested_position `standard/fallback/custom` · justification · status `open/accepted/rejected/withdrawn` · decided_by user · decided_at |
@@ -237,6 +237,7 @@ RLS 谓词不能跨对象（ADR-0055），所以「同部门可见」无法用 `
 | F12 | `renewal_notice` | 定时（日） | `active` 且 `end_date - renewal_notice_days <= today`：置 `is_expiring`，提醒业务承办与法务；动作「发起续签」预填新 draft |
 | F13 | `expiration_sweep` | 定时（日） | `active` 且 `end_date < today`：非自动续签置 `expired`；自动续签则建续签 draft 并提醒 |
 | F14 | `contract_archive` | hook beforeUpdate | 终态合同由档案岗填 `archive_no` 后置 `archived_at`，此后除 `notes` 外只读 |
+| F16 | `executed_upload` | 动作（补录已签合同，§13 Q8） | 档案或法务岗「补录已签合同」：一步填核心字段、相对方、执行副本与签署日期，合同直接进入 `active` 并置 `is_backfilled`，跳过审查与审批但全部留审计；仅 `clm_records.access` 与 `clm_legal.access` 可用 |
 | F15 | `crm_handoff` | record_change（`crm_contract` 进入 `in_approval`） | **仅 `CLM_COMPOSITION=with-hotcrm` 装配时注册**：建 `clm_contract`（direction `sales`，party 自 `crm_account` 查找或新建，金额期限预填，`crm_contract` 回链） |
 
 定时流与对审批结果做出反应的 record_change 流一律 `runAs: 'system'` 并注明理由（审批服务的镜像写不带用户，默认身份会被拒绝）。
@@ -369,18 +370,18 @@ docs/backlog/              派发卡片
 
 规则：平台能力受限**只上报** objectstack，不在本仓库修平台；应用侧只允许带环境闸门的临时夹具并注明平台 issue；新发现追加到 objectstack 的 `docs/PLATFORM_GAPS_FROM_TEMPLATES.md`。
 
-## 13 待裁决项
+## 13 裁决记录（2026-09-07，维护者：「16 项全部同意默认」）
 
-**Q1 · 财务对生效合同的写权限。** 当前：`edit` + FLS 锁法律字段。替代：`clm_payment_plan` 脱离 master-detail、自持 OWD 和共享。前者简单但财务可改合同非法律字段；后者失去汇总字段。建议前者，M1 验证 FLS 能否锁住 `status`。
+设计方案 V1.0 第 13 章 16 项与本节 Q1–Q7 于同日一次裁定，全部采用默认口径。逐条记录，此后改动走新的 Q 编号，不改已裁决项。
 
-**Q2 · 部门内可见性。** RLS 不能表达「与当前用户同部门」。选项：不做（默认，靠 `own_and_reports`）；或按客户覆盖层加 team 共享规则，部门 = team。建议不进标准品。
-
-**Q3 · 审批台阶是否够。** 固定五级覆盖中型企业常见的分级审批；Ironclad 式任意条件审批人留给客户覆盖层。若第一个客户就要第六级，改为矩阵驱动台阶数（hook 盖 `approver_n` 字段、节点 `type: 'field'`），成本一周。
-
-**Q4 · 相对方与 `crm_account` 的关系。** 当前：永远独立 `clm_party`，可选 lookup 到 `crm_account`。替代：并装时直接复用 `crm_account`。后者让 CLM 单装时缺相对方主数据，否决；保留 lookup 即可。
-
-**Q5 · 合同编号。** `autonumber` 只有静态格式（`CT-{00000}`），做不到「按类型前缀 + 年份 + 流水」。选项：接受单一流水，类型 code 作独立列；或 hook 生成编号并存 `contract_number` 文本字段（放弃 autonumber）。国内客户对编号规则要求刚性，建议 M1 用 hook 方案并把规则做成类型配置。
-
-**Q7 · 区域包的装配方式。** 中国区域包（契约锁 / 法大大 / e签宝 连接器、本地登记库筛查、印章形式的种子与流转流程）默认做成 marketplace 扩展包，依赖 HotCLM 安装；备选是仓库内 `CLM_COMPOSITION=cn` 组合开关（与 HotCRM 的 saas 组合同法）。扩展包让区域差异在标准品之外演进，建议扩展包；组合开关只在扩展包机制未验证时作过渡。
-
-**Q6 · 是否复用 HotCRM 的 `crm_contract` 六种类型枚举。** 不复用。CLM 的 category 是流程分类，crm_contract 的类型是商务分类，两者语义不同，硬对齐只会互相牵制；F15 做一次映射即可。
+| # | 事项 | 裁定 | 落实 |
+|---|---|---|---|
+| Q1 | 财务对生效合同的写权限 | `edit` + FLS 锁法律字段与 `status` | 卡 04；M1 验证 FLS 能锁 `status` |
+| Q2 | 部门内可见性 | 不进标准品，靠 `own_and_reports`；team 规则留客户覆盖层 | 卡 04 |
+| Q3 | 审批台阶 | 固定五级，矩阵选台阶 | 卡 06 |
+| Q4 | 相对方与 `crm_account` | 永远独立 `clm_party`，可选 lookup | 已落地 |
+| Q5 | 合同编号 | hook 生成 `<type.code>-<YYYY>-<0000>`，放弃 autonumber | 卡 02，§03 已改 |
+| Q6 | 类别与 HotCRM 类型 | 不对齐，F15 映射 | 卡 12 |
+| Q7 | 区域包装配 | marketplace 扩展包，依赖 HotCLM；开关只作过渡 | 2.x |
+| Q8 | 补录已签合同（方案第 12 项） | 允许：F16 `executed_upload`，直接 `active`，`is_backfilled` 标记并留审计 | 卡 09 追加 F16 |
+| 方案 1–16 | 财务写权限、部门可见性、台阶、相对方、编号、类别、对方红线由法务上传、执行形式按类型、DocuSign 首发、IM 通道本期不承诺、出厂 USD 与英文、补录通道、保留期默认 10 年、补充协议走自己的矩阵、AI 四字段进合同、区域包用扩展包 | 全部默认 | 已分别体现在 §01–§12 |

@@ -5,7 +5,7 @@ Milestone: M3 · Labels: `pm:queue` · Blocked-by: 04
 ## Scope
 `src/objects/contract.hook.ts` (F9, F14), `src/flows/obligation-due.flow.ts` (F10),
 `payment-overdue.flow.ts` (F11), `renewal-notice.flow.ts` (F12), `expiration-sweep.flow.ts` (F13),
-`legal-review-sla.flow.ts` (F3), `turn-stalled.flow.ts` (F4).
+`legal-review-sla.flow.ts` (F3), `turn-stalled.flow.ts` (F4), and the `executed_upload` action (F16, DESIGN.md §13 Q8): a records/legal-only action that creates an already-executed contract straight into `active` with `is_backfilled = true`, skipping review and approval, fully audited.
 
 ## Spec — DESIGN.md §06
 Exactly the behaviors in the table. All scheduled flows `runAs: 'system'` with the reason stated;
