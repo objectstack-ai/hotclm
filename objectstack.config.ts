@@ -8,6 +8,8 @@ import { ClmPositions, ClmSharingRules } from './src/sharing/index.js';
 import { registerClmPositionBindings, type BindHostContext } from './src/security/index.js';
 import { clmSeeds } from './src/data/index.js';
 import * as apps from './src/apps/index.js';
+import * as datasets from './src/datasets/index.js';
+import * as dashboards from './src/dashboards/index.js';
 import * as pages from './src/pages/index.js';
 import * as views from './src/views/index.js';
 
@@ -107,15 +109,42 @@ export default defineStack({
   // with three such issues). `approvals` additionally pulls `job` + `queue`
   // in ahead of itself, so its SLA escalation has durable scheduling.
   //
-  // The rest arrive with the cards that need them (`analytics` for §09).
-  // Capability expansion stays tight — a card names the token it adds
-  // (AGENTS.md).
-  requires: ['ui', 'auth', 'sharing', 'hierarchy-security', 'automation', 'triggers', 'approvals', 'messaging'],
+  // `analytics` is the ADR-0021 semantic layer DESIGN.md §09's four datasets
+  // and three dashboards run on. MEASURED on 17.3.0 before it was declared,
+  // because the question the card asked first was whether it is
+  // enterprise-gated the way `hierarchy-security` is. It is not, on either
+  // count:
+  //
+  //   - `PLATFORM_CAPABILITY_PROVIDERS.analytics` is
+  //     `{ package: '@objectstack/service-analytics', edition: 'open' }` — the
+  //     open edition, where `hierarchy-security` reads
+  //     `{ package: '@objectstack/security-enterprise', edition: 'enterprise' }`.
+  //   - It needs no declaration to load. `analytics` is a member of
+  //     `PLATFORM_ALWAYS_ON_CAPABILITIES`, so `serve` appends it for every
+  //     non-`minimal` preset: `AnalyticsServicePlugin` was already in the boot
+  //     roster (36 plugins) on `main` with this list unchanged, and
+  //     `POST /api/v1/analytics/dataset/query` already answered.
+  //
+  // So this token has no gate behind it, exactly like `messaging` above, and
+  // it is declared for the same reason: the app must state what it MEANS. A
+  // runtime that does not carry the always-on slate serves no dataset at all,
+  // and every widget on all three dashboards would render its error state.
+  //
+  // The rest arrive with the cards that need them. Capability expansion stays
+  // tight — a card names the token it adds (AGENTS.md).
+  requires: ['ui', 'auth', 'sharing', 'hierarchy-security', 'automation', 'triggers', 'approvals', 'messaging', 'analytics'],
 
   objects: Object.values(objects),
   apps: Object.values(apps),
   views: Object.values(views),
   pages: Object.values(pages),
+
+  // Analytics (DESIGN.md §09, card 10). `datasets` is the ONE semantic layer
+  // (ADR-0021): a dashboard widget names a dataset and picks its dimensions
+  // and measures by name, so "contract value" is defined once and means the
+  // same number on every surface. There are no hand-written cubes.
+  datasets: Object.values(datasets),
+  dashboards: Object.values(dashboards),
   // Lifecycle hooks (numbering, type-derived stamps, the state machines and
   // the display_name mirrors). A metadata `Hook` is only registered from
   // here — `hooks` is a top-level stack key, not an object key.

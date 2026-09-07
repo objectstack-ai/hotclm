@@ -1,0 +1,208 @@
+import type { Dashboard } from '@objectstack/spec/ui';
+
+/**
+ * 管理层 — DESIGN.md §09's second dashboard: 生效合同额 · 90 天内到期 ·
+ * 高风险合同 · 审批瓶颈（各台阶平均停留）· 按方向的合同额趋势.
+ *
+ * Every widget binds `contract_metrics`, so the two global filters below reach
+ * a column that exists on every one of them. See `legal.dashboard.ts` for the
+ * measured list of widget keys the renderer reads and for why no dashboard
+ * `dateRange` is declared.
+ */
+export const ExecutiveDashboard: Dashboard = {
+  name: 'executive_overview',
+  label: 'Executive Overview',
+  description: 'Contract value in force, expiries, risk concentration and approval load for management.',
+
+  columns: 12,
+  gap: 4,
+
+  globalFilters: [
+    {
+      name: 'direction',
+      field: 'direction',
+      object: 'clm_contract',
+      label: 'Direction',
+      type: 'select',
+      scope: 'dashboard',
+      options: [
+        { value: 'sales', label: 'Sales' },
+        { value: 'purchase', label: 'Purchase' },
+        { value: 'other', label: 'Other' },
+      ],
+    },
+    {
+      name: 'risk_level',
+      field: 'risk_level',
+      object: 'clm_contract',
+      label: 'Risk Level',
+      type: 'select',
+      scope: 'dashboard',
+      options: [
+        { value: 'low', label: 'Low' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'high', label: 'High' },
+      ],
+    },
+  ],
+
+  widgets: [
+    // ─── Row 1 ───────────────────────────────────────────────────────────
+    {
+      /**
+       * §09's 生效合同额, rendered SPLIT BY CURRENCY rather than as one KPI
+       * number, and the split is the honest form rather than a decoration.
+       *
+       * The fixture holds three currencies (USD 42 / EUR 41 / GBP 37 across 120
+       * contracts) and this app carries no FX rate — DESIGN.md §01 leaves
+       * commercial terms with HotCRM. A single "active contract value" tile
+       * would therefore add dollars to euro to sterling and print the result as
+       * though it meant something. Three bars each say what they are.
+       *
+       * This is the same rule that keeps `format: '0,0'` free of a baked `$`
+       * (the HotCRM changelog lesson); a cross-currency SUM is the same mistake
+       * one level up from the symbol.
+       */
+      // `chart-config-missing` suppressed — MEASURED, not waved away. The rule's
+      // message asserts "the renderer cannot determine which measure to plot,
+      // so the series renders empty"; on a dataset-bound widget that is not
+      // what happens. objectui's `buildChartSeries(rows, dimensions, values,
+      // fields)` DERIVES the bindings from the selection, and `chartConfig` is
+      // merged onto that derivation as PRESENTATION only
+      // (`mergeAuthoredPresentation`). Observed in Chromium against this branch:
+      // this widget draws its marks with no `chartConfig` at all. The rule's own
+      // hint prescribes this suppression for exactly that case.
+      id: 'active_contract_value',
+      title: 'Active Contract Value by Currency',
+      description: 'Contracts in force. Each bar is its own currency — no FX conversion exists in this app.',
+      type: 'bar',
+      dataset: 'contract_metrics',
+      dimensions: ['currency_code'],
+      values: ['total_amount'],
+      filter: { status: 'active' },
+      suppressWarnings: ['chart-config-missing'],
+      layout: { x: 0, y: 0, w: 6, h: 4 },
+    },
+    {
+      id: 'expiring_90_days',
+      title: 'Expiring Within 90 Days',
+      description: 'Active contracts whose end date falls in the next 90 days',
+      type: 'metric',
+      dataset: 'contract_metrics',
+      values: ['contract_count'],
+      // `end_date` is a persisted `Field.date`; the bounds are date macros the
+      // renderer resolves before the query leaves the browser. This widget
+      // carries no `compareTo`, so the bounded window it states is simply a
+      // filter.
+      filter: { status: 'active', end_date: { $gte: '{today}', $lte: '{90_days_from_now}' } },
+      colorVariant: 'warning',
+      layout: { x: 6, y: 0, w: 3, h: 2 },
+    },
+    {
+      id: 'high_risk_contracts',
+      title: 'High-Risk Contracts',
+      description: 'Assessed high by legal during review',
+      type: 'metric',
+      dataset: 'contract_metrics',
+      values: ['contract_count'],
+      filter: { risk_level: 'high' },
+      colorVariant: 'danger',
+      layout: { x: 9, y: 0, w: 3, h: 2 },
+    },
+    // ─── §09's 审批瓶颈, as the four rungs of DESIGN.md §04's ladder ───────
+    //
+    // §09 asks for 各台阶平均停留 — average DWELL per approval step. Two
+    // independent facts rule the dwell out, both measured rather than assumed:
+    //
+    //   1. There is no dwell to read. `sys_approval_request` holds 0 rows on a
+    //      stock `pnpm demo` — the seed stamps `approval_status` directly and
+    //      the ladder (F5) never ran — so no rung has a start or an end.
+    //   2. Even with rows, a duration is not expressible in the semantic layer:
+    //      see the measurement in `cycle-time.dataset.ts`.
+    //
+    // What IS persisted is the routing: F2 stamps four booleans on the contract,
+    // one per rung. These four tiles read them — how much traffic each rung
+    // carries. Each title names its rung and the group title says "Routing
+    // Load", never "bottleneck", because volume is not dwell.
+    //
+    // FOUR TILES, not one four-measure chart, and the shape was forced by a
+    // measurement. The rungs are four COLUMNS, not four values of one column, so
+    // a single widget would have to select four measures with no dimension —
+    // and `DatasetWidget.tsx:423` reads `METRIC_TYPES.has(widgetType) ||
+    // dimensions.length === 0`, so ANY zero-dimension widget renders as a KPI
+    // card whatever its `type`. Authored as one `bar`, and then as one `table`,
+    // this tile printed "11 · Routes: Head of Legal" and nothing else: three of
+    // the four rungs silently absent from a card that looked finished. One tile
+    // per rung is the shape that shows all four numbers.
+    {
+      id: 'route_legal_head',
+      title: 'Routes: Head of Legal',
+      description: 'Contracts whose matrix row reaches the head of legal',
+      type: 'metric',
+      dataset: 'contract_metrics',
+      values: ['route_legal_head_count'],
+      layout: { x: 0, y: 4, w: 3, h: 2 },
+    },
+    {
+      id: 'route_finance',
+      title: 'Routes: Finance Controller',
+      description: 'Contracts whose matrix row reaches finance',
+      type: 'metric',
+      dataset: 'contract_metrics',
+      values: ['route_finance_count'],
+      layout: { x: 3, y: 4, w: 3, h: 2 },
+    },
+    {
+      id: 'route_executive',
+      title: 'Routes: Executive',
+      description: 'Contracts whose matrix row reaches the executive sponsor',
+      type: 'metric',
+      dataset: 'contract_metrics',
+      values: ['route_executive_count'],
+      layout: { x: 6, y: 4, w: 3, h: 2 },
+    },
+    {
+      id: 'route_gm',
+      title: 'Routes: General Manager',
+      description: 'Contracts whose matrix row reaches the general manager',
+      type: 'metric',
+      dataset: 'contract_metrics',
+      values: ['route_gm_count'],
+      layout: { x: 9, y: 4, w: 3, h: 2 },
+    },
+
+    // ─── Row 2 ───────────────────────────────────────────────────────────
+    {
+      /**
+       * 按方向的合同额趋势, on the signature month — the point a contract's
+       * value becomes real.
+       *
+       * `other` is excluded: NDAs and DPAs carry no `amount` by construction
+       * (`clm_contract_type.amountBand` is null for both), so the series would
+       * be a flat zero line claiming a trend that has no values in it. The
+       * filter names the two directions that carry money, both persisted select
+       * values.
+       */
+      // `chart-config-missing` suppressed — MEASURED, not waved away. The rule's
+      // message asserts "the renderer cannot determine which measure to plot,
+      // so the series renders empty"; on a dataset-bound widget that is not
+      // what happens. objectui's `buildChartSeries(rows, dimensions, values,
+      // fields)` DERIVES the bindings from the selection, and `chartConfig` is
+      // merged onto that derivation as PRESENTATION only
+      // (`mergeAuthoredPresentation`). Observed in Chromium against this branch:
+      // this widget draws its marks with no `chartConfig` at all. The rule's own
+      // hint prescribes this suppression for exactly that case.
+      id: 'value_trend_by_direction',
+      title: 'Contract Value Signed, by Direction',
+      description: 'Signed value over the last 12 months. Sales and purchase only — NDA/DPA types carry no amount.',
+      type: 'line',
+      dataset: 'contract_metrics',
+      dimensions: ['signed_month', 'direction'],
+      values: ['total_amount'],
+      filter: { direction: { $in: ['sales', 'purchase'] }, signed_at: { $gte: '{12_months_ago}' } },
+      options: { sortBy: 'signed_month', sortOrder: 'asc' },
+      suppressWarnings: ['chart-config-missing'],
+      layout: { x: 0, y: 6, w: 12, h: 4 },
+    },
+  ],
+};

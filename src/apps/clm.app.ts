@@ -40,7 +40,9 @@ import { App } from '@objectstack/spec/ui';
  *   to mean here, and the only place they are edited is the Setup app's field
  *   editor. Reported rather than invented: giving them an object is a data-model
  *   decision, not a view.
- * - **报表** (管理) is card 10. No `reports:` metadata exists yet, and a
+ * - **报表** (管理) is still absent. Card 10 landed §09's four datasets and
+ *   three DASHBOARDS, which the 分析 group below points at with
+ *   `type: 'dashboard'` items; no `reports:` metadata exists yet, and a
  *   `type: 'report'` item naming a report that does not exist is a dead row.
  */
 export const ClmApp = App.create({
@@ -177,6 +179,34 @@ export const ClmApp = App.create({
         { id: 'nav_pending_execution', type: 'object', objectName: 'clm_contract', viewName: 'pending_execution', label: 'Awaiting Execution', icon: 'stamp' },
         { id: 'nav_pending_archive',   type: 'object', objectName: 'clm_contract', viewName: 'pending_archive',   label: 'Awaiting Archive',   icon: 'folder-input' },
         { id: 'nav_register',          type: 'object', objectName: 'clm_contract', viewName: 'contract_register', label: 'Contract Register',  icon: 'table' },
+      ],
+    },
+
+    {
+      /**
+       * 分析 — DESIGN.md §09's three dashboards, one row each.
+       *
+       * Gated by the audience each board is written for rather than by one
+       * "analytics" capability: the legal workbench answers a lawyer's
+       * questions, the finance board a controller's. `clm_admin.access` reaches
+       * all three because an administrator holds every set — which is also what
+       * makes the three rows verifiable on a single dev-admin session.
+       *
+       * `type: 'dashboard'` + `dashboardName`, the only shape
+       * `DashboardNavItemSchema` accepts. Each name matches a dashboard
+       * registered in `objectstack.config.ts`; a name that matched nothing
+       * would be the same dead row the 报表 note above refuses.
+       */
+      id: 'group_analytics',
+      type: 'group',
+      label: 'Analytics',
+      icon: 'chart-line',
+      expanded: true,
+      requiredPermissions: ['clm_legal.access'],
+      children: [
+        { id: 'nav_legal_workbench',    type: 'dashboard', dashboardName: 'legal_workbench',    label: 'Legal Workbench',    icon: 'scale' },
+        { id: 'nav_executive_overview', type: 'dashboard', dashboardName: 'executive_overview', label: 'Executive Overview', icon: 'trending-up' },
+        { id: 'nav_finance_overview',   type: 'dashboard', dashboardName: 'finance_overview',   label: 'Finance Overview',   icon: 'banknote' },
       ],
     },
 
