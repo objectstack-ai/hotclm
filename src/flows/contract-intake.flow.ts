@@ -20,9 +20,13 @@ import { Party } from '../objects/party.object.js';
  *    text box. So the two pickers the intake needs — the contract type and the
  *    counterparty — are collected by the `launch_contract` ACTION's param
  *    dialog (`src/actions/contract.actions.ts`), whose field-backed lookup
- *    params render the real pickers and inherit the fields' `lookupFilters`
- *    (active types only; blocked parties hidden). The flow receives them as
- *    the input variables `contract_type` and `party`.
+ *    params render the real record pickers. The flow receives them as the
+ *    input variables `contract_type` and `party`. Those pickers do NOT
+ *    inherit the fields' `lookupFilters` — measured on 17.3.0, the dialog
+ *    fetches `GET /api/v1/data/clm_party?top=50` with no filter on the wire
+ *    and offers the blocked party like any other. So `refuse_blocked` below
+ *    is not belt-and-braces over an already-filtered picker: on this console
+ *    it is the only thing between the launcher and a blocked counterparty.
  *  - A screen field's `visibleWhen` is bare CEL the CLIENT evaluates against
  *    the screen's OWN field values only — flow variables are not in scope
  *    there (the server re-checks `required` under it with the run's variables
@@ -38,6 +42,15 @@ import { Party } from '../objects/party.object.js';
  *    `has(vars.title)`, a variable only a headless caller binds (the action
  *    declares it `visible: false`, so the console dialog never sends it), and
  *    routes straight to the same create nodes.
+ *  - The flow itself CANNOT carry `ai: { exposed: true }` — measured, not
+ *    assumed: `FlowSchema` has no `ai` key on 17.3.0, so `tsc` reports
+ *    "'ai' does not exist in type" and `objectstack validate` refuses the
+ *    stack with "flows.0: Unrecognized key(s) on this flow: `ai`". DESIGN.md
+ *    §06 F1's "`ai.exposed`，输入变量齐全时可由 MCP 调用" is delivered by the
+ *    ACTION instead (`launch_contract.ai.exposed`), which is what the MCP tool
+ *    surface and `POST /api/v1/actions/...` are actually built from; every
+ *    flow input is an `isInput` variable and a declared action param, so a
+ *    caller that supplies them all completes the run with no screen.
  *  - Refusals (`clm_intake_refuse`, registered under `functions`) FAIL the run
  *    with the message: a paused "refusal screen" would leave a headless run
  *    parked forever, and the console shows a failed run's error as the toast.
@@ -48,10 +61,31 @@ import { Party } from '../objects/party.object.js';
  *    prefilled with the new contract. An object form always pauses, which is
  *    why the two headless spellings exist.
  *
- * Every write runs as the launching user (`runAs: 'user'`, the default):
- * DESIGN.md §04 decides who may create a party or a payment instalment
- * (legal / finance / admin; a requester reads them) and the platform refuses
- * the step for anyone else — the flow does not elevate around the matrix.
+ * ## Every write runs as the launching user, and the graph respects §04
+ *
+ * `runAs: 'user'` (the default): the flow does not elevate around the
+ * permission matrix. That constrains WHICH records it may create, and the
+ * boundary was measured per object rather than assumed — as `clm_requester`,
+ * the set every employee holds:
+ *
+ *  - `clm_contract`, `clm_contract_version`: created (201). These are the
+ *    flow's two products and every launcher may write them.
+ *  - `clm_payment_plan`: refused, `PERMISSION_DENIED` "You do not have
+ *    permission to perform this action" (§04 grants the requester R only;
+ *    legal's RC creates the same row 201). So F1 does NOT create one — which
+ *    is what DESIGN.md §06 says too: F1's steps end at "建合同（draft）与版本
+ *    v1 → 可选一键提交", and it is F9 `contract_activate` that generates
+ *    `clm_payment_plan` on activation. An earlier draft of this flow asked
+ *    for an instalment on the last screen and created the row; measured, that
+ *    failed the run at `create_payment_plan` AFTER the contract and its
+ *    version were already committed, orphaning both. WHERE the intake-captured
+ *    arrangement F9 reads should be stored is a design gap, raised as its own
+ *    decision card rather than guessed at here.
+ *  - `clm_party`: refused for a requester the same way, granted to legal
+ *    (§04 gives the requester R, legal RCU). The inline-create branch stays
+ *    because DESIGN.md §06 F1 names it ("相对方查找或新建") and legal and
+ *    admin do launch contracts; it fails ATOMICALLY — `create_party` runs
+ *    before any other write, so a refused requester leaves nothing behind.
  *
  * Flow copy is English-only (the source language, DESIGN.md §01); a flow has
  * no entry in the translation bundles.
@@ -71,7 +105,7 @@ function optionsOf(object: { name: string; fields: Record<string, unknown> }, fi
 }
 
 /** The optional contract fields a type may list in `intake_fields`, in the order the screen asks them. */
-const INTAKE_FIELD_NAMES = ['governing_law', 'payment_terms', 'confidentiality_term_months', 'liability_cap', 'auto_renew', 'parent_contract'] as const;
+const INTAKE_FIELD_NAMES = ['governing_law', 'payment_terms', 'confidentiality_term_months', 'auto_renew', 'parent_contract'] as const;
 
 /** Bare CEL over the screen's own fields: shown only when the type lists the field. */
 const askedFor = (field: (typeof INTAKE_FIELD_NAMES)[number]): string => `"${field}" in intakeFields`;
@@ -131,7 +165,6 @@ export const ContractIntakeFlow: Flow = {
     { name: 'governing_law', type: 'text', isInput: true, isOutput: false },
     { name: 'payment_terms', type: 'text', isInput: true, isOutput: false },
     { name: 'confidentiality_term_months', type: 'number', isInput: true, isOutput: false },
-    { name: 'liability_cap', type: 'number', isInput: true, isOutput: false },
     { name: 'auto_renew', type: 'boolean', isInput: true, isOutput: false, defaultValue: false },
     { name: 'parent_contract', type: 'text', isInput: true, isOutput: false },
     // Inline counterparty, when none was picked.
@@ -143,11 +176,7 @@ export const ContractIntakeFlow: Flow = {
     // First version.
     { name: 'draft_from_template', type: 'boolean', isInput: true, isOutput: false, defaultValue: false },
     { name: 'first_version_file', type: 'text', isInput: true, isOutput: false },
-    // Optional first payment instalment, and the submit toggle.
-    { name: 'pay_seq', type: 'number', isInput: true, isOutput: false, defaultValue: 1 },
-    { name: 'pay_planned_date', type: 'date', isInput: true, isOutput: false },
-    { name: 'pay_planned_amount', type: 'number', isInput: true, isOutput: false },
-    { name: 'pay_condition', type: 'text', isInput: true, isOutput: false },
+    // The submit toggle.
     { name: 'submit_now', type: 'boolean', isInput: true, isOutput: false, defaultValue: false },
   ],
 
@@ -228,7 +257,6 @@ export const ContractIntakeFlow: Flow = {
           { name: 'governing_law', label: 'Governing law', type: 'text', required: true, placeholder: 'e.g. US-NY, England and Wales', visibleWhen: askedFor('governing_law') },
           { name: 'payment_terms', label: 'Payment terms', type: 'select', required: true, options: optionsOf(Contract, 'payment_terms'), visibleWhen: askedFor('payment_terms') },
           { name: 'confidentiality_term_months', label: 'Confidentiality term (months)', type: 'number', required: true, visibleWhen: askedFor('confidentiality_term_months') },
-          { name: 'liability_cap', label: 'Liability cap', type: 'currency', required: true, visibleWhen: askedFor('liability_cap') },
           { name: 'auto_renew', label: 'Auto-renews', type: 'boolean', defaultValue: '{auto_renew}', visibleWhen: askedFor('auto_renew') },
           // A flat screen has no record picker (see the header): the parent
           // contract is collected as its record id.
@@ -318,13 +346,14 @@ export const ContractIntakeFlow: Flow = {
           governing_law: '{governing_law}',
           payment_terms: '{payment_terms}',
           confidentiality_term_months: '{confidentiality_term_months}',
-          // `liability_cap` is NOT in this map: field-level security locks it
-          // for requesters (DESIGN.md §04, "由法务评定"), and the security layer
-          // judges a write by the KEYS it carries — an unbound `{liability_cap}`
-          // still puts the key on the wire and had a requester's launch refused
-          // with "Field write denied: not permitted to edit [liability_cap]".
-          // It is written by `set_liability_cap` below, only when a value was
-          // actually given.
+          // `liability_cap` is deliberately absent, and the flow does not ask
+          // for it: DESIGN.md §04 makes it read-only for `clm_requester` ("由法
+          // 务评定"), and the launch form is the requester's. Measured on
+          // 17.3.0: a requester's write carrying the key is refused
+          // `PERMISSION_DENIED` "[Security] Field write denied: not permitted
+          // to edit [liability_cap]" — on CREATE and on UPDATE alike, so
+          // moving the write to a later node does not rescue it. Legal sets
+          // the cap during review, where §04 puts it.
           auto_renew: '{auto_renew}',
           parent_contract: '{parent_contract}',
           status: 'draft',
@@ -332,12 +361,6 @@ export const ContractIntakeFlow: Flow = {
         },
         outputVariable: 'contractRecord',
       },
-    },
-    // The liability cap, written only when given — see `create_contract`.
-    { id: 'decision_liability_cap', type: 'decision', label: 'Liability Cap Given?' },
-    {
-      id: 'set_liability_cap', type: 'update_record', label: 'Set Liability Cap',
-      config: { objectName: 'clm_contract', filter: { id: '{contractRecord.id}' }, fields: { liability_cap: '{liability_cap}' } },
     },
     { id: 'decision_version', type: 'decision', label: 'Where Does Version 1 Come From?' },
     {
@@ -389,36 +412,16 @@ export const ContractIntakeFlow: Flow = {
       },
     },
 
-    // ── Step 5: an optional first instalment, and submit ──────────────────
-    { id: 'decision_schedule_screen', type: 'decision', label: 'Ask About Payment And Submission?' },
+    // ── Step 5: submit ────────────────────────────────────────────────────
+    { id: 'decision_schedule_screen', type: 'decision', label: 'Ask About Submission?' },
     {
-      id: 'screen_schedule', type: 'screen', label: 'Payment And Submission',
+      id: 'screen_schedule', type: 'screen', label: 'Submission',
       config: {
-        title: 'Payment schedule and submission',
-        description: 'Optionally record the first planned instalment (more can be added on the contract), then choose whether to submit now. Submitting routes the contract to legal review or to approval, as its type decides.',
+        title: 'Submit the contract',
+        description: 'Choose whether to submit now. Submitting routes the contract to legal review or to approval, as its type decides.',
         fields: [
-          { name: 'pay_seq', label: 'Instalment no.', type: 'number', defaultValue: '{pay_seq}' },
-          { name: 'pay_planned_date', label: 'Planned date', type: 'date' },
-          { name: 'pay_planned_amount', label: 'Planned amount', type: 'currency' },
-          { name: 'pay_condition', label: 'Condition', type: 'textarea', placeholder: 'What releases the instalment — acceptance, delivery, a milestone' },
           { name: 'submit_now', label: 'Submit now', type: 'boolean', defaultValue: '{submit_now}' },
         ],
-      },
-    },
-    { id: 'decision_payment', type: 'decision', label: 'Instalment Given?' },
-    {
-      id: 'create_payment_plan', type: 'create_record', label: 'Create First Instalment',
-      config: {
-        objectName: 'clm_payment_plan',
-        fields: {
-          contract: '{contractRecord.id}',
-          seq: '{pay_seq}',
-          planned_date: '{pay_planned_date}',
-          planned_amount: '{pay_planned_amount}',
-          condition: '{pay_condition}',
-          status: 'planned',
-        },
-        outputVariable: 'instalmentRecord',
       },
     },
     { id: 'decision_submit', type: 'decision', label: 'Submit Now?' },
@@ -473,10 +476,7 @@ export const ContractIntakeFlow: Flow = {
     { id: 'e29', source: 'decision_document_screen', target: 'create_contract', type: 'default', condition: NOT_INTERACTIVE, label: 'Headless' },
     { id: 'e30', source: 'decision_document_screen', target: 'screen_document', type: 'default', condition: INTERACTIVE, label: 'Interactive' },
     { id: 'e31', source: 'screen_document', target: 'create_contract', type: 'default' },
-    { id: 'e32', source: 'create_contract', target: 'decision_liability_cap', type: 'default' },
-    { id: 'e32a', source: 'decision_liability_cap', target: 'set_liability_cap', type: 'default', condition: P`has(vars.liability_cap) && vars.liability_cap != null && vars.liability_cap != ""`, label: 'Given' },
-    { id: 'e32b', source: 'decision_liability_cap', target: 'decision_version', type: 'default', condition: P`!has(vars.liability_cap) || vars.liability_cap == null || vars.liability_cap == ""`, label: 'Not given' },
-    { id: 'e32c', source: 'set_liability_cap', target: 'decision_version', type: 'default' },
+    { id: 'e32', source: 'create_contract', target: 'decision_version', type: 'default' },
     // Version 1: the template (when asked for and available), a supplied file,
     // or the upload form. Partitioned in that order.
     { id: 'e33', source: 'decision_version', target: 'create_template_version', type: 'default', condition: P`vars.draft_from_template == true && vars.templateAvailable == true`, label: 'Template' },
@@ -485,12 +485,9 @@ export const ContractIntakeFlow: Flow = {
     { id: 'e36', source: 'create_template_version', target: 'decision_schedule_screen', type: 'default' },
     { id: 'e37', source: 'create_file_version', target: 'decision_schedule_screen', type: 'default' },
     { id: 'e38', source: 'screen_upload', target: 'decision_schedule_screen', type: 'default' },
-    { id: 'e39', source: 'decision_schedule_screen', target: 'decision_payment', type: 'default', condition: NOT_INTERACTIVE, label: 'Headless' },
+    { id: 'e39', source: 'decision_schedule_screen', target: 'decision_submit', type: 'default', condition: NOT_INTERACTIVE, label: 'Headless' },
     { id: 'e40', source: 'decision_schedule_screen', target: 'screen_schedule', type: 'default', condition: INTERACTIVE, label: 'Interactive' },
-    { id: 'e41', source: 'screen_schedule', target: 'decision_payment', type: 'default' },
-    { id: 'e42', source: 'decision_payment', target: 'create_payment_plan', type: 'default', condition: P`has(vars.pay_planned_amount) && vars.pay_planned_amount != null`, label: 'Instalment' },
-    { id: 'e43', source: 'decision_payment', target: 'decision_submit', type: 'default', condition: P`!has(vars.pay_planned_amount) || vars.pay_planned_amount == null`, label: 'None' },
-    { id: 'e44', source: 'create_payment_plan', target: 'decision_submit', type: 'default' },
+    { id: 'e41', source: 'screen_schedule', target: 'decision_submit', type: 'default' },
     { id: 'e45', source: 'decision_submit', target: 'submit_contract', type: 'default', condition: P`vars.submit_now == true`, label: 'Submit' },
     { id: 'e46', source: 'decision_submit', target: 'end', type: 'default', condition: P`vars.submit_now != true`, label: 'Keep draft' },
     { id: 'e47', source: 'submit_contract', target: 'end', type: 'default' },

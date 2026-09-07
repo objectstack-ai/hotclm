@@ -16,9 +16,14 @@ import { P } from '@objectstack/spec';
  *
  * ## The headless half
  *
- * `ai.exposed` makes this the `action_launch_contract` tool over MCP and the
+ * `ai.exposed` publishes this action to the MCP surface and to the
  * `POST /api/v1/actions/clm_contract/launch_contract` route — DESIGN.md §07's
- * conversational intake for M2. Over those doors the params gate (ADR-0104)
+ * conversational intake for M2. Measured on 17.3.0: MCP does not mint one
+ * tool per action; it ships the generic pair `list_actions` / `run_action`,
+ * and an exposed action appears in `list_actions` (with its params) for
+ * `run_action` to call by name. The REST route takes the params under a
+ * `params` wrapper — a bare top-level body is refused
+ * "Invalid action params: Action param \"contract_type\" is required". Over those doors the params gate (ADR-0104)
  * refuses any key the action does not declare, so EVERY flow input is
  * declared below; the ones a person answers on the flow's screens are
  * `visible: false`, which keeps them out of the console dialog (and out of
@@ -68,7 +73,6 @@ export const LaunchContractAction: Action = {
     headless('governing_law', 'text', 'Governing law'),
     headless('payment_terms', 'text', 'Payment terms'),
     headless('confidentiality_term_months', 'number', 'Confidentiality term (months)'),
-    headless('liability_cap', 'number', 'Liability cap'),
     headless('auto_renew', 'boolean', 'Auto-renews'),
     headless('parent_contract', 'text', 'Parent contract (record id)'),
     headless('new_party_name', 'text', 'New counterparty: name'),
@@ -78,10 +82,6 @@ export const LaunchContractAction: Action = {
     headless('new_party_contact_email', 'text', 'New counterparty: contact email'),
     headless('draft_from_template', 'boolean', 'Draft version 1 from the type template'),
     headless('first_version_file', 'text', 'Version 1: uploaded file id'),
-    headless('pay_seq', 'number', 'First instalment: number'),
-    headless('pay_planned_date', 'date', 'First instalment: planned date'),
-    headless('pay_planned_amount', 'number', 'First instalment: planned amount'),
-    headless('pay_condition', 'text', 'First instalment: condition'),
     headless('submit_now', 'boolean', 'Submit now'),
   ],
   successMessage: 'Contract launched.',
@@ -90,6 +90,6 @@ export const LaunchContractAction: Action = {
     exposed: true,
     category: 'flow',
     description:
-      'Launches a contract: creates the contract draft and its first version from the given contract type, counterparty (existing id, or a new one by name), core terms and the fields the type asks for; optionally records a first payment instalment and submits the contract into legal review or approval. Refuses a blocked counterparty.',
+      'Launches a contract: creates the contract draft and its first version from the given contract type, counterparty (an existing record id, or a new one by name) and the core terms plus whichever optional fields the type asks for, then optionally submits it into legal review or approval. Refuses a blocked counterparty, naming it and why.',
   },
 };

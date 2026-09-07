@@ -85,12 +85,19 @@ export const ContractType = ObjectSchema.create({
       label: 'Intake Fields',
       group: 'workflow',
       multiple: true,
-      description: 'Optional contract fields the launch form shows (and requires) for this type. Core fields are always asked.',
+      // The list is exactly the optional fields a LAUNCHING user may write.
+      // `liability_cap` is not among them and must not be re-added: DESIGN.md
+      // §04 makes it read-only for `clm_requester` ("由法务评定"), so a type
+      // that asked for it deadlocked its own contracts — measured on 17.3.0,
+      // a requester's write of the key is refused `PERMISSION_DENIED`, while
+      // `contract_state_machine` refuses the submission without it
+      // ("Intake fields required by the contract type are missing:
+      // liability_cap."). Legal sets the cap during review.
+      description: 'Optional contract fields the launch form shows (and requires) for this type. Core fields are always asked. Only fields a launching requester may write belong here.',
       options: [
         { label: 'Governing Law',            value: 'governing_law' },
         { label: 'Payment Terms',            value: 'payment_terms' },
         { label: 'Confidentiality Term',     value: 'confidentiality_term_months' },
-        { label: 'Liability Cap',            value: 'liability_cap' },
         { label: 'Auto Renewal',             value: 'auto_renew' },
         { label: 'Parent Contract',          value: 'parent_contract' },
       ],
