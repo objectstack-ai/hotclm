@@ -85,6 +85,14 @@ Two rules about what that evidence may claim:
   `controlled_by_parent`. Which one is decided in `DESIGN.md` §03/§04.
 - **Every object resolves a title.** A stored `name`/`title` field, or a **stored** `display_name`
   mirror declared as `nameField` — never a formula (formulas are not searchable).
+- **`required` is not a column constraint.** A field whose `required: true` maps to a real column
+  also declares `storage: { notNull: true }`. ADR-0113 split the two axes: `required` is the
+  write-time contract the engine enforces (and what the Console form reads), `storage.notNull` is
+  the physical `NOT NULL` — **absent means the column stays nullable even under `required: true`**.
+  Nothing mechanical catches the bare spelling: the only signal was the boot's ADR-0087 conversion
+  notice, which retires in protocol 18 and is itself under question (#8, PR #22; upstream
+  `objectstack-ai/objectstack#16693`). Write both, and remember that adding `storage.notNull` to a
+  column that already has rows is a destructive migration, not a tidy-up.
 - **Numbers declare their four: decimals, min, max, unit.** No platform defaults on amounts or counts.
 - **Predicates are CEL** and reference fields as `record.<field>`; a bare `<field>` is a silent `null`.
   `script` validations are inverted: the rule **fails when the expression is true**.
