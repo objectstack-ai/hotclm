@@ -97,8 +97,12 @@ export function refuseIntake({ input }: { input: Record<string, unknown> }): nev
   throw err;
 }
 
-const H = P`has(vars.title)`;
-const NOT_H = P`!has(vars.title)`;
+// Decided ONCE, before any screen: a headless caller binds `title` up front,
+// a person answers it on the core screen — so after that screen the test
+// would flip, which is why `interactive` is bound by an assignment on each
+// branch and every later fork reads the binding rather than re-testing.
+const INTERACTIVE = P`vars.interactive == true`;
+const NOT_INTERACTIVE = P`vars.interactive != true`;
 
 export const ContractIntakeFlow: Flow = {
   name: 'contract_intake',
@@ -190,7 +194,15 @@ export const ContractIntakeFlow: Flow = {
     },
     // Interactive or headless? A headless caller binds `title` up front; the
     // console never does (the launch action declares it `visible: false`).
+    // Each branch binds `interactive`, which every later fork reads.
     { id: 'decision_headless', type: 'decision', label: 'Inputs Supplied Headlessly?' },
+    { id: 'mode_headless', type: 'assignment', label: 'Headless Run', config: { assignments: { interactive: false } } },
+    { id: 'mode_interactive', type: 'assignment', label: 'Interactive Run', config: { assignments: { interactive: true } } },
+    // A PICKED counterparty is checked before anything is asked, so a blocked
+    // party is refused at the picker and not after a filled screen; a party
+    // created inline is checked by construction (it is born unflagged).
+    { id: 'decision_party_precheck', type: 'decision', label: 'Counterparty Picked Up Front?' },
+    { id: 'decision_core_screen', type: 'decision', label: 'Ask The Core Fields?' },
 
     // ── Step 2: core fields, and the type's optional ones ─────────────────
     {
@@ -225,8 +237,8 @@ export const ContractIntakeFlow: Flow = {
       },
     },
 
-    // ── Step 3: the counterparty — picked, supplied inline, or asked for ──
-    { id: 'decision_party_given', type: 'decision', label: 'Counterparty Picked?' },
+    // ── Step 3: the counterparty — already resolved, supplied inline, or asked for ──
+    { id: 'decision_party_given', type: 'decision', label: 'Counterparty Resolved?' },
     {
       id: 'screen_party', type: 'screen', label: 'New Counterparty',
       config: {
@@ -306,7 +318,13 @@ export const ContractIntakeFlow: Flow = {
           governing_law: '{governing_law}',
           payment_terms: '{payment_terms}',
           confidentiality_term_months: '{confidentiality_term_months}',
-          liability_cap: '{liability_cap}',
+          // `liability_cap` is NOT in this map: field-level security locks it
+          // for requesters (DESIGN.md §04, "由法务评定"), and the security layer
+          // judges a write by the KEYS it carries — an unbound `{liability_cap}`
+          // still puts the key on the wire and had a requester's launch refused
+          // with "Field write denied: not permitted to edit [liability_cap]".
+          // It is written by `set_liability_cap` below, only when a value was
+          // actually given.
           auto_renew: '{auto_renew}',
           parent_contract: '{parent_contract}',
           status: 'draft',
@@ -314,6 +332,12 @@ export const ContractIntakeFlow: Flow = {
         },
         outputVariable: 'contractRecord',
       },
+    },
+    // The liability cap, written only when given — see `create_contract`.
+    { id: 'decision_liability_cap', type: 'decision', label: 'Liability Cap Given?' },
+    {
+      id: 'set_liability_cap', type: 'update_record', label: 'Set Liability Cap',
+      config: { objectName: 'clm_contract', filter: { id: '{contractRecord.id}' }, fields: { liability_cap: '{liability_cap}' } },
     },
     { id: 'decision_version', type: 'decision', label: 'Where Does Version 1 Come From?' },
     {
@@ -326,7 +350,10 @@ export const ContractIntakeFlow: Flow = {
           kind: 'draft',
           turn: 'internal',
           is_current: true,
-          file: '{typeRecord.template_file}',
+          // A file field READS as `{ id, name, size, mimeType, url }` and is
+          // WRITTEN as the id (measured: the object form of the value is
+          // refused with "expected string, received object").
+          file: '{typeRecord.template_file.id}',
           submitted_by: '{$User.Id}',
           notes: 'Drafted from the contract type template.',
         },
@@ -419,26 +446,37 @@ export const ContractIntakeFlow: Flow = {
     { id: 'e12', source: 'decision_intake_fields', target: 'intake_none', type: 'default', condition: P`!has(vars.typeRecord.intake_fields) || vars.typeRecord.intake_fields == null`, label: 'None' },
     { id: 'e13', source: 'intake_from_type', target: 'decision_headless', type: 'default' },
     { id: 'e14', source: 'intake_none', target: 'decision_headless', type: 'default' },
-    { id: 'e15', source: 'decision_headless', target: 'decision_party_given', type: 'default', condition: H, label: 'Headless' },
-    { id: 'e16', source: 'decision_headless', target: 'screen_core', type: 'default', condition: NOT_H, label: 'Interactive' },
-    { id: 'e17', source: 'screen_core', target: 'decision_party_given', type: 'default' },
-    // Three ways out, partitioned: a picked party, an inline party supplied
-    // headlessly, or the screen that asks for one.
-    { id: 'e18', source: 'decision_party_given', target: 'get_party', type: 'default', condition: P`has(vars.party) && vars.party != null && vars.party != ""`, label: 'Picked' },
-    { id: 'e19', source: 'decision_party_given', target: 'create_party', type: 'default', condition: P`(!has(vars.party) || vars.party == null || vars.party == "") && has(vars.new_party_name) && vars.new_party_name != null && vars.new_party_name != ""`, label: 'Inline' },
-    { id: 'e20', source: 'decision_party_given', target: 'screen_party', type: 'default', condition: P`(!has(vars.party) || vars.party == null || vars.party == "") && (!has(vars.new_party_name) || vars.new_party_name == null || vars.new_party_name == "")`, label: 'Ask' },
-    { id: 'e21', source: 'screen_party', target: 'create_party', type: 'default' },
-    { id: 'e22', source: 'create_party', target: 'use_new_party', type: 'default' },
+    { id: 'e15', source: 'decision_headless', target: 'mode_headless', type: 'default', condition: P`has(vars.title)`, label: 'Headless' },
+    { id: 'e16', source: 'decision_headless', target: 'mode_interactive', type: 'default', condition: P`!has(vars.title)`, label: 'Interactive' },
+    { id: 'e15a', source: 'mode_headless', target: 'decision_party_precheck', type: 'default' },
+    { id: 'e16a', source: 'mode_interactive', target: 'decision_party_precheck', type: 'default' },
+    // A picked party is loaded and judged first; without one the run goes on
+    // to the core fields and asks for the party afterwards.
+    { id: 'e18', source: 'decision_party_precheck', target: 'get_party', type: 'default', condition: P`has(vars.party) && vars.party != null && vars.party != ""`, label: 'Picked' },
+    { id: 'e18b', source: 'decision_party_precheck', target: 'decision_core_screen', type: 'default', condition: P`!has(vars.party) || vars.party == null || vars.party == ""`, label: 'Not picked' },
     { id: 'e23', source: 'get_party', target: 'decision_party_state', type: 'default' },
     { id: 'e24', source: 'decision_party_state', target: 'refuse_party_missing', type: 'default', condition: P`vars.partyRecord == null`, label: 'Missing' },
     { id: 'e25', source: 'decision_party_state', target: 'refuse_blocked', type: 'default', condition: P`vars.partyRecord != null && has(vars.partyRecord.risk_flag) && vars.partyRecord.risk_flag == "blocked"`, label: 'Blocked' },
     { id: 'e26', source: 'decision_party_state', target: 'use_picked_party', type: 'default', condition: P`vars.partyRecord != null && (!has(vars.partyRecord.risk_flag) || vars.partyRecord.risk_flag != "blocked")`, label: 'Clear' },
+    { id: 'e28', source: 'use_picked_party', target: 'decision_core_screen', type: 'default' },
+    { id: 'e27a', source: 'decision_core_screen', target: 'screen_core', type: 'default', condition: INTERACTIVE, label: 'Interactive' },
+    { id: 'e27b', source: 'decision_core_screen', target: 'decision_party_given', type: 'default', condition: NOT_INTERACTIVE, label: 'Headless' },
+    { id: 'e17', source: 'screen_core', target: 'decision_party_given', type: 'default' },
+    // Three ways out, partitioned: a party already resolved up front, an
+    // inline party supplied headlessly, or the screen that asks for one.
+    { id: 'e17b', source: 'decision_party_given', target: 'decision_document_screen', type: 'default', condition: P`has(vars.partyId) && vars.partyId != null && vars.partyId != ""`, label: 'Resolved' },
+    { id: 'e19', source: 'decision_party_given', target: 'create_party', type: 'default', condition: P`(!has(vars.partyId) || vars.partyId == null || vars.partyId == "") && has(vars.new_party_name) && vars.new_party_name != null && vars.new_party_name != ""`, label: 'Inline' },
+    { id: 'e20', source: 'decision_party_given', target: 'screen_party', type: 'default', condition: P`(!has(vars.partyId) || vars.partyId == null || vars.partyId == "") && (!has(vars.new_party_name) || vars.new_party_name == null || vars.new_party_name == "")`, label: 'Ask' },
+    { id: 'e21', source: 'screen_party', target: 'create_party', type: 'default' },
+    { id: 'e22', source: 'create_party', target: 'use_new_party', type: 'default' },
     { id: 'e27', source: 'use_new_party', target: 'decision_document_screen', type: 'default' },
-    { id: 'e28', source: 'use_picked_party', target: 'decision_document_screen', type: 'default' },
-    { id: 'e29', source: 'decision_document_screen', target: 'create_contract', type: 'default', condition: H, label: 'Headless' },
-    { id: 'e30', source: 'decision_document_screen', target: 'screen_document', type: 'default', condition: NOT_H, label: 'Interactive' },
+    { id: 'e29', source: 'decision_document_screen', target: 'create_contract', type: 'default', condition: NOT_INTERACTIVE, label: 'Headless' },
+    { id: 'e30', source: 'decision_document_screen', target: 'screen_document', type: 'default', condition: INTERACTIVE, label: 'Interactive' },
     { id: 'e31', source: 'screen_document', target: 'create_contract', type: 'default' },
-    { id: 'e32', source: 'create_contract', target: 'decision_version', type: 'default' },
+    { id: 'e32', source: 'create_contract', target: 'decision_liability_cap', type: 'default' },
+    { id: 'e32a', source: 'decision_liability_cap', target: 'set_liability_cap', type: 'default', condition: P`has(vars.liability_cap) && vars.liability_cap != null && vars.liability_cap != ""`, label: 'Given' },
+    { id: 'e32b', source: 'decision_liability_cap', target: 'decision_version', type: 'default', condition: P`!has(vars.liability_cap) || vars.liability_cap == null || vars.liability_cap == ""`, label: 'Not given' },
+    { id: 'e32c', source: 'set_liability_cap', target: 'decision_version', type: 'default' },
     // Version 1: the template (when asked for and available), a supplied file,
     // or the upload form. Partitioned in that order.
     { id: 'e33', source: 'decision_version', target: 'create_template_version', type: 'default', condition: P`vars.draft_from_template == true && vars.templateAvailable == true`, label: 'Template' },
@@ -447,8 +485,8 @@ export const ContractIntakeFlow: Flow = {
     { id: 'e36', source: 'create_template_version', target: 'decision_schedule_screen', type: 'default' },
     { id: 'e37', source: 'create_file_version', target: 'decision_schedule_screen', type: 'default' },
     { id: 'e38', source: 'screen_upload', target: 'decision_schedule_screen', type: 'default' },
-    { id: 'e39', source: 'decision_schedule_screen', target: 'decision_payment', type: 'default', condition: H, label: 'Headless' },
-    { id: 'e40', source: 'decision_schedule_screen', target: 'screen_schedule', type: 'default', condition: NOT_H, label: 'Interactive' },
+    { id: 'e39', source: 'decision_schedule_screen', target: 'decision_payment', type: 'default', condition: NOT_INTERACTIVE, label: 'Headless' },
+    { id: 'e40', source: 'decision_schedule_screen', target: 'screen_schedule', type: 'default', condition: INTERACTIVE, label: 'Interactive' },
     { id: 'e41', source: 'screen_schedule', target: 'decision_payment', type: 'default' },
     { id: 'e42', source: 'decision_payment', target: 'create_payment_plan', type: 'default', condition: P`has(vars.pay_planned_amount) && vars.pay_planned_amount != null`, label: 'Instalment' },
     { id: 'e43', source: 'decision_payment', target: 'decision_submit', type: 'default', condition: P`!has(vars.pay_planned_amount) || vars.pay_planned_amount == null`, label: 'None' },
