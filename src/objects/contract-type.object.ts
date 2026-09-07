@@ -38,6 +38,7 @@ export const ContractType = ObjectSchema.create({
       label: 'Name',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       searchable: true,
       maxLength: 120,
     }),
@@ -45,6 +46,7 @@ export const ContractType = ObjectSchema.create({
       label: 'Code',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       maxLength: 10,
       description: 'Short uppercase prefix used in contract numbering (e.g. NDA, PUR, SAL).',
     }),
@@ -52,6 +54,7 @@ export const ContractType = ObjectSchema.create({
       label: 'Direction',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       options: [
         { label: 'Sales',    value: 'sales',    color: '#0B6E63' },
         { label: 'Purchase', value: 'purchase', color: '#3B82F6' },
@@ -62,6 +65,7 @@ export const ContractType = ObjectSchema.create({
       label: 'Category',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       description: 'Process category — drives the approval matrix and the clause playbook. Not the commercial type HotCRM uses.',
       options: [
         { label: 'NDA',                  value: 'nda' },

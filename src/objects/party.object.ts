@@ -34,6 +34,7 @@ export const Party = ObjectSchema.create({
       label: 'Name',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       searchable: true,
       maxLength: 200,
     }),
@@ -41,6 +42,7 @@ export const Party = ObjectSchema.create({
       label: 'Kind',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       options: [
         { label: 'Company',     value: 'company', default: true },
         { label: 'Individual',  value: 'individual' },
@@ -102,6 +104,7 @@ export const Party = ObjectSchema.create({
       label: 'Risk Flag',
       group: 'risk',
       required: true,
+      storage: { notNull: true },
       options: [
         { label: 'None',    value: 'none',    color: '#94A3B8', default: true },
         { label: 'Watch',   value: 'watch',   color: '#F59E0B' },
@@ -117,6 +120,7 @@ export const Party = ObjectSchema.create({
       label: 'Screening',
       group: 'risk',
       required: true,
+      storage: { notNull: true },
       description: 'Result of the last sanctions / registry screening. Written by the screening connector when one is configured (DESIGN.md §08), otherwise by legal.',
       options: [
         { label: 'Not screened', value: 'not_screened', color: '#94A3B8', default: true },

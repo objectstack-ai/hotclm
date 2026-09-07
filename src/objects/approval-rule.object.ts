@@ -31,6 +31,7 @@ export const ApprovalRule = ObjectSchema.create({
       label: 'Name',
       group: 'match',
       required: true,
+      storage: { notNull: true },
       searchable: true,
       maxLength: 120,
     }),

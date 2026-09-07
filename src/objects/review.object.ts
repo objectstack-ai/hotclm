@@ -40,6 +40,7 @@ export const Review = ObjectSchema.create({
       label: 'Contract',
       group: 'review',
       required: true,
+      storage: { notNull: true },
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Reviews',
@@ -48,11 +49,13 @@ export const Review = ObjectSchema.create({
       label: 'Reviewer',
       group: 'review',
       required: true,
+      storage: { notNull: true },
     }),
     stage: Field.select({
       label: 'Stage',
       group: 'review',
       required: true,
+      storage: { notNull: true },
       options: [
         { label: 'Legal',      value: 'legal',      color: '#8B5CF6', default: true },
         { label: 'Finance',    value: 'finance',    color: '#0B6E63' },

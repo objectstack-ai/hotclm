@@ -67,6 +67,7 @@ export const Contract = ObjectSchema.create({
       label: 'Title',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       searchable: true,
       maxLength: 200,
     }),
@@ -74,6 +75,7 @@ export const Contract = ObjectSchema.create({
       label: 'Contract Type',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       // Inactive types are hidden from the picker; existing contracts keep
       // them (clm_contract_type.is_active).
       lookupFilters: [{ field: 'is_active', operator: 'eq', value: true }],
@@ -112,6 +114,7 @@ export const Contract = ObjectSchema.create({
       label: 'Status',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       description: 'Lifecycle state. Transitions and their guards are enforced by contract.hook.ts (DESIGN.md §03 状态机); expired, terminated and cancelled are terminal.',
       options: [
         { label: 'Draft',       value: 'draft',       color: '#94A3B8', default: true },
@@ -157,6 +160,7 @@ export const Contract = ObjectSchema.create({
       label: 'Counterparty',
       group: 'parties',
       required: true,
+      storage: { notNull: true },
       // The picker hides blocked parties; the state machine refuses submission
       // with one regardless (the picker is convenience, the hook is the rule).
       lookupFilters: [{ field: 'risk_flag', operator: 'ne', value: 'blocked' }],
