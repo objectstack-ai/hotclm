@@ -9,7 +9,9 @@
     "pnpm": ">=10.15"
   },
   "scripts": {
-    "dev": "objectstack dev --ui",
+    "dev": "objectstack dev --ui --compile",
+    "demo": "node scripts/demo.mjs",
+    "demo:zh": "OS_SEED_LOCALE=zh-CN node scripts/demo.mjs",
     "start": "objectstack start",
     "build": "objectstack build",
     "validate": "objectstack validate",
