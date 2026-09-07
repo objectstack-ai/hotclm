@@ -11,9 +11,24 @@ import type { HookApi } from './_hook-api.js';
  *   sequence per type per year, next = max existing + 1 within the
  *   organization (§13 Q5). Changing the type is allowed only on a draft and
  *   re-stamps all four.
+ * - `contract_route` (beforeUpdate, F2 of §06): on the way into `submitted`
+ *   and into `in_approval`, evaluates the approval matrix and stamps the UNION
+ *   of the `route_*` flags of every matching rule, and — when the type
+ *   requires legal review — assigns `legal_owner` to the legal counsel with
+ *   the fewest open contracts. Runs at priority 150, between the type stamp
+ *   and the state machine, so the machine's onward hop can read what it set.
  * - `contract_state_machine` (beforeUpdate on `status`): the transition table
  *   and every guard of §03 状态机, refusing with a structured error rather
- *   than coercing, and stamping the stage timestamp on each entry.
+ *   than coercing, and stamping the stage timestamp on each entry. Since F2
+ *   the machine also takes the AUTOMATIC onward hop of §06: `draft →
+ *   submitted` continues to `in_review` (a legal owner was assigned) or to
+ *   `in_approval` (the type needs no legal review) in the same write, and the
+ *   hop is validated by the same guard block a hand-made transition meets.
+ * - `deviation_gate` (afterUpdate on `clm_deviation`, F6 of §06): an accepted
+ *   deviation from a clause that `requires_legal_head` stamps
+ *   `route_legal_head` on the parent contract. The other half of F6 — no
+ *   `open` deviation may enter `in_approval` — is the state machine's guard,
+ *   applied on BOTH edges into `in_approval`.
  * - `deviation_state_machine`, `signature_state_machine`,
  *   `obligation_state_machine`, `payment_plan_state_machine`: the child
  *   machines. The last two also hold the `overdue` reservation — that state
@@ -134,12 +149,21 @@ const contractTypeStamp: Hook = {
   },
 };
 
-const contractStateMachine: Hook = {
-  name: 'contract_state_machine',
+const contractRoute: Hook = {
+  name: 'contract_route',
   object: 'clm_contract',
   events: ['beforeUpdate'],
-  priority: 200,
-  description: 'Enforce the contract status transition table and its guards; stamp the stage timestamp on each entry.',
+  priority: 150,
+  // System context, measured as REQUIRED rather than convenient: the two
+  // reads this hook makes are outside a requester's reach by construction.
+  // `sys_user_position` is a platform object a requester cannot list, and the
+  // per-counsel open-contract tally counts OTHER people's contracts on a
+  // `private` object — under an inherited context every counsel would tally
+  // 0 and the "fewest open contracts" rule would degrade to "first in the
+  // list". `runAs` elevates `ctx.api` only; `ctx.session` still describes
+  // the caller.
+  runAs: 'system',
+  description: 'F2: on entering submitted (and again on entering in_approval), stamp the union of route_* from every matching approval rule; on submission assign legal_owner to the legal counsel with the fewest open contracts when the type requires legal review.',
   handler: async (ctx: HookContext) => {
     function refuse(message: string, code: string, status: number): Error {
       const err = new Error(message) as Error & { code: string; status: number };
@@ -153,6 +177,172 @@ const contractStateMachine: Hook = {
     if (typeof to !== 'string') return;
     const from = typeof previous.status === 'string' ? previous.status : 'draft';
     if (to === from) return;
+    const submitting = from === 'draft' && to === 'submitted';
+    const enteringApproval = to === 'in_approval' && (from === 'submitted' || from === 'in_review');
+    if (!submitting && !enteringApproval) return;
+
+    const api = ctx.api as HookApi | undefined;
+    if (!api) throw refuse('The data API is not available to the contract routing hook.', 'INTERNAL_ERROR', 500);
+    const id = typeof previous.id === 'string' ? previous.id : '';
+    const get = (key: string): unknown => (input[key] !== undefined ? input[key] : previous[key]);
+    const isSet = (value: unknown): boolean =>
+      !(value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0));
+    const organizationId = [
+      ctx.user?.organizationId,
+      ctx.session?.organizationId,
+      input.organization_id,
+      previous.organization_id,
+    ].find((candidate): candidate is string => typeof candidate === 'string' && candidate !== '');
+    const inOrganization = (row: Record<string, unknown>): boolean =>
+      !organizationId || row.organization_id === undefined || row.organization_id === null || row.organization_id === '' || row.organization_id === organizationId;
+
+    // The category and direction are card 02's stamps (contract_type_stamp,
+    // priority 100, on insert and on a draft's type change). They are READ
+    // here, never re-derived: a contract without them is a contract that
+    // never went through the stamp, and the fix is to set its type on the
+    // draft, not a second copy of the stamping.
+    const category = get('category');
+    const direction = get('direction');
+    if (typeof category !== 'string' || !category) {
+      throw refuse('The contract carries no category stamp, so the approval matrix cannot be evaluated; set its contract type while it is a draft.', 'INVALID_STATE', 422);
+    }
+    const rawAmount = get('amount');
+    // A contract with no amount (an NDA, a framework without a value) sits in
+    // the lowest band: an absent amount is 0, not "unbounded".
+    const amount = typeof rawAmount === 'number' && Number.isFinite(rawAmount) ? rawAmount : Number(rawAmount) || 0;
+
+    // Accepted deviations decide two things: the `only_with_deviation` match
+    // and, through the clause's `requires_legal_head`, the legal-head rung
+    // (F6, derived here so a resubmission never loses the stamp).
+    const accepted = await api.object('clm_deviation').find({
+      where: { contract: id, status: 'accepted' },
+      fields: ['id', 'clause'],
+      top: 500,
+    });
+    const clauseIds = [...new Set(accepted.map((row) => row.clause).filter((c): c is string => typeof c === 'string' && c !== ''))];
+    let deviationNeedsLegalHead = false;
+    if (clauseIds.length > 0) {
+      const clauses = await api.object('clm_clause').find({
+        where: { id: { $in: clauseIds } },
+        fields: ['id', 'requires_legal_head'],
+        top: 500,
+      });
+      deviationNeedsLegalHead = clauses.some((clause) => clause.requires_legal_head === true);
+    }
+    const hasAcceptedDeviation = accepted.length > 0;
+
+    // The matrix: every ACTIVE rule that matches contributes its rungs, and
+    // the contract climbs the union (clm_approval_rule.priority's own words).
+    // A rule matches when: its categories are empty or contain the contract's;
+    // its direction is empty / `any` or equals the contract's; the amount is
+    // inside [amount_min, amount_max) with an absent bound meaning no bound;
+    // and, if it is `only_with_deviation`, the contract carries an accepted
+    // deviation.
+    const rules = await api.object('clm_approval_rule').find({
+      where: organizationId ? { is_active: true, organization_id: organizationId } : { is_active: true },
+      fields: ['id', 'name', 'applies_to', 'direction', 'amount_min', 'amount_max', 'only_with_deviation', 'route_legal_head', 'route_finance', 'route_executive', 'route_gm'],
+      top: 1000,
+    });
+    const flags = { route_legal_head: deviationNeedsLegalHead, route_finance: false, route_executive: false, route_gm: false };
+    for (const rule of rules) {
+      const appliesTo = Array.isArray(rule.applies_to) ? rule.applies_to : [];
+      if (appliesTo.length > 0 && !appliesTo.includes(category)) continue;
+      const ruleDirection = typeof rule.direction === 'string' ? rule.direction : 'any';
+      if (ruleDirection !== 'any' && ruleDirection !== '' && ruleDirection !== direction) continue;
+      const min = typeof rule.amount_min === 'number' ? rule.amount_min : rule.amount_min === null || rule.amount_min === undefined || rule.amount_min === '' ? null : Number(rule.amount_min);
+      const max = typeof rule.amount_max === 'number' ? rule.amount_max : rule.amount_max === null || rule.amount_max === undefined || rule.amount_max === '' ? null : Number(rule.amount_max);
+      if (min !== null && Number.isFinite(min) && amount < min) continue;
+      if (max !== null && Number.isFinite(max) && amount >= max) continue;
+      if (rule.only_with_deviation === true && !hasAcceptedDeviation) continue;
+      if (rule.route_legal_head === true) flags.route_legal_head = true;
+      if (rule.route_finance === true) flags.route_finance = true;
+      if (rule.route_executive === true) flags.route_executive = true;
+      if (rule.route_gm === true) flags.route_gm = true;
+    }
+    // The stamp IS the evaluation: all four flags are written, so a flag that
+    // stopped matching (the amount was lowered before resubmission) clears,
+    // and the record never carries a rung nothing routes it to.
+    input.route_legal_head = flags.route_legal_head;
+    input.route_finance = flags.route_finance;
+    input.route_executive = flags.route_executive;
+    input.route_gm = flags.route_gm;
+
+    if (!submitting) return;
+
+    // Legal owner: the legal counsel with the fewest open contracts, if the
+    // type requires legal review and nobody assigned one by hand. Holders of
+    // `clm_legal_counsel` are `sys_user_position` rows (position is the
+    // position NAME there), within their validity window and this
+    // organization. With no holder the contract stays `submitted` — the legal
+    // queue of §05 ("待受理: submitted 且未分配") accepts it by hand.
+    const typeId = get('contract_type');
+    const type = isSet(typeId)
+      ? await api.object('clm_contract_type').findOne({ where: { id: typeId }, fields: ['id', 'requires_legal_review'] })
+      : null;
+    if (!type) return; // the state machine refuses a contract without a type
+    if (type.requires_legal_review === false) return;
+    if (isSet(get('legal_owner'))) return;
+
+    const nowMs = Date.now();
+    const assignments = await api.object('sys_user_position').find({
+      where: { position: 'clm_legal_counsel' },
+      fields: ['id', 'user_id', 'organization_id', 'valid_from', 'valid_until'],
+      top: 1000,
+    });
+    const holders = [...new Set(assignments
+      .filter((row) => inOrganization(row))
+      .filter((row) => {
+        const fromMs = typeof row.valid_from === 'string' && row.valid_from ? Date.parse(row.valid_from) : row.valid_from instanceof Date ? row.valid_from.getTime() : NaN;
+        const untilMs = typeof row.valid_until === 'string' && row.valid_until ? Date.parse(row.valid_until) : row.valid_until instanceof Date ? row.valid_until.getTime() : NaN;
+        if (Number.isFinite(fromMs) && fromMs > nowMs) return false;
+        if (Number.isFinite(untilMs) && untilMs <= nowMs) return false;
+        return true;
+      })
+      .map((row) => row.user_id)
+      .filter((user): user is string => typeof user === 'string' && user !== ''))];
+    if (holders.length === 0) return;
+
+    // "Open" = still moving toward execution; a closed or active contract is
+    // no longer on the lawyer's desk.
+    const OPEN_STATUSES = ['submitted', 'in_review', 'in_approval', 'approved', 'signing'];
+    const open = await api.object('clm_contract').find({
+      where: organizationId
+        ? { organization_id: organizationId, legal_owner: { $in: holders }, status: { $in: OPEN_STATUSES } }
+        : { legal_owner: { $in: holders }, status: { $in: OPEN_STATUSES } },
+      fields: ['id', 'legal_owner'],
+      top: 10000,
+    });
+    const load = new Map<string, number>(holders.map((user) => [user, 0]));
+    for (const row of open) {
+      const owner = typeof row.legal_owner === 'string' ? row.legal_owner : '';
+      if (load.has(owner)) load.set(owner, (load.get(owner) ?? 0) + 1);
+    }
+    // Fewest open contracts wins; a tie breaks on the user id so the choice is
+    // deterministic and re-runnable.
+    const [chosen] = [...load.entries()].sort((a, b) => a[1] - b[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0];
+    input.legal_owner = chosen;
+  },
+};
+
+const contractStateMachine: Hook = {
+  name: 'contract_state_machine',
+  object: 'clm_contract',
+  events: ['beforeUpdate'],
+  priority: 200,
+  description: 'Enforce the contract status transition table and its guards; stamp the stage timestamp on each entry; take the automatic onward hop out of submitted (F2).',
+  handler: async (ctx: HookContext) => {
+    function refuse(message: string, code: string, status: number): Error {
+      const err = new Error(message) as Error & { code: string; status: number };
+      err.code = code;
+      err.status = status;
+      return err;
+    }
+    const { input } = ctx;
+    const previous = ctx.previous ?? {};
+    const requested = input.status;
+    if (typeof requested !== 'string') return;
+    let from = typeof previous.status === 'string' ? previous.status : 'draft';
+    if (requested === from) return;
 
     // DESIGN.md §03 状态机 — from → allowed targets. expired, terminated and
     // cancelled are terminal; renewal and amendment are new contracts.
@@ -169,16 +359,6 @@ const contractStateMachine: Hook = {
       terminated:  [],
       cancelled:   [],
     };
-    const allowed = TRANSITIONS[from] ?? [];
-    if (!allowed.includes(to)) {
-      throw refuse(
-        allowed.length === 0
-          ? `A ${from} contract is closed; its status cannot change to ${to}. Start a renewal or an amendment instead.`
-          : `Contract status cannot go from ${from} to ${to}. Allowed from ${from}: ${allowed.join(', ')}.`,
-        'INVALID_STATE',
-        422,
-      );
-    }
 
     const api = ctx.api as HookApi | undefined;
     if (!api) throw refuse('The data API is not available to the contract state machine.', 'INTERNAL_ERROR', 500);
@@ -188,7 +368,9 @@ const contractStateMachine: Hook = {
       !(value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0));
     const now = new Date().toISOString();
 
+    let cachedType: Record<string, unknown> | null = null;
     async function loadType(): Promise<Record<string, unknown>> {
+      if (cachedType) return cachedType;
       const typeId = get('contract_type');
       const type = isSet(typeId)
         ? await api!.object('clm_contract_type').findOne({
@@ -197,118 +379,161 @@ const contractStateMachine: Hook = {
           })
         : null;
       if (!type) throw refuse('The contract has no contract type; one is required to move it forward.', 'INVALID_STATE', 422);
+      cachedType = type;
       return type;
     }
 
-    if (from === 'draft' && to === 'submitted') {
-      const type = await loadType();
-      const partyId = get('party');
-      if (!isSet(partyId)) throw refuse('A counterparty is required before submission.', 'INVALID_STATE', 422);
-      const party = await api.object('clm_party').findOne({ where: { id: partyId }, fields: ['id', 'name', 'risk_flag'] });
-      if (!party) throw refuse(`Counterparty ${String(partyId)} does not exist.`, 'INVALID_REFERENCE', 422);
-      if (party.risk_flag === 'blocked') {
-        throw refuse(`Counterparty ${String(party.name ?? partyId)} is blocked; a contract with a blocked party cannot be submitted.`, 'INVALID_STATE', 422);
-      }
-      const intake = Array.isArray(type.intake_fields) ? type.intake_fields : [];
-      const missing = intake.filter((field): field is string => typeof field === 'string' && !isSet(get(field)));
-      if (missing.length > 0) {
-        throw refuse(`Intake fields required by the contract type are missing: ${missing.join(', ')}.`, 'INVALID_STATE', 422);
-      }
-      const versions = await api.object('clm_contract_version').count({ where: { contract: id } });
-      if (versions === 0 && !isSet(type.template_file)) {
-        throw refuse('Upload a first version, or choose a contract type that carries a template, before submitting.', 'INVALID_STATE', 422);
-      }
-      input.submitted_at = now;
-    }
+    // One write may carry MORE than one transition: `draft → submitted`
+    // continues to `in_review` or `in_approval` in the same write (§06 F2).
+    // Each hop goes through the SAME table check and the SAME guard blocks a
+    // hand-made transition meets — the onward hop is a second iteration, not
+    // a second copy of the guards. Two hops is the ceiling the table allows.
+    let to = requested;
+    for (let hop = 0; ; hop += 1) {
+      if (hop > 2) throw refuse(`The contract status hopped more than twice in one write (${from} → ${to}); refusing to loop.`, 'INTERNAL_ERROR', 500);
+      let onward: string | null = null;
 
-    if (from === 'submitted' && (to === 'in_review' || to === 'in_approval')) {
-      const type = await loadType();
-      // The field defaults to true; an unset value reads as the default.
-      const requiresLegalReview = type.requires_legal_review !== false;
-      if (to === 'in_review') {
-        if (!requiresLegalReview) {
-          throw refuse('This contract type does not require legal review; a submitted contract of this type goes straight to in_approval.', 'INVALID_STATE', 422);
-        }
-        if (!isSet(get('legal_owner'))) {
-          throw refuse('Assign a legal owner before the contract enters review.', 'INVALID_STATE', 422);
-        }
-        input.review_started_at = now;
-      } else if (requiresLegalReview) {
-        throw refuse('This contract type requires legal review; the next state after submitted is in_review, not in_approval.', 'INVALID_STATE', 422);
-      }
-    }
-
-    if (from === 'in_review' && to === 'in_approval') {
-      const openDeviations = await api.object('clm_deviation').count({ where: { contract: id, status: 'open' } });
-      if (openDeviations > 0) {
-        throw refuse(`${openDeviations} deviation(s) are still open; decide each one before the contract enters approval.`, 'INVALID_STATE', 422);
-      }
-      const legalApprovals = await api.object('clm_review').count({ where: { contract: id, stage: 'legal', decision: 'approved' } });
-      if (legalApprovals === 0) {
-        throw refuse('An approved legal review is required before the contract enters approval.', 'INVALID_STATE', 422);
-      }
-    }
-
-    if (from === 'in_review' && to === 'draft') {
-      const sendBacks = await api.object('clm_review').count({
-        where: { contract: id, decision: { $in: ['changes_requested', 'rejected'] } },
-      });
-      if (sendBacks === 0) {
-        throw refuse('Returning a contract from review to draft needs a review with the decision changes_requested (or rejected) recorded.', 'INVALID_STATE', 422);
-      }
-    }
-
-    if (from === 'in_approval' && to === 'approved') {
-      input.approved_at = now;
-    }
-
-    if (from === 'approved' && to === 'signing') {
-      const cleanVersions = await api.object('clm_contract_version').count({
-        where: { contract: id, kind: 'clean', is_current: true },
-      });
-      if (cleanVersions === 0) {
-        throw refuse('A current clean version is required before signing.', 'INVALID_STATE', 422);
-      }
-    }
-
-    if (from === 'signing' && to === 'active') {
-      const required = Array.isArray(get('execution_formalities'))
-        ? (get('execution_formalities') as unknown[]).filter((f): f is string => typeof f === 'string')
-        : [];
-      const completed = await api.object('clm_signature').find({
-        where: { contract: id, status: 'completed' },
-        fields: ['id', 'formalities_done', 'completed_at'],
-        top: 50,
-      });
-      const executed = completed.find((signature) => {
-        const done = Array.isArray(signature.formalities_done) ? signature.formalities_done : [];
-        return required.every((formality) => done.includes(formality));
-      });
-      if (!executed) {
+      const allowed = TRANSITIONS[from] ?? [];
+      if (!allowed.includes(to)) {
         throw refuse(
-          completed.length === 0
-            ? 'A completed signature round is required before activation.'
-            : `A completed signature round must record every execution formality the contract type requires (${required.join(', ')}) before activation.`,
+          allowed.length === 0
+            ? `A ${from} contract is closed; its status cannot change to ${to}. Start a renewal or an amendment instead.`
+            : `Contract status cannot go from ${from} to ${to}. Allowed from ${from}: ${allowed.join(', ')}.`,
           'INVALID_STATE',
           422,
         );
       }
-      const finalVersions = await api.object('clm_contract_version').count({ where: { contract: id, kind: 'final_signed' } });
-      if (finalVersions === 0) {
-        throw refuse('A final_signed version is required before activation.', 'INVALID_STATE', 422);
+
+      if (from === 'draft' && to === 'submitted') {
+        const type = await loadType();
+        const partyId = get('party');
+        if (!isSet(partyId)) throw refuse('A counterparty is required before submission.', 'INVALID_STATE', 422);
+        const party = await api.object('clm_party').findOne({ where: { id: partyId }, fields: ['id', 'name', 'risk_flag'] });
+        if (!party) throw refuse(`Counterparty ${String(partyId)} does not exist.`, 'INVALID_REFERENCE', 422);
+        if (party.risk_flag === 'blocked') {
+          throw refuse(`Counterparty ${String(party.name ?? partyId)} is blocked; a contract with a blocked party cannot be submitted.`, 'INVALID_STATE', 422);
+        }
+        const intake = Array.isArray(type.intake_fields) ? type.intake_fields : [];
+        const missing = intake.filter((field): field is string => typeof field === 'string' && !isSet(get(field)));
+        if (missing.length > 0) {
+          throw refuse(`Intake fields required by the contract type are missing: ${missing.join(', ')}.`, 'INVALID_STATE', 422);
+        }
+        const versions = await api.object('clm_contract_version').count({ where: { contract: id } });
+        if (versions === 0 && !isSet(type.template_file)) {
+          throw refuse('Upload a first version, or choose a contract type that carries a template, before submitting.', 'INVALID_STATE', 422);
+        }
+        input.submitted_at = now;
+        // F2's onward hop. `contract_route` (priority 150) has already stamped
+        // the `route_*` union and, when the type requires legal review, assigned
+        // `legal_owner` to the least-loaded legal counsel. No legal review →
+        // straight to approval; a legal owner in hand → into review; a type
+        // that wants legal review but no counsel could be assigned → the
+        // contract stays `submitted` for the legal queue to accept by hand.
+        if (type.requires_legal_review === false) onward = 'in_approval';
+        else if (isSet(get('legal_owner'))) onward = 'in_review';
       }
-      const executedAt = typeof executed.completed_at === 'string' && executed.completed_at ? executed.completed_at : now;
-      if (!isSet(get('signed_at'))) input.signed_at = executedAt;
-      if (!isSet(get('executed_at'))) input.executed_at = executedAt;
-      input.activated_at = now;
-    }
 
-    if (from === 'active' && to === 'expired' && ctx.session?.isSystem !== true) {
-      throw refuse('Only the expiry job marks a contract expired; terminate it to end it by hand.', 'INVALID_STATE', 422);
-    }
+      if (from === 'submitted' && (to === 'in_review' || to === 'in_approval')) {
+        const type = await loadType();
+        // The field defaults to true; an unset value reads as the default.
+        const requiresLegalReview = type.requires_legal_review !== false;
+        if (to === 'in_review') {
+          if (!requiresLegalReview) {
+            throw refuse('This contract type does not require legal review; a submitted contract of this type goes straight to in_approval.', 'INVALID_STATE', 422);
+          }
+          if (!isSet(get('legal_owner'))) {
+            throw refuse('Assign a legal owner before the contract enters review.', 'INVALID_STATE', 422);
+          }
+          input.review_started_at = now;
+        } else if (requiresLegalReview) {
+          throw refuse('This contract type requires legal review; the next state after submitted is in_review, not in_approval.', 'INVALID_STATE', 422);
+        }
+      }
 
-    if (to === 'terminated') {
-      input.closed_at = now;
+      // F6, first half (DESIGN.md §06 deviation_gate): no `open` deviation may
+      // enter approval. Guarded on EVERY edge into `in_approval` — from
+      // `in_review` (card 02) and from `submitted` (a type that skips legal
+      // review), since a deviation can be recorded on a draft too.
+      if (to === 'in_approval') {
+        const openDeviations = await api.object('clm_deviation').count({ where: { contract: id, status: 'open' } });
+        if (openDeviations > 0) {
+          throw refuse(`${openDeviations} deviation(s) are still open; decide each one before the contract enters approval.`, 'INVALID_STATE', 422);
+        }
+      }
+
+      if (from === 'in_review' && to === 'in_approval') {
+        const legalApprovals = await api.object('clm_review').count({ where: { contract: id, stage: 'legal', decision: 'approved' } });
+        if (legalApprovals === 0) {
+          throw refuse('An approved legal review is required before the contract enters approval.', 'INVALID_STATE', 422);
+        }
+      }
+
+      if (from === 'in_review' && to === 'draft') {
+        const sendBacks = await api.object('clm_review').count({
+          where: { contract: id, decision: { $in: ['changes_requested', 'rejected'] } },
+        });
+        if (sendBacks === 0) {
+          throw refuse('Returning a contract from review to draft needs a review with the decision changes_requested (or rejected) recorded.', 'INVALID_STATE', 422);
+        }
+      }
+
+      if (from === 'in_approval' && to === 'approved') {
+        input.approved_at = now;
+      }
+
+      if (from === 'approved' && to === 'signing') {
+        const cleanVersions = await api.object('clm_contract_version').count({
+          where: { contract: id, kind: 'clean', is_current: true },
+        });
+        if (cleanVersions === 0) {
+          throw refuse('A current clean version is required before signing.', 'INVALID_STATE', 422);
+        }
+      }
+
+      if (from === 'signing' && to === 'active') {
+        const required = Array.isArray(get('execution_formalities'))
+          ? (get('execution_formalities') as unknown[]).filter((f): f is string => typeof f === 'string')
+          : [];
+        const completed = await api.object('clm_signature').find({
+          where: { contract: id, status: 'completed' },
+          fields: ['id', 'formalities_done', 'completed_at'],
+          top: 50,
+        });
+        const executed = completed.find((signature) => {
+          const done = Array.isArray(signature.formalities_done) ? signature.formalities_done : [];
+          return required.every((formality) => done.includes(formality));
+        });
+        if (!executed) {
+          throw refuse(
+            completed.length === 0
+              ? 'A completed signature round is required before activation.'
+              : `A completed signature round must record every execution formality the contract type requires (${required.join(', ')}) before activation.`,
+            'INVALID_STATE',
+            422,
+          );
+        }
+        const finalVersions = await api.object('clm_contract_version').count({ where: { contract: id, kind: 'final_signed' } });
+        if (finalVersions === 0) {
+          throw refuse('A final_signed version is required before activation.', 'INVALID_STATE', 422);
+        }
+        const executedAt = typeof executed.completed_at === 'string' && executed.completed_at ? executed.completed_at : now;
+        if (!isSet(get('signed_at'))) input.signed_at = executedAt;
+        if (!isSet(get('executed_at'))) input.executed_at = executedAt;
+        input.activated_at = now;
+      }
+
+      if (from === 'active' && to === 'expired' && ctx.session?.isSystem !== true) {
+        throw refuse('Only the expiry job marks a contract expired; terminate it to end it by hand.', 'INVALID_STATE', 422);
+      }
+
+      if (to === 'terminated') {
+        input.closed_at = now;
+      }
+
+      if (!onward) break;
+      from = to;
+      to = onward;
+      input.status = onward;
     }
   },
 };
@@ -350,6 +575,37 @@ const deviationStateMachine: Hook = {
       const actor = ctx.user?.id ?? ctx.session?.userId;
       if (typeof actor === 'string' && actor) input.decided_by = actor;
     }
+  },
+};
+
+const deviationGate: Hook = {
+  name: 'deviation_gate',
+  object: 'clm_deviation',
+  events: ['afterUpdate'],
+  priority: 250,
+  // The parent contract's `route_legal_head` is `readonly` and locked by
+  // field-level security for every position: it has exactly two writers, the
+  // routing hook and this one. A system context is what lets a write from
+  // OUTSIDE the contract's own hook chain land on a read-only column (the
+  // strip is bypassed under `isSystem`, the same way the engine's roll-up
+  // recompute lands). After the deviation row is committed, never before: a
+  // refused deviation write must not leave a stamped contract behind.
+  runAs: 'system',
+  description: 'F6: an accepted deviation from a clause that requires the head of legal stamps route_legal_head on the parent contract.',
+  handler: async (ctx: HookContext) => {
+    const { input } = ctx;
+    const previous = ctx.previous ?? {};
+    if (input.status !== 'accepted' || previous.status === 'accepted') return;
+    const api = ctx.api as HookApi | undefined;
+    if (!api) return;
+    const clauseId = input.clause !== undefined ? input.clause : previous.clause;
+    const contractId = input.contract !== undefined ? input.contract : previous.contract;
+    if (typeof clauseId !== 'string' || !clauseId || typeof contractId !== 'string' || !contractId) return;
+    const clause = await api.object('clm_clause').findOne({ where: { id: clauseId }, fields: ['id', 'requires_legal_head'] });
+    if (clause?.requires_legal_head !== true) return;
+    const contract = await api.object('clm_contract').findOne({ where: { id: contractId }, fields: ['id', 'route_legal_head'] });
+    if (!contract || contract.route_legal_head === true) return;
+    await api.object('clm_contract').update({ id: contractId, route_legal_head: true }, { where: { id: contractId } });
   },
 };
 
@@ -529,8 +785,10 @@ const paymentPlanStateMachine: Hook = {
 
 export default [
   contractTypeStamp,
+  contractRoute,
   contractStateMachine,
   deviationStateMachine,
+  deviationGate,
   signatureStateMachine,
   obligationStateMachine,
   paymentPlanStateMachine,

@@ -1,6 +1,8 @@
 import { defineStack } from '@objectstack/spec';
 import * as objects from './src/objects/index.js';
 import { allHooks } from './src/objects/hooks.js';
+import * as actions from './src/actions/index.js';
+import { allFlows, flowFunctions } from './src/flows/index.js';
 import * as profiles from './src/profiles/index.js';
 import { ClmPositions, ClmSharingRules } from './src/sharing/index.js';
 import { registerClmPositionBindings, type BindHostContext } from './src/security/index.js';
@@ -58,17 +60,38 @@ export default defineStack({
   // that edition. On the enterprise edition the same metadata widens to the
   // manager chain. The app states what it MEANS; the edition supplies it.
   //
+  // `automation` is the flow engine: it registers `flows`, runs the
+  // `contract_intake` screen flow (F1, card 05) and resolves `functions`.
+  // Measured as required on 17.3.0: without the token the flow-typed
+  // `launch_contract` action is refused at dispatch (503, "flow action
+  // unavailable"), because the automation service is never resolved.
+  //
+  // `triggers` is deliberately NOT declared yet. It installs the record-change
+  // and schedule PROVIDERS that launch `record_change` / `schedule` flows;
+  // this card's flow is a `screen` flow launched by its action, and F2 / F6
+  // are hooks, not flows — so nothing here is ever fired by a trigger. The
+  // token arrives with the first card that authors a flow a trigger launches
+  // (F5 in card 06, the daily jobs in card 09), the same way `sharing` and
+  // `hierarchy-security` arrived with card 04: measured, then declared.
+  //
   // The rest arrive with the cards that need them (DESIGN.md §06:
-  // `automation` + `triggers` + `approvals` + `messaging` for F1–F15,
-  // `analytics` for §09). Capability expansion stays tight — a card names the
-  // token it adds (AGENTS.md).
-  requires: ['ui', 'auth', 'sharing', 'hierarchy-security'],
+  // `approvals` + `messaging` for F5–F15, `analytics` for §09). Capability
+  // expansion stays tight — a card names the token it adds (AGENTS.md).
+  requires: ['ui', 'auth', 'sharing', 'hierarchy-security', 'automation'],
 
   objects: Object.values(objects),
   // Lifecycle hooks (numbering, type-derived stamps, the state machines and
   // the display_name mirrors). A metadata `Hook` is only registered from
   // here — `hooks` is a top-level stack key, not an object key.
   hooks: allHooks,
+
+  // Automation (DESIGN.md §06, card 05): the intake screen flow (F1) and the
+  // action that launches it. The routing (F2) and the deviation gate (F6)
+  // are hooks above. `functions` holds the one callable a `script` node
+  // names — the refusal that fails a run with a message.
+  flows: allFlows,
+  actions: Object.values(actions),
+  functions: flowFunctions,
 
   // Security (DESIGN.md §04, card 04): seven positions, five permission sets,
   // the sharing rules. Positions and sets are containers — the join rows that
