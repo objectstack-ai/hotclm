@@ -45,6 +45,7 @@ export const Signature = ObjectSchema.create({
       label: 'Contract',
       group: 'round',
       required: true,
+      storage: { notNull: true },
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Signatures',
@@ -53,6 +54,7 @@ export const Signature = ObjectSchema.create({
       label: 'Method',
       group: 'round',
       required: true,
+      storage: { notNull: true },
       options: [
         { label: 'E-signature', value: 'esign',   color: '#3B82F6', default: true },
         { label: 'Wet ink',     value: 'wet_ink', color: '#7C2D12' },
@@ -84,6 +86,7 @@ export const Signature = ObjectSchema.create({
       label: 'Status',
       group: 'round',
       required: true,
+      storage: { notNull: true },
       options: [
         { label: 'Draft',     value: 'draft',     color: '#94A3B8', default: true },
         { label: 'Sent',      value: 'sent',      color: '#3B82F6' },

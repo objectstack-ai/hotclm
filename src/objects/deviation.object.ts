@@ -42,6 +42,7 @@ export const Deviation = ObjectSchema.create({
       label: 'Contract',
       group: 'deviation',
       required: true,
+      storage: { notNull: true },
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Deviations',
@@ -50,12 +51,14 @@ export const Deviation = ObjectSchema.create({
       label: 'Clause',
       group: 'deviation',
       required: true,
+      storage: { notNull: true },
       lookupFilters: [{ field: 'is_active', operator: 'eq', value: true }],
     }),
     deviation_text: Field.textarea({
       label: 'Proposed Wording',
       group: 'deviation',
       required: true,
+      storage: { notNull: true },
       description: 'The wording on the table, as it departs from the standard text.',
     }),
     requested_position: Field.select({
@@ -78,6 +81,7 @@ export const Deviation = ObjectSchema.create({
       label: 'Status',
       group: 'decision',
       required: true,
+      storage: { notNull: true },
       description: 'open → accepted / rejected / withdrawn; the decided states are terminal (contract.hook.ts).',
       options: [
         { label: 'Open',      value: 'open',      color: '#F59E0B', default: true },

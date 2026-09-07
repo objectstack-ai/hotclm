@@ -53,6 +53,7 @@ export const Obligation = ObjectSchema.create({
       label: 'Contract',
       group: 'obligation',
       required: true,
+      storage: { notNull: true },
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Obligations',
@@ -61,6 +62,7 @@ export const Obligation = ObjectSchema.create({
       label: 'Title',
       group: 'obligation',
       required: true,
+      storage: { notNull: true },
       searchable: true,
       maxLength: 200,
       description: 'What has to be done, in the words the owner will recognise on a reminder.',
@@ -82,6 +84,7 @@ export const Obligation = ObjectSchema.create({
       label: 'Due Date',
       group: 'obligation',
       required: true,
+      storage: { notNull: true },
       description: 'The date the daily job (card 09) measures arrears against.',
     }),
     owner: Field.user({
@@ -94,6 +97,7 @@ export const Obligation = ObjectSchema.create({
       label: 'Status',
       group: 'progress',
       required: true,
+      storage: { notNull: true },
       description: 'pending → in_progress / done / waived / overdue; in_progress → done / waived; overdue → done / waived. Enforced by contract.hook.ts; overdue is written only by the daily job (card 09).',
       options: [
         { label: 'Pending',     value: 'pending',     color: '#94A3B8', default: true },

@@ -30,6 +30,7 @@ export const Clause = ObjectSchema.create({
       label: 'Title',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       searchable: true,
       maxLength: 160,
     }),
@@ -37,6 +38,7 @@ export const Clause = ObjectSchema.create({
       label: 'Category',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       options: [
         { label: 'Liability',       value: 'liability' },
         { label: 'Payment',         value: 'payment' },
@@ -52,6 +54,7 @@ export const Clause = ObjectSchema.create({
       label: 'Risk Level',
       group: 'identity',
       required: true,
+      storage: { notNull: true },
       options: [
         { label: 'Low',    value: 'low',    color: '#94A3B8', default: true },
         { label: 'Medium', value: 'medium', color: '#F59E0B' },
@@ -63,6 +66,7 @@ export const Clause = ObjectSchema.create({
       label: 'Standard Wording',
       group: 'wording',
       required: true,
+      storage: { notNull: true },
       description: 'The position the company opens with.',
     }),
     fallback_text: Field.richtext({
