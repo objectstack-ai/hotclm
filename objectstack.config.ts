@@ -1,5 +1,6 @@
 import { defineStack } from '@objectstack/spec';
 import * as objects from './src/objects/index.js';
+import { allHooks } from './src/objects/hooks.js';
 
 /**
  * HotCLM — contract lifecycle management on ObjectStack.
@@ -30,4 +31,8 @@ export default defineStack({
   requires: ['ui'],
 
   objects: Object.values(objects),
+  // Lifecycle hooks (numbering, type-derived stamps, the state machines and
+  // the display_name mirrors). A metadata `Hook` is only registered from
+  // here — `hooks` is a top-level stack key, not an object key.
+  hooks: allHooks,
 });
