@@ -12,3 +12,5 @@ export { Deviation } from './deviation.object.js';
 export { Signature } from './signature.object.js';
 
 // Post-signature domain — card 03.
+export { Obligation } from './obligation.object.js';
+export { PaymentPlan } from './payment-plan.object.js';
