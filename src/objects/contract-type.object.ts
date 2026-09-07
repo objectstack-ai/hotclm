@@ -3,19 +3,21 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
 /**
  * A contract type IS a workflow definition (DESIGN.md §02, Ironclad's
  * Workflow Designer): which optional intake fields the launch form shows,
- * whether legal reviews it, whether it must be sealed, how it is signed, and
- * the template the first version is drafted from. Adding a kind of contract
- * is adding a row here, not a flow.
+ * whether legal reviews it, how it is executed and which execution
+ * formalities activation waits for, and the template the first version is
+ * drafted from. Adding a kind of contract is adding a row here, not a flow.
  *
- * Industry-neutral by rule: the eight seeded types (NDA, sales, purchase,
- * service, lease, labor, framework, amendment) are data, not schema.
+ * Industry- and region-neutral by rule: the seeded types (NDA, MSA, SOW,
+ * order form, supplier agreement, DPA, lease, contractor, amendment) are
+ * data, not schema; a company seal is one execution formality among
+ * notarization, witnessing and countersignature, not a module.
  */
 export const ContractType = ObjectSchema.create({
   name: 'clm_contract_type',
   label: 'Contract Type',
   pluralLabel: 'Contract Types',
   icon: 'file-cog',
-  description: 'A kind of contract and the workflow it runs: intake fields, review, sealing, signing method, template.',
+  description: 'A kind of contract and the workflow it runs: intake fields, review, execution method and formalities, template.',
 
   // A configuration dictionary is useless if it is not readable by everyone
   // who launches a contract. Write access is withheld from every non-admin
@@ -67,8 +69,9 @@ export const ContractType = ObjectSchema.create({
         { label: 'Purchase',             value: 'purchase' },
         { label: 'Service',              value: 'service' },
         { label: 'Lease',                value: 'lease' },
-        { label: 'Labor',                value: 'labor' },
+        { label: 'Employment / Contractor', value: 'employment' },
         { label: 'Framework',            value: 'framework' },
+        { label: 'Data Processing (DPA)', value: 'dpa' },
         { label: 'Amendment',            value: 'amendment' },
         { label: 'Other',                value: 'other', default: true },
       ],
@@ -98,19 +101,26 @@ export const ContractType = ObjectSchema.create({
       defaultValue: true,
       description: 'When off, a submitted contract of this type goes straight to approval (DESIGN.md §03 状态机).',
     }),
-    requires_seal: Field.boolean({
-      label: 'Requires Seal',
+    execution_formalities: Field.select({
+      label: 'Execution Formalities',
       group: 'workflow',
-      defaultValue: true,
-      description: 'Activation waits for a completed seal request when on.',
+      multiple: true,
+      description: 'Formalities activation waits for, recorded on the signature record. Company seal, notarization and witnessing are regional or deed-type requirements; most types need none.',
+      options: [
+        { label: 'Countersigned copy returned', value: 'countersigned_copy' },
+        { label: 'Company seal',                value: 'company_seal' },
+        { label: 'Notarized',                   value: 'notarized' },
+        { label: 'Witnessed',                   value: 'witnessed' },
+      ],
     }),
     sign_method: Field.select({
       label: 'Signing Method',
       group: 'workflow',
+      description: 'How this type is normally executed. E-signature goes through the configured provider (DocuSign, Adobe Acrobat Sign, Dropbox Sign, or a regional provider); wet ink records an uploaded executed copy.',
       options: [
-        { label: 'E-signature',       value: 'esign' },
+        { label: 'E-signature',       value: 'esign', default: true },
         { label: 'Wet ink',           value: 'wet_ink' },
-        { label: 'Either',            value: 'both', default: true },
+        { label: 'Either',            value: 'either' },
       ],
     }),
     review_sla_days: Field.number({
@@ -120,7 +130,7 @@ export const ContractType = ObjectSchema.create({
       min: 0,
       max: 90,
       defaultValue: 5,
-      description: 'Working days legal has to finish review before the overdue reminder fires (F3).',
+      description: 'Calendar days legal has to finish review before the overdue reminder fires (F3).',
     }),
 
     template_file: Field.file({

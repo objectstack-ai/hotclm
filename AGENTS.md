@@ -11,7 +11,7 @@
 ## Project context
 
 An **ObjectStack** application: contract lifecycle management (intake → review → approval → signing
-and sealing → obligations and payments → renewal and archive) defined as typed metadata. A sellable
+and execution formalities → obligations and payments → renewal and archive) defined as typed metadata. A sellable
 standard product, not a starter: every customer-specific need goes through `docs/requirements/`
 triage (A already supported · B standard enhancement · C customer overlay · D decline) before it
 touches `src/`.
@@ -48,7 +48,10 @@ Paste the three green tails into the PR body.
 | Exports | `PascalCase`, barrel via `Object.values()` | `export { Contract } from './contract.object.js'` |
 
 - **Industry-neutral, always.** No vertical vocabulary in any object, field, option value or label.
-  Contract types, approval thresholds, seal kinds, payment terms and signing entities live in seed data.
+  Contract types, approval thresholds, execution formalities, currencies, payment terms and signing entities live in seed data.
+- **Global by default.** English is the default locale and the source of every label; `zh-CN` is a full second bundle.
+  Nothing in schema, option values or defaults assumes one country: a region-specific requirement is an
+  execution formality, a seed row or a connector, never a hard-coded path.
 - **Reserved platform words — never as field names:** `role`, `position`, `permission_set`,
   `business_unit` (ADR-0090 D3; `validate` refuses them as `security-role-word`). Use a domain word.
 - **Never set `namespace` or `tableName` on an object.** Prefix lives in `name`.
@@ -72,7 +75,7 @@ src/objects/            clm_*.object.ts + *.hook.ts    src/profiles/ src/sharing
 src/views/ src/pages/   *.view.ts / *.page.ts          src/flows/                  F1–F15 (DESIGN.md §06)
 src/apps/               one App, five audience groups  src/skills/                 S1–S4 (DESIGN.md §07)
 src/datasets/ src/dashboards/  analytics               src/mappings/               import projections
-src/translations/       zh-CN (default), en            src/data/                   demo-zh/ · demo-en/
+src/translations/       en (default), zh-CN            src/data/                   demo-en/ · demo-zh/
 docs/backlog/           work cards                     docs/requirements/          customer requirement triage
 ```
 

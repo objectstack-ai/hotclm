@@ -1,10 +1,13 @@
-# S1–S4 skills with honest degradation
+# AI participation: S1–S6 skills, the pre-review memo, MCP tool surface, honest degradation
 
 Milestone: M4 · Labels: `pm:queue` · Blocked-by: 05
 
 ## Scope
-`src/skills/{extract-terms,review-summary,deviation-check,contract-qa}.skill.ts`; the actions they call;
-UI affordances gated on the `ai` capability being present at runtime.
+`src/skills/{extract-terms,review-summary,deviation-check,contract-qa,obligation-extract,approver-memo}.skill.ts`;
+the `ai.exposed` actions they call; the `ai_summary` / `ai_risk_score` / `ai_risk_rationale` / `ai_reviewed_at`
+fields on `clm_contract` (proposed by S6, written only on confirmation); the MCP tool surface (launch, status,
+obligations due, search) — see DESIGN.md §07 for the full map and the governance rules; UI affordances gated on
+the `ai` capability being present at runtime.
 
 ## Spec — DESIGN.md §07
 Skills-only surface attached to the platform `ask` assistant by `surface` (ADR-0063); no app agents.

@@ -13,7 +13,7 @@ type's `intake_fields` lists (`visibleWhen`/`requiredWhen` on the screen fields)
 tick "draft from template" (which attaches the type's `template_file` as version 1 with kind `draft`) →
 create `clm_contract` (`draft`) + `clm_contract_version` v1 → optional "submit now" toggle → `submitted`.
 Declare `ai: { exposed: true }` with every input as an `isInput` variable so MCP can complete it headlessly.
-F2 (hook, entering `submitted`): stamp category/direction/requires_seal; evaluate active
+F2 (hook, entering `submitted`): stamp category/direction/execution_formalities; evaluate active
 `clm_approval_rule` rows (category ∈ applies_to or empty; direction match or `any`; amount band;
 `only_with_deviation`) and stamp the union of `route_*`; `submitted_at`; if the type requires legal review,
 assign `legal_owner` round-robin among holders of `clm_legal_counsel` by open-contract count and enter

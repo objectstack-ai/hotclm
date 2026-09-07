@@ -13,8 +13,7 @@ one flow.
 F8 dispatch: durable `http` node (`durable: true`) posting the current `clean` version and the signers
 to the configured provider; callback is an `api`-triggered flow that maps envelope status to
 `esign_status`, creates the `final_signed` version and stamps `signed_at` on completion. No e-signature
-engine is built here — the platform has none (spec 17). Providers: Docusign first; 契约锁 / 法大大 /
-e签宝 as further connector definitions with the same contract.
+engine is built here — the platform has none (spec 17). Providers: DocuSign first, then Adobe Acrobat Sign and Dropbox Sign; regional providers (e.g. 契约锁, 法大大, e签宝 for China) are further connector definitions with the same contract, shipped as region packs.
 F15: `record_change` on `crm_contract` entering `in_approval` creates `clm_contract` (direction `sales`,
 party find-or-create from `crm_account`, amount/dates pre-filled, `crm_contract` back-link).
 

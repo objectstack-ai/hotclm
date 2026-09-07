@@ -15,7 +15,7 @@ export default defineStack({
     version: '0.1.0',
     type: 'app',
     name: 'HotCLM',
-    description: 'Contract lifecycle management — intake, review, approval, signing, obligations and archive.',
+    description: 'Contract lifecycle management — intake, review, approval, execution, obligations and archive. Global by default, AI-assisted under governance.',
     // Protocol major this app is authored against. The runtime checks the
     // range at load time and refuses a major-incompatible runtime with a
     // structured diagnostic instead of failing deep in a schema parse.
