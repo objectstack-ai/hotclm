@@ -67,7 +67,7 @@ thirty days and the arrears lists are always in arrears.
 
 ### Users are not seeded — create them, then assign these positions
 
-A seed cannot create a user, so the demo runs entirely as the dev admin. To see
+A seed cannot create a user, so `pnpm demo` produces exactly one account. To see
 the permission model of [DESIGN.md](./DESIGN.md) §04 do anything, create
 accounts in **Setup → Users** and assign the seven positions:
 
@@ -81,9 +81,24 @@ accounts in **Setup → Users** and assign the seven positions:
 | `clm_records_manager` | 1 | Execution formalities, the executed copy and the archive number |
 | (business requesters) | 3 | The default `clm_requester` set — launches contracts, sees their own |
 
-Until those exist, `clm_review.reviewer`, `clm_obligation.owner` and
-`clm_contract.legal_owner` all point at the demo admin, which is the only
-account in the database. Reassign them once the real accounts are there.
+**Name the three business requesters exactly** `Business Requester 1`,
+`Business Requester 2` and `Business Requester 3`. The 120 contracts are dealt
+across those three names by counterparty — 43 / 43 / 34 — so each one's
+**我的合同 › Launched by Me** fills the moment the account exists. `owner_id` is
+optional, so naming an account that is not there yet costs nothing and no row:
+it simply stays empty. Every dataset is an upsert, so **create the accounts and
+run `pnpm demo` again** and their contracts are handed over.
+
+The dev admin is deliberately not one of them: it holds no `clm_*` permission
+set, so `clm_requester.access` hides every 我的合同 item from it and
+`GET /api/v1/meta/app/clm` serves it `navigation: []`. Contracts parked there
+would belong to the one account that cannot open the screen they are for.
+
+`clm_review.reviewer`, `clm_obligation.owner` and `clm_contract.legal_owner`
+point at the dev admin instead, and have to: `reviewer` is required, so a name
+that resolves to nothing takes the row with it, and the dev admin is the only
+account that exists while the seed runs. Reassign them once the real accounts
+are there.
 
 ### What the seeded rows do NOT carry, and why
 

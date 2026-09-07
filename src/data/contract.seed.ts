@@ -6,7 +6,7 @@ import { Contract } from '../objects/contract.object.js';
 
 import { dayOffset } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
-import { contractTitle, titleOfIndex, DEMO_USER } from './keys.js';
+import { contractTitle, ownerOf, titleOfIndex, DEMO_USER } from './keys.js';
 import { CONTRACT_PLAN, lawOf, typeOf, type ContractPlan } from './plan-contracts.js';
 
 /**
@@ -74,9 +74,31 @@ export const contractSeed = defineSeed(Contract, {
       status: contract.status,
       our_entity: 'head_office' as const,
       department: type.department,
-      // `owner_id` is left to the platform: a seed cannot name a user that
-      // does not exist when it runs, and the runtime claims ownerless seeded
-      // rows for the dev admin once that account is minted (measured).
+      // `owner_id` names a user the way `legal_owner` on the next line does —
+      // a `lookup('sys_user')` resolved against `sys_user.name` by the two-boot
+      // handover `scripts/demo.mjs` sequences. It replaces two claims that
+      // stood here and were both false; each was re-measured on 17.3.0 before
+      // this line was written, because a `(measured)` annotation that is not
+      // one is worse than no comment at all.
+      //
+      //  - "a seed cannot name a user": it can, and this file already did on
+      //    the next line. A name that no account carries resolves to nothing
+      //    and lands NULL, silently — it never refuses the row.
+      //  - "the runtime claims ownerless seeded rows for the dev admin once
+      //    that account is minted": the routine is real
+      //    (`claimSeedOwnership`, `@objectstack/plugin-security`) but it runs
+      //    on exactly one path — the boot that PROMOTES the first human to
+      //    platform admin. Under `pnpm demo` that is the PRIMING boot, which
+      //    runs with the demo off and has no contract to claim; the demo boot
+      //    then reports `adminPromoted: false, reason: "already_have_admin"`
+      //    and claims nothing. Measured both ways on one database: a single
+      //    boot with the demo on logs `adminPromoted: true, ownershipClaimed:
+      //    260` and owns all 120, `pnpm demo`'s second boot leaves all 120
+      //    NULL. The annotation was true of the world before the two-boot
+      //    handover landed, and that handover is what turned it off.
+      //
+      // Which requester owns which contract is {@link ownerOf} in `keys.ts`.
+      owner_id: ownerOf(contract),
       legal_owner: contract.hasLegalOwner ? DEMO_USER : null,
 
       amount: contract.amount,
