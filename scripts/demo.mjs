@@ -64,6 +64,12 @@ const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
  * The account name the fixture's `clm_review.reviewer`, `clm_obligation.owner`
  * and `clm_contract.legal_owner` references resolve against.
  *
+ * NOT `clm_contract.owner_id`: that one names the three business-requester
+ * accounts of DESIGN.md §10, which no seed may create and this script does not
+ * mint. It can afford to — `owner_id` is optional, so a name with no account
+ * lands NULL and the row survives — where `reviewer` is `required: true` and
+ * must name an account that exists while the seed runs. See `src/data/keys.ts`.
+ *
  * ⚠️ This MIRRORS `DEMO_USER` in `src/data/keys.ts`. They have to agree, and
  * they cannot be one constant: this file is plain `.mjs` that runs before
  * anything is compiled, and that one is TypeScript baked into the artifact.
@@ -291,5 +297,15 @@ console.log('  1/2  preparing an admin account and the organization (quiet, a fe
 await primeAdminAccount();
 console.log('  1/2  done — admin account ready.');
 console.log('  2/2  starting HotCLM with the demo group loaded…');
+console.log('');
+// The one thing about this fixture an evaluator cannot see from the app: every
+// contract is launched by one of the three business-requester accounts
+// DESIGN.md §10 has the operator create, and no seed may create a user (§10).
+// Said here rather than left to be discovered, because a name no account
+// carries resolves to NULL in silence — no error, no boot warning.
+console.log('  Every contract is launched by one of the three business requesters DESIGN.md');
+console.log('  §10 asks you to create — no seed may create a user, so until those accounts');
+console.log('  exist the contracts have no owner and 我的合同 stays empty. Add them in Setup');
+console.log('  → Users and run this again; the README names them and says who gets what.');
 console.log('');
 startDemo();
