@@ -67,21 +67,29 @@ export default defineStack({
   // unavailable"), because the automation service is never resolved.
   //
   // `approvals` is the Approval NODE (ADR-0019): `@objectstack/plugin-approvals`
-  // registers the executor that opens `sys_approval_request`, holds the
-  // record lock, mirrors the decision onto `approval_status` and resumes the
-  // run down the matching branch label. Without it the ladder's six approval
-  // nodes have no executor. Card 06.
+  // registers the executor that opens `sys_approval_request`, holds the record
+  // lock, mirrors the decision onto `approval_status` and resumes the run down
+  // the matching branch label. MEASURED on 17.3.0, both directions, each boot
+  // from a freshly built artifact (a stale `dist/objectstack.json` carries the
+  // OLD `requires` and answers this question wrong): declared ⇒
+  // `ApprovalsServicePlugin` is in the boot roster; omitted ⇒ it is absent,
+  // and the ladder's first rung dies with `NO_EXECUTOR: No executor registered
+  // for node type 'approval'`. That failure is invisible from the outside —
+  // the submitting PATCH still answers 200 and the contract sits in
+  // `in_approval` with `approval_status: not_required`, no request, no lock,
+  // no approver — which is exactly why the token is declared rather than
+  // discovered.
   //
   // `messaging` backs the `notify` node (ADR-0012) — F5 tells the contract
   // owner about both terminal outcomes, F7 names the missing execution
-  // formality to the legal owner. Measured on 17.3.0, and the measurement is
-  // worth recording because it cuts the other way from the rest of this list:
-  // `messaging` is in `PLATFORM_ALWAYS_ON_CAPABILITIES`, which `serve` appends
-  // to `requires` for every non-`minimal` preset — so omitting it would have
-  // changed NOTHING on a local boot and the notify nodes would have delivered
-  // anyway. It is declared because the app must state what it means (a runtime
-  // that does not carry that always-on slate would degrade the notify node to
-  // a logged no-op), not because a gate caught it.
+  // formality to the legal owner. Measured the same way, and the answer cuts
+  // the other way: with `messaging` REMOVED from this list,
+  // `MessagingServicePlugin` still loads and the notify nodes still deliver.
+  // It is in `PLATFORM_ALWAYS_ON_CAPABILITIES`, which `serve` appends for
+  // every non-`minimal` preset, so no gate here has teeth. It is declared
+  // because the app must state what it MEANS — a runtime that does not carry
+  // that always-on slate degrades the notify node to a logged no-op — not
+  // because anything caught its absence.
   //
   // `triggers` was the token card 05's note deferred to "the first card that
   // authors a flow a trigger launches (F5 in card 06)" — and this is that

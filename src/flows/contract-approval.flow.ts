@@ -116,13 +116,22 @@ const when = (...clauses: string[]) => expression(clauses.join(' && '));
  * flags, returns four booleans, and touches nothing else.
  *
  * It exists because a stored boolean does not arrive as one shape. The
- * automation engine's own re-entrancy warning states it: "booleans persist as
- * 0/1 on SQLite/libsql and CEL `1 != true` is true". So an edge written
- * `vars.contractRecord.route_gm == true` reads FALSE against a driver that
- * answers `1`, and the general-manager rung is skipped with no error anywhere
- * — the silent mis-route this ladder must not have. Coercing once, in one
- * place, makes every downstream edge read a real boolean whatever the driver
- * stores.
+ * automation engine says so in its own re-entrancy warning: "booleans persist
+ * as 0/1 on SQLite/libsql and CEL `1 != true` is true". An edge written
+ * `vars.contractRecord.route_gm == true` would then read FALSE, the
+ * general-manager rung would be skipped, and nothing anywhere would say so —
+ * the silent mis-route this ladder must not have.
+ *
+ * MEASURED on this deployment (better-sqlite3, 17.3.0), both ends: the column
+ * really does store `1` (`SELECT route_gm FROM clm_contract` → `1`, a JS
+ * number), and the data engine's READ coerces it to a real boolean before it
+ * reaches a flow (`GET /api/v1/data/clm_contract/<id>` → `"route_gm": true`,
+ * typeof boolean). So on this driver the coercion below is a no-op and a bare
+ * `== true` edge would have worked. It stays because the property that makes
+ * it a no-op is the READ path's, not the flag's: the engine's warning names
+ * drivers where the raw `1` reaches CEL, and the cost of being wrong there is
+ * a rung that is silently not climbed. One coercion, in one place, is what
+ * makes the six edges below driver-independent.
  *
  * This is a NORMALISATION, not a derivation: no rule is read, no threshold is
  * compared, no flag is invented. `false` in is `false` out.
@@ -363,10 +372,15 @@ export const ContractApprovalFlow: Flow = {
         severity: 'warning',
         topic: 'clm_contract_rejected',
         title: 'Contract rejected: {contractRecord.title}',
-        // §03: `rejected → draft` 修改重提 — the requester's way forward, and
-        // the reason the notification says what to do rather than only what
-        // happened.
-        message: 'Your contract {contractRecord.title} was rejected in approval. Read the approver\'s comment on the approval record, then return the contract to draft to rework and resubmit it.',
+        // §03's way forward is `rejected → draft` 修改重提 — but the copy does
+        // NOT tell the owner to do it themselves, because measured against
+        // card 04's row window they cannot: §04 lets a requester edit their
+        // own contract only while it is `draft` or `submitted`, so the same
+        // PATCH that legal answers 200 answers the owner 403 on a `rejected`
+        // contract. Naming the person who can act is the honest instruction;
+        // whether §03 and §04 should agree here is a maintainer decision this
+        // card files rather than settles.
+        message: 'Your contract {contractRecord.title} was rejected in approval. The approver\'s comment is on the approval record. Ask legal to return the contract to draft if you want to rework and resubmit it.',
         sourceObject: 'clm_contract',
         sourceId: '{record.id}',
       },
