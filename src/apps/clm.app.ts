@@ -40,7 +40,9 @@ import { App } from '@objectstack/spec/ui';
  *   to mean here, and the only place they are edited is the Setup app's field
  *   editor. Reported rather than invented: giving them an object is a data-model
  *   decision, not a view.
- * - **报表** (管理) is card 10. No `reports:` metadata exists yet, and a
+ * - **报表** (管理) is still absent. Card 10 landed §09's four datasets and
+ *   three DASHBOARDS, which the 分析 group below points at with
+ *   `type: 'dashboard'` items; no `reports:` metadata exists yet, and a
  *   `type: 'report'` item naming a report that does not exist is a dead row.
  */
 export const ClmApp = App.create({
@@ -177,6 +179,96 @@ export const ClmApp = App.create({
         { id: 'nav_pending_execution', type: 'object', objectName: 'clm_contract', viewName: 'pending_execution', label: 'Awaiting Execution', icon: 'stamp' },
         { id: 'nav_pending_archive',   type: 'object', objectName: 'clm_contract', viewName: 'pending_archive',   label: 'Awaiting Archive',   icon: 'folder-input' },
         { id: 'nav_register',          type: 'object', objectName: 'clm_contract', viewName: 'contract_register', label: 'Contract Register',  icon: 'table' },
+      ],
+    },
+
+    {
+      /**
+       * 分析 — DESIGN.md §09's three dashboards, one row each.
+       *
+       * ## The gate is `clm_requester.access`, and it is the ONLY spelling that
+       * ## reaches every audience these three boards are written for
+       *
+       * `requiredPermissions` is **AND, not OR**. Measured, not assumed — the
+       * authoritative server-side filter is `filterAppForUserWithReason`
+       * (`@objectstack/rest` 17.3.0), and its nav clause reads:
+       *
+       *     const req = Array.isArray(e.requiredPermissions) ? e.requiredPermissions : [];
+       *     if (req.length > 0 && !req.every((p) => sysPerms.has(p))) continue;
+       *
+       * `req.every(...)`. So the intuitive "one row per audience, gated by that
+       * audience" — `['clm_legal.access', 'clm_finance.access', ...]` — would
+       * require a user to hold ALL of them and would hide the group from
+       * EVERYONE. No account in this app holds two `*.access` capabilities.
+       * That is this card's own trap in a third costume: a union that reads as
+       * generous and gates to nothing.
+       *
+       * What the five sets actually grant (card 04, `src/profiles/`): each one
+       * carries exactly ONE `clm_*.access` and never another's — `clm_admin`'s
+       * `systemPermissions` are `clm_admin.access` plus six action gates, so an
+       * administrator does NOT hold `clm_legal.access`. The one capability every
+       * CLM audience shares is `clm_requester.access`, because
+       * `bind-position-sets.ts` binds `RequesterSet` to *every* position:
+       *
+       *     ...Object.values(CLM_POSITION).map((position) => [position, RequesterSet.name])
+       *
+       * PR #25's audience matrix is the measurement: 我的合同, gated on exactly
+       * this capability, is served to legal, finance, records, clm_admin and an
+       * employee with no position — and withheld from the platform admin, which
+       * holds no CLM set at all. That last one is the control that proves the
+       * gate is a gate and not a no-op.
+       *
+       * ⚠️ This gate reaches every CLM user, a plain business requester
+       * included, so it is only correct if a DATASET QUERY is row-level scoped
+       * to the person asking. Scoped and unscoped look identical from outside —
+       * a board renders numbers either way — so it was measured, with a
+       * POSITIVE CONTROL rather than inferred from a zero (a broken query
+       * returns zero too).
+       *
+       * An account holding `clm_requester` and NO position (card 07's "employee
+       * with no position", which §04 lets read 0 contracts), against `clm_admin`,
+       * on the same two measures, before and after that employee created one
+       * contract of their own worth 4,242:
+       *
+       *                       contract_count / total_amount     instalments / overdue
+       *     before  employee            0 /            0             0 /         0
+       *             clm_admin         120 /   61,041,000           300 / 2,176,250
+       *     after   employee            1 /        4,242             0 /         0
+       *             clm_admin         121 /   61,045,242           300 / 2,176,250
+       *
+       * SCOPED. The employee's total moved to exactly their own contract and no
+       * further; the administrator's moved to the company total INCLUDING it.
+       * Same instant, same tiles, 4,242 against 61,045,242. The move is also
+       * what rules out a false negative: that account's query demonstrably
+       * works, because it answered a correct non-zero the moment there was
+       * something it was allowed to see.
+       *
+       * So the same board is a personal view for a requester and a company view
+       * for the CFO — the analytics runtime scopes per joined object (ADR-0021
+       * D-C), visible in the generated SQL as a
+       * `WHERE "clm_payment_plan"."contract" IN (...)` clause.
+       *
+       * Narrowing the ROWS is what this app can express; narrowing the NAV per
+       * audience needs an OR the platform does not have, and inventing a
+       * per-board capability would be a §04 change this card does not own.
+       *
+       * `type: 'dashboard'` + `dashboardName`, the only shape
+       * `DashboardNavItemSchema` accepts. Each name matches a dashboard
+       * registered in `objectstack.config.ts`; a name that matched nothing
+       * would be the same dead row the 报表 note above refuses — and that is
+       * enforced, not hoped: `validate` exits 1 with "App 'clm' navigation
+       * references dashboard '…' which is not defined in dashboards."
+       */
+      id: 'group_analytics',
+      type: 'group',
+      label: 'Analytics',
+      icon: 'chart-line',
+      expanded: true,
+      requiredPermissions: ['clm_requester.access'],
+      children: [
+        { id: 'nav_legal_workbench',    type: 'dashboard', dashboardName: 'legal_workbench',    label: 'Legal Workbench',    icon: 'scale' },
+        { id: 'nav_executive_overview', type: 'dashboard', dashboardName: 'executive_overview', label: 'Executive Overview', icon: 'trending-up' },
+        { id: 'nav_finance_overview',   type: 'dashboard', dashboardName: 'finance_overview',   label: 'Finance Overview',   icon: 'banknote' },
       ],
     },
 
