@@ -218,27 +218,35 @@ export const ClmApp = App.create({
        * holds no CLM set at all. That last one is the control that proves the
        * gate is a gate and not a no-op.
        *
-       * ⚠️ So the ROW is reachable by every CLM user, and what each of them then
-       * SEES is narrowed by RLS rather than by the sidebar. Measured on this
-       * branch, same dataset query (`payment_metrics`, `overdue_amount` +
-       * `instalment_count`), four readers:
+       * ⚠️ This gate reaches every CLM user, a plain business requester
+       * included, so it is only correct if a DATASET QUERY is row-level scoped
+       * to the person asking. Scoped and unscoped look identical from outside —
+       * a board renders numbers either way — so it was measured, with a
+       * POSITIVE CONTROL rather than inferred from a zero (a broken query
+       * returns zero too).
        *
-       *     platform admin              300 instalments / 2,176,250 overdue
-       *     clm_admin                   300 instalments / 2,176,250 overdue
-       *     finance                       0 /         0
-       *     executive (requester only)    0 /         0
+       * An account holding `clm_requester` and NO position (card 07's "employee
+       * with no position", which §04 lets read 0 contracts), against `clm_admin`,
+       * on the same two measures, before and after that employee created one
+       * contract of their own worth 4,242:
        *
-       * The scope is real and per-reader — the analytics runtime scopes per
-       * joined object (ADR-0021 D-C), visible in the generated SQL as a
-       * `WHERE "clm_payment_plan"."contract" IN (...)` clause. What it is NOT
-       * is a claim about the shipped product's numbers: those two zeroes come
-       * from how the test accounts were provisioned (permission sets granted
-       * directly, so the §04 sharing rules — which grant by POSITION — never
-       * materialised for them), on top of `owner_id` being NULL on all 120
-       * seeded contracts (#28). PR #25's position-provisioned users read 120 /
-       * 82 / 78. Recorded this way because "a requester sees only their own"
-       * is the kind of runtime claim that is easy to assert and was worth
-       * measuring.
+       *                       contract_count / total_amount     instalments / overdue
+       *     before  employee            0 /            0             0 /         0
+       *             clm_admin         120 /   61,041,000           300 / 2,176,250
+       *     after   employee            1 /        4,242             0 /         0
+       *             clm_admin         121 /   61,045,242           300 / 2,176,250
+       *
+       * SCOPED. The employee's total moved to exactly their own contract and no
+       * further; the administrator's moved to the company total INCLUDING it.
+       * Same instant, same tiles, 4,242 against 61,045,242. The move is also
+       * what rules out a false negative: that account's query demonstrably
+       * works, because it answered a correct non-zero the moment there was
+       * something it was allowed to see.
+       *
+       * So the same board is a personal view for a requester and a company view
+       * for the CFO — the analytics runtime scopes per joined object (ADR-0021
+       * D-C), visible in the generated SQL as a
+       * `WHERE "clm_payment_plan"."contract" IN (...)` clause.
        *
        * Narrowing the ROWS is what this app can express; narrowing the NAV per
        * audience needs an OR the platform does not have, and inventing a
