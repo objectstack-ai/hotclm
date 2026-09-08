@@ -21,6 +21,47 @@ import type { Page } from '@objectstack/spec/ui';
  * a sibling — HotCRM's AGENTS.md records that every `record:related_list`
  * filter under its own `src/pages/` is one of the rejected forms.
  *
+ * ## Why 22 labels on this page are inline `{ en, 'zh-CN' }` maps (card 11)
+ *
+ * `I18nLabelSchema` authorizes two forms for a display label: a plain string
+ * whose translations live in a bundle, and an inline locale map picked at
+ * render time. Everything else this repo authors uses the first form —
+ * translators never open a `*.object.ts` — and this page uses the second,
+ * because for these 22 strings THE FIRST FORM HAS NO KEY.
+ *
+ * Measured, not assumed. `walkAddressedPageComponents` (`@objectstack/spec`
+ * 17.3.0) is the traversal `translatePage` runs to decide what
+ * `pages.<name>.components.<id>.*` addresses, and it addresses **zero**
+ * components on this page:
+ *
+ *     import { walkAddressedPageComponents } from '@objectstack/spec/system';
+ *     let n = 0; walkAddressedPageComponents(ContractDetailPage, (c) => (n++, c));
+ *     // -> 0        (21 components and tab labels are authored below)
+ *
+ * Two independent reasons, either of which alone is enough. The walk's roots
+ * are `regions[].components[]` and this page is `kind: 'slotted'`, so its
+ * `slots` are not roots at all. And the descent is `properties.children` only,
+ * so `page:tabs` `items[].children` would be out of reach even on a regions
+ * page — which also means a TAB LABEL (`items[].label`) has no bundle key on
+ * any page, of any kind.
+ *
+ * So `pages.contract_detail` carries exactly two bundle keys, `label` and
+ * `description`, and the seven tab labels, seven path stages, seven related-list
+ * titles and one block label below could not be translated by a bundle if one
+ * were written. The inline map is the spec's own ruled route for page copy the
+ * bundle cannot address, not a workaround for it — `translation.zod.ts` says so
+ * where it declines to add `content` to the page-component key face: "The
+ * inline locale map is the ruled route for page prose".
+ *
+ * ⚠️ THE GATE CANNOT SEE THESE. `os i18n check` counts bundle keys, and an
+ * inline map is invisible to it (the extractor skips a label already in map
+ * form — it is multilingual, so no key is scaffolded). Adding an eighth tab
+ * with a plain-string label would therefore ship an English tab on a zh-CN
+ * console and `pnpm lint:i18n-gate` would stay green. The section labels one
+ * level down are NOT in this class and are deliberately left as plain strings:
+ * they carry `name`, which resolves `objects.clm_contract._sections.<name>.label`
+ * from the bundle, and the gate does cover those.
+ *
  * ## What §05 asks for that this page renders differently, and why
  *
  * - **版本（timeline）** — the page-component vocabulary has no timeline
@@ -109,13 +150,13 @@ export const ContractDetailPage: Page = {
         properties: {
           statusField: 'status',
           stages: [
-            { value: 'draft', label: 'Draft' },
-            { value: 'submitted', label: 'Submitted' },
-            { value: 'in_review', label: 'In Review' },
-            { value: 'in_approval', label: 'In Approval' },
-            { value: 'approved', label: 'Approved' },
-            { value: 'signing', label: 'Signing' },
-            { value: 'active', label: 'Active', terminal: 'won' },
+            { value: 'draft', label: { en: 'Draft', 'zh-CN': '草稿' } },
+            { value: 'submitted', label: { en: 'Submitted', 'zh-CN': '已提交' } },
+            { value: 'in_review', label: { en: 'In Review', 'zh-CN': '审查中' } },
+            { value: 'in_approval', label: { en: 'In Approval', 'zh-CN': '审批中' } },
+            { value: 'approved', label: { en: 'Approved', 'zh-CN': '已批准' } },
+            { value: 'signing', label: { en: 'Signing', 'zh-CN': '签署中' } },
+            { value: 'active', label: { en: 'Active', 'zh-CN': '生效中' }, terminal: 'won' },
           ],
         },
       },
@@ -139,7 +180,7 @@ export const ContractDetailPage: Page = {
           {
             // 概要
             value: 'overview',
-            label: 'Overview',
+            label: { en: 'Overview', 'zh-CN': '概要' },
             children: [
               {
                 type: 'record:details',
@@ -204,7 +245,7 @@ export const ContractDetailPage: Page = {
           {
             // 版本 — newest first; see the file header on §05's "(timeline)".
             value: 'versions',
-            label: 'Versions',
+            label: { en: 'Versions', 'zh-CN': '版本' },
             children: [
               {
                 type: 'record:related_list',
@@ -212,7 +253,7 @@ export const ContractDetailPage: Page = {
                 properties: {
                   objectName: 'clm_contract_version',
                   relationshipField: 'contract',
-                  title: 'Versions',
+                  title: { en: 'Versions', 'zh-CN': '版本' },
                   columns: ['display_name', 'version_no', 'kind', 'turn', 'is_current', 'file', 'submitted_by', 'created_at'],
                   sort: [{ field: 'version_no', order: 'desc' }],
                   limit: 20,
@@ -224,7 +265,7 @@ export const ContractDetailPage: Page = {
             // 审查与偏离 — the two objects legal works in, on one tab because
             // a deviation only means anything beside the review that raised it.
             value: 'review',
-            label: 'Review & Deviations',
+            label: { en: 'Review & Deviations', 'zh-CN': '审查与偏离' },
             children: [
               {
                 type: 'record:related_list',
@@ -232,7 +273,7 @@ export const ContractDetailPage: Page = {
                 properties: {
                   objectName: 'clm_review',
                   relationshipField: 'contract',
-                  title: 'Reviews',
+                  title: { en: 'Reviews', 'zh-CN': '审查' },
                   columns: ['display_name', 'stage', 'reviewer', 'decision', 'risk_level_assessed', 'started_at', 'decided_at'],
                   sort: [{ field: 'started_at', order: 'desc' }],
                   limit: 10,
@@ -244,7 +285,7 @@ export const ContractDetailPage: Page = {
                 properties: {
                   objectName: 'clm_deviation',
                   relationshipField: 'contract',
-                  title: 'Deviations',
+                  title: { en: 'Deviations', 'zh-CN': '偏离' },
                   columns: ['display_name', 'clause', 'requested_position', 'status', 'decided_by', 'decided_at'],
                   sort: [{ field: 'created_at', order: 'desc' }],
                   limit: 10,
@@ -259,7 +300,7 @@ export const ContractDetailPage: Page = {
             // needed: without the filter this list would show every approval
             // request whose `record_id` happens to collide across objects.
             value: 'approvals',
-            label: 'Approvals',
+            label: { en: 'Approvals', 'zh-CN': '审批记录' },
             children: [
               {
                 type: 'record:related_list',
@@ -267,7 +308,7 @@ export const ContractDetailPage: Page = {
                 properties: {
                   objectName: 'sys_approval_request',
                   relationshipField: 'record_id',
-                  title: 'Approval Requests',
+                  title: { en: 'Approval Requests', 'zh-CN': '审批请求' },
                   filter: [{ field: 'object_name', operator: 'equals', value: 'clm_contract' }],
                   sort: [{ field: 'created_at', order: 'desc' }],
                   limit: 10,
@@ -278,7 +319,7 @@ export const ContractDetailPage: Page = {
           {
             // 履约与收付款
             value: 'performance',
-            label: 'Obligations & Payments',
+            label: { en: 'Obligations & Payments', 'zh-CN': '履约与收付款' },
             children: [
               {
                 type: 'record:related_list',
@@ -286,7 +327,7 @@ export const ContractDetailPage: Page = {
                 properties: {
                   objectName: 'clm_obligation',
                   relationshipField: 'contract',
-                  title: 'Obligations',
+                  title: { en: 'Obligations', 'zh-CN': '履约义务' },
                   columns: ['display_name', 'title', 'kind', 'due_date', 'owner', 'status'],
                   sort: [{ field: 'due_date', order: 'asc' }],
                   limit: 10,
@@ -298,7 +339,7 @@ export const ContractDetailPage: Page = {
                 properties: {
                   objectName: 'clm_payment_plan',
                   relationshipField: 'contract',
-                  title: 'Payment Schedule',
+                  title: { en: 'Payment Schedule', 'zh-CN': '收付款计划' },
                   columns: ['display_name', 'seq', 'planned_date', 'planned_amount', 'status', 'actual_date', 'actual_amount', 'invoice_no'],
                   sort: [{ field: 'seq', order: 'asc' }],
                   limit: 12,
@@ -312,7 +353,7 @@ export const ContractDetailPage: Page = {
             // same tab because "is it archived" is a property of the contract,
             // not of a signature row.
             value: 'signing',
-            label: 'Signing & Archive',
+            label: { en: 'Signing & Archive', 'zh-CN': '签署与归档' },
             children: [
               {
                 type: 'record:related_list',
@@ -320,7 +361,7 @@ export const ContractDetailPage: Page = {
                 properties: {
                   objectName: 'clm_signature',
                   relationshipField: 'contract',
-                  title: 'Signature Records',
+                  title: { en: 'Signature Records', 'zh-CN': '签署记录' },
                   columns: ['display_name', 'method', 'provider', 'status', 'formalities_done', 'executed_file', 'completed_at'],
                   sort: [{ field: 'created_at', order: 'desc' }],
                   limit: 10,
@@ -329,7 +370,7 @@ export const ContractDetailPage: Page = {
               {
                 type: 'record:details',
                 id: 'contract_archive_details',
-                label: 'Archive',
+                label: { en: 'Archive', 'zh-CN': '归档' },
                 properties: {
                   columns: '2',
                   sections: [
@@ -357,7 +398,7 @@ export const ContractDetailPage: Page = {
             // is then overridden with an empty array so the synthesized default
             // does not render a second copy of the same panel below the body.
             value: 'discussion',
-            label: 'Discussion',
+            label: { en: 'Discussion', 'zh-CN': '讨论' },
             children: [
               {
                 type: 'record:discussion',

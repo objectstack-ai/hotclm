@@ -178,14 +178,30 @@ function getCoverageReport(locales, fixture) {
       + `stderr:\n${result.stderr ?? '(empty)'}`
     );
   }
+  let report;
   try {
-    return JSON.parse(stdout);
+    report = JSON.parse(stdout);
   } catch (err) {
     throw new Error(
       `\`os i18n check --json\` did not print valid JSON: ${err.message}\n`
       + `--- stdout (first 2000 chars) ---\n${stdout.slice(0, 2000)}`
     );
   }
+
+  // The CLI answers a failed config load with `{"error": "..."}` and no report.
+  // Say so in its own words: the alternative — falling through to "the JSON
+  // shape may have changed" — sends the reader to inspect this gate when the
+  // fault is in the bundle. It is a real path: `apps.<app>.label` and
+  // `apps.<app>.navigation.<id>.label` are the only NON-optional string leaves
+  // in `TranslationData`, so dropping either one fails `defineStack` outright
+  // rather than showing up as a coverage gap.
+  if (typeof report?.error === 'string') {
+    throw new Error(
+      `\`os i18n check --json\` could not load the stack (exit ${result.status}):\n\n`
+      + `${report.error.split('\n').map((l) => `      ${l}`).join('\n')}`
+    );
+  }
+  return report;
 }
 
 /** App-owned issues only. Exported for the unit seam. */
