@@ -7,6 +7,29 @@ import { defineView } from '@objectstack/spec/ui';
  * whole book (a records or legal reader lands there from the record page's
  * related list); `my_obligations` is the personal queue the navigation names.
  */
+/**
+ * ## Why every `description` here carries an inline `{ en, 'zh-CN' }` map (card 11)
+ *
+ * A view's `description` has a bundle key — `objects.<object>._views.<view>.description`
+ * — the bundle authors it, and `pnpm lint:i18n-gate` counts it as covered. The
+ * console does not render it. Measured on 17.3.0 against a zh-CN console, both
+ * legs in the same session:
+ *
+ *   - bundle only:  the tab strip reads 我发起的 (the LABEL resolves from the
+ *     same group, one key over) while the line under the header reads
+ *     "Contracts I launched, grouped by where each one has got to.";
+ *   - inline map:   the same line reads 我发起的合同，按各自进行到哪一步分组。
+ *
+ * So this is a declared, enumerated, authored key that no resolver applies —
+ * and it is invisible to the gate BY BEING COVERED, which is the sharpest form
+ * of the trap card 11 was written around: the coverage report says 100% and the
+ * screen is still half English.
+ *
+ * The bundle entries are kept as well as these maps, deliberately. They are
+ * what the gate counts, and if the resolver is fixed the bundle wins — the
+ * duplication resolves itself rather than having to be unpicked. Reported
+ * upstream; not patched here (AGENTS.md "Platform gaps").
+ */
 export const ObligationViews = defineView({
   list: {
     type: 'grid',
@@ -40,7 +63,7 @@ export const ObligationViews = defineView({
       name: 'my_obligations',
       type: 'grid',
       label: 'My Obligations',
-      description: 'Obligations assigned to me that are not finished, soonest due first.',
+      description: { en: 'Obligations assigned to me that are not finished, soonest due first.', 'zh-CN': '指派给我且尚未完成的义务，快到期的排在前面。' },
       data: { provider: 'object', object: 'clm_obligation' },
       filter: [
         { field: 'owner', operator: 'equals', value: '{current_user_id}' },

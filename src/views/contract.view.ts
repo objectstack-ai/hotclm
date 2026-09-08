@@ -23,6 +23,29 @@ import { defineView } from '@objectstack/spec/ui';
  * path resolves; it is what makes "mine" mean the signed-in person rather than
  * a literal string that matches no row.
  */
+/**
+ * ## Why every `description` here carries an inline `{ en, 'zh-CN' }` map (card 11)
+ *
+ * A view's `description` has a bundle key — `objects.<object>._views.<view>.description`
+ * — the bundle authors it, and `pnpm lint:i18n-gate` counts it as covered. The
+ * console does not render it. Measured on 17.3.0 against a zh-CN console, both
+ * legs in the same session:
+ *
+ *   - bundle only:  the tab strip reads 我发起的 (the LABEL resolves from the
+ *     same group, one key over) while the line under the header reads
+ *     "Contracts I launched, grouped by where each one has got to.";
+ *   - inline map:   the same line reads 我发起的合同，按各自进行到哪一步分组。
+ *
+ * So this is a declared, enumerated, authored key that no resolver applies —
+ * and it is invisible to the gate BY BEING COVERED, which is the sharpest form
+ * of the trap card 11 was written around: the coverage report says 100% and the
+ * screen is still half English.
+ *
+ * The bundle entries are kept as well as these maps, deliberately. They are
+ * what the gate counts, and if the resolver is fixed the bundle wins — the
+ * duplication resolves itself rather than having to be unpicked. Reported
+ * upstream; not patched here (AGENTS.md "Platform gaps").
+ */
 export const ContractViews = defineView({
   /**
    * The whole book, in the order a lawyer scans it: the ones that moved most
@@ -63,7 +86,7 @@ export const ContractViews = defineView({
       name: 'my_contracts',
       type: 'grid',
       label: 'My Contracts',
-      description: 'Contracts I launched, grouped by where each one has got to.',
+      description: { en: 'Contracts I launched, grouped by where each one has got to.', 'zh-CN': '我发起的合同，按各自进行到哪一步分组。' },
       data: { provider: 'object', object: 'clm_contract' },
       filter: [{ field: 'owner_id', operator: 'equals', value: '{current_user_id}' }],
       columns: [
@@ -88,7 +111,7 @@ export const ContractViews = defineView({
       name: 'legal_intake',
       type: 'grid',
       label: 'Awaiting Intake',
-      description: 'Submitted contracts no lawyer has taken yet.',
+      description: { en: 'Submitted contracts no lawyer has taken yet.', 'zh-CN': '已提交但还没有法务接手的合同。' },
       data: { provider: 'object', object: 'clm_contract' },
       filter: [
         { field: 'status', operator: 'equals', value: 'submitted' },
@@ -112,7 +135,7 @@ export const ContractViews = defineView({
       name: 'legal_in_review',
       type: 'grid',
       label: 'My Reviews',
-      description: 'Contracts assigned to me for legal review.',
+      description: { en: 'Contracts assigned to me for legal review.', 'zh-CN': '指派给我做法务审查的合同。' },
       data: { provider: 'object', object: 'clm_contract' },
       filter: [{ field: 'legal_owner', operator: 'equals', value: '{current_user_id}' }],
       columns: [
@@ -136,7 +159,7 @@ export const ContractViews = defineView({
       name: 'negotiating',
       type: 'grid',
       label: 'In Negotiation',
-      description: 'Waiting on the counterparty — oldest turn first.',
+      description: { en: 'Waiting on the counterparty — oldest turn first.', 'zh-CN': '球在对方手上，本轮开始最久的排在前面。' },
       data: { provider: 'object', object: 'clm_contract' },
       filter: [{ field: 'current_turn', operator: 'equals', value: 'counterparty' }],
       columns: [
@@ -161,7 +184,7 @@ export const ContractViews = defineView({
       name: 'status_kanban',
       type: 'kanban',
       label: 'Status Board',
-      description: 'Every contract by lifecycle status.',
+      description: { en: 'Every contract by lifecycle status.', 'zh-CN': '全部合同按生命周期状态排列。' },
       data: { provider: 'object', object: 'clm_contract' },
       columns: ['contract_number', 'title', 'party', 'amount', 'end_date'],
       kanban: {
@@ -181,7 +204,7 @@ export const ContractViews = defineView({
       name: 'expiry_calendar',
       type: 'calendar',
       label: 'Expiry Calendar',
-      description: 'When contracts run out.',
+      description: { en: 'When contracts run out.', 'zh-CN': '合同分别在哪天到期。' },
       data: { provider: 'object', object: 'clm_contract' },
       columns: ['contract_number', 'title', 'party', 'status'],
       calendar: {
@@ -196,7 +219,7 @@ export const ContractViews = defineView({
       name: 'active_contracts',
       type: 'grid',
       label: 'Active Contracts',
-      description: 'Contracts in force.',
+      description: { en: 'Contracts in force.', 'zh-CN': '正在生效中的合同。' },
       data: { provider: 'object', object: 'clm_contract' },
       filter: [{ field: 'status', operator: 'equals', value: 'active' }],
       columns: [
@@ -229,7 +252,7 @@ export const ContractViews = defineView({
       name: 'pending_execution',
       type: 'grid',
       label: 'Awaiting Execution',
-      description: 'Signed or signing — waiting on signatures and execution formalities.',
+      description: { en: 'Signed or signing — waiting on signatures and execution formalities.', 'zh-CN': '已签署或签署中，正等签字与执行形式做齐。' },
       data: { provider: 'object', object: 'clm_contract' },
       filter: [{ field: 'status', operator: 'equals', value: 'signing' }],
       columns: [
@@ -250,7 +273,7 @@ export const ContractViews = defineView({
       name: 'pending_archive',
       type: 'grid',
       label: 'Awaiting Archive',
-      description: 'Closed contracts with no archive number yet.',
+      description: { en: 'Closed contracts with no archive number yet.', 'zh-CN': '已结束但还没有档案号的合同。' },
       data: { provider: 'object', object: 'clm_contract' },
       filter: [
         { field: 'status', operator: 'in', value: ['expired', 'terminated', 'cancelled'] },
@@ -276,7 +299,7 @@ export const ContractViews = defineView({
       name: 'contract_register',
       type: 'grid',
       label: 'Contract Register',
-      description: 'The full register — every field, exportable.',
+      description: { en: 'The full register — every field, exportable.', 'zh-CN': '完整台账，全部字段，可导出。' },
       data: { provider: 'object', object: 'clm_contract' },
       columns: [
         { field: 'contract_number', width: 150, link: true, pinned: 'left' },

@@ -16,8 +16,9 @@
     "build": "objectstack build",
     "validate": "objectstack validate",
     "lint": "objectstack lint",
+    "lint:i18n-gate": "node scripts/check-lint-i18n-gate.mjs",
     "typecheck": "tsc --noEmit",
-    "verify": "pnpm validate && pnpm lint && pnpm typecheck"
+    "verify": "pnpm validate && pnpm lint && pnpm typecheck && pnpm lint:i18n-gate"
   },
   "dependencies": {
     "@objectstack/spec": "^17.0.0",

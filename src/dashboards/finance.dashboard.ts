@@ -10,6 +10,33 @@ import type { Dashboard } from '@objectstack/spec/ui';
  * opt-out. See `legal.dashboard.ts` for the measured list of keys the renderer
  * reads and for why no dashboard `dateRange` is declared.
  */
+/**
+ * ## Why the `globalFilters` copy below is inline `{ en, 'zh-CN' }` (card 11)
+ *
+ * The same reason as `src/pages/contract_detail.page.ts`, on a different
+ * surface: the translation bundle has NO KEY for it. `TranslationData`'s
+ * `dashboards.<name>` group is `label` · `description` · `actions.<url>.label` ·
+ * `widgets.<id>.{title,description,subCaption}` and nothing else, so a filter
+ * label and its option labels cannot be addressed from a bundle at all — while
+ * the filter bar is drawn at the top of every board, above the widget titles the
+ * bundle does translate. Measured in a zh-CN console before this change: the
+ * board read `Category: 全部` / `Requesting Department: 全部` over six Chinese
+ * widget titles.
+ *
+ * Both keys are `I18nLabelSchema` (`GlobalFilterSchema.label`,
+ * `.options[].label`), so the inline locale map is the authorized second form,
+ * not a workaround.
+ *
+ * ⚠️ The gate cannot see these — `os i18n check` counts bundle keys and an
+ * inline map produces none. A filter added later with a plain-string label
+ * ships English on a zh-CN board with `pnpm lint:i18n-gate` still green.
+ *
+ * ⚠️ These option labels DUPLICATE `objects.<object>.fields.<field>.options.*`
+ * in the bundle, which is not ideal and is not avoidable here: the filter
+ * declares its own option list (the schema requires it for a `select` filter),
+ * and the two are separate authored strings that happen to say the same thing.
+ * If they drift, the bundle's copy is the one the grid and the record page use.
+ */
 export const FinanceDashboard: Dashboard = {
   name: 'finance_overview',
   label: 'Finance Overview',
@@ -23,15 +50,15 @@ export const FinanceDashboard: Dashboard = {
       name: 'status',
       field: 'status',
       object: 'clm_payment_plan',
-      label: 'Instalment Status',
+      label: { en: 'Instalment Status', 'zh-CN': '分期状态' },
       type: 'select',
       scope: 'dashboard',
       options: [
-        { value: 'planned', label: 'Planned' },
-        { value: 'due', label: 'Due' },
-        { value: 'partial', label: 'Partial' },
-        { value: 'paid', label: 'Paid' },
-        { value: 'overdue', label: 'Overdue' },
+        { value: 'planned', label: { en: 'Planned', 'zh-CN': '计划中' } },
+        { value: 'due', label: { en: 'Due', 'zh-CN': '待收付' } },
+        { value: 'partial', label: { en: 'Partial', 'zh-CN': '部分收付' } },
+        { value: 'paid', label: { en: 'Paid', 'zh-CN': '已结清' } },
+        { value: 'overdue', label: { en: 'Overdue', 'zh-CN': '已逾期' } },
       ],
     },
   ],
