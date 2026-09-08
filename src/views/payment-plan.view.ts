@@ -15,6 +15,29 @@ import { defineView } from '@objectstack/spec/ui';
  * `due`, a row due in three months is `planned` — which is recorded here
  * rather than left for a reader to discover from an off-by-a-month count.
  */
+/**
+ * ## Why every `description` here carries an inline `{ en, 'zh-CN' }` map (card 11)
+ *
+ * A view's `description` has a bundle key — `objects.<object>._views.<view>.description`
+ * — the bundle authors it, and `pnpm lint:i18n-gate` counts it as covered. The
+ * console does not render it. Measured on 17.3.0 against a zh-CN console, both
+ * legs in the same session:
+ *
+ *   - bundle only:  the tab strip reads 我发起的 (the LABEL resolves from the
+ *     same group, one key over) while the line under the header reads
+ *     "Contracts I launched, grouped by where each one has got to.";
+ *   - inline map:   the same line reads 我发起的合同，按各自进行到哪一步分组。
+ *
+ * So this is a declared, enumerated, authored key that no resolver applies —
+ * and it is invisible to the gate BY BEING COVERED, which is the sharpest form
+ * of the trap card 11 was written around: the coverage report says 100% and the
+ * screen is still half English.
+ *
+ * The bundle entries are kept as well as these maps, deliberately. They are
+ * what the gate counts, and if the resolver is fixed the bundle wins — the
+ * duplication resolves itself rather than having to be unpicked. Reported
+ * upstream; not patched here (AGENTS.md "Platform gaps").
+ */
 export const PaymentPlanViews = defineView({
   list: {
     type: 'grid',
@@ -43,7 +66,7 @@ export const PaymentPlanViews = defineView({
       name: 'payments_due',
       type: 'grid',
       label: 'Due Now',
-      description: 'Instalments that have come due and are not settled.',
+      description: { en: 'Instalments that have come due and are not settled.', 'zh-CN': '已到应收付日期但尚未结清的分期。' },
       data: { provider: 'object', object: 'clm_payment_plan' },
       filter: [{ field: 'status', operator: 'in', value: ['due', 'partial'] }],
       columns: [
@@ -63,7 +86,7 @@ export const PaymentPlanViews = defineView({
       name: 'payments_overdue',
       type: 'grid',
       label: 'Overdue',
-      description: 'Instalments past their planned date and still unpaid.',
+      description: { en: 'Instalments past their planned date and still unpaid.', 'zh-CN': '已过计划日期且仍未结清的分期。' },
       data: { provider: 'object', object: 'clm_payment_plan' },
       filter: [{ field: 'status', operator: 'equals', value: 'overdue' }],
       columns: [
@@ -83,7 +106,7 @@ export const PaymentPlanViews = defineView({
       name: 'payments_paid',
       type: 'grid',
       label: 'Paid',
-      description: 'Settled instalments, most recently paid first.',
+      description: { en: 'Settled instalments, most recently paid first.', 'zh-CN': '已结清的分期，最近结清的排在前面。' },
       data: { provider: 'object', object: 'clm_payment_plan' },
       filter: [{ field: 'status', operator: 'equals', value: 'paid' }],
       columns: [
@@ -104,7 +127,7 @@ export const PaymentPlanViews = defineView({
       name: 'payment_kanban',
       type: 'kanban',
       label: 'Payment Board',
-      description: 'Every instalment by settlement status.',
+      description: { en: 'Every instalment by settlement status.', 'zh-CN': '全部分期按结清状态排列。' },
       data: { provider: 'object', object: 'clm_payment_plan' },
       columns: ['display_name', 'contract', 'planned_date', 'planned_amount'],
       kanban: {

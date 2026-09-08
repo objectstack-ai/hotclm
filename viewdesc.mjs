@@ -1,0 +1,16 @@
+import { page, login, BASE } from './drive.mjs';
+await login(); await page.waitForTimeout(1500);
+await page.click('#radix-_r_h_'); await page.waitForTimeout(1000);
+await page.locator('text=Language').last().click(); await page.waitForTimeout(1000);
+await page.locator('text=中文（中国）').click(); await page.waitForTimeout(5000);
+await page.keyboard.press('Escape'); await page.waitForTimeout(2000);
+await page.goto(`${BASE}/_console/apps/clm/clm_contract/view/my_contracts`, { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(10000);
+await page.screenshot({ path: `${process.env.SHOTDIR}/60-viewdesc.png` });
+const t = await page.evaluate(() => document.body.innerText);
+console.log('EN description present:', t.includes('Contracts I launched, grouped by where each one has got to.'));
+console.log('ZH description present:', t.includes('我发起的合同，按各自进行到哪一步分组。'));
+const i = t.indexOf('我发起的');
+console.log('--- around the view header ---');
+console.log(t.slice(Math.max(0,i-120), i+520));
+process.exit(0);
