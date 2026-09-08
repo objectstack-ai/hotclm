@@ -186,23 +186,77 @@ export const ClmApp = App.create({
       /**
        * 分析 — DESIGN.md §09's three dashboards, one row each.
        *
-       * Gated by the audience each board is written for rather than by one
-       * "analytics" capability: the legal workbench answers a lawyer's
-       * questions, the finance board a controller's. `clm_admin.access` reaches
-       * all three because an administrator holds every set — which is also what
-       * makes the three rows verifiable on a single dev-admin session.
+       * ## The gate is `clm_requester.access`, and it is the ONLY spelling that
+       * ## reaches every audience these three boards are written for
+       *
+       * `requiredPermissions` is **AND, not OR**. Measured, not assumed — the
+       * authoritative server-side filter is `filterAppForUserWithReason`
+       * (`@objectstack/rest` 17.3.0), and its nav clause reads:
+       *
+       *     const req = Array.isArray(e.requiredPermissions) ? e.requiredPermissions : [];
+       *     if (req.length > 0 && !req.every((p) => sysPerms.has(p))) continue;
+       *
+       * `req.every(...)`. So the intuitive "one row per audience, gated by that
+       * audience" — `['clm_legal.access', 'clm_finance.access', ...]` — would
+       * require a user to hold ALL of them and would hide the group from
+       * EVERYONE. No account in this app holds two `*.access` capabilities.
+       * That is this card's own trap in a third costume: a union that reads as
+       * generous and gates to nothing.
+       *
+       * What the five sets actually grant (card 04, `src/profiles/`): each one
+       * carries exactly ONE `clm_*.access` and never another's — `clm_admin`'s
+       * `systemPermissions` are `clm_admin.access` plus six action gates, so an
+       * administrator does NOT hold `clm_legal.access`. The one capability every
+       * CLM audience shares is `clm_requester.access`, because
+       * `bind-position-sets.ts` binds `RequesterSet` to *every* position:
+       *
+       *     ...Object.values(CLM_POSITION).map((position) => [position, RequesterSet.name])
+       *
+       * PR #25's audience matrix is the measurement: 我的合同, gated on exactly
+       * this capability, is served to legal, finance, records, clm_admin and an
+       * employee with no position — and withheld from the platform admin, which
+       * holds no CLM set at all. That last one is the control that proves the
+       * gate is a gate and not a no-op.
+       *
+       * ⚠️ So the ROW is reachable by every CLM user, and what each of them then
+       * SEES is narrowed by RLS rather than by the sidebar. Measured on this
+       * branch, same dataset query (`payment_metrics`, `overdue_amount` +
+       * `instalment_count`), four readers:
+       *
+       *     platform admin              300 instalments / 2,176,250 overdue
+       *     clm_admin                   300 instalments / 2,176,250 overdue
+       *     finance                       0 /         0
+       *     executive (requester only)    0 /         0
+       *
+       * The scope is real and per-reader — the analytics runtime scopes per
+       * joined object (ADR-0021 D-C), visible in the generated SQL as a
+       * `WHERE "clm_payment_plan"."contract" IN (...)` clause. What it is NOT
+       * is a claim about the shipped product's numbers: those two zeroes come
+       * from how the test accounts were provisioned (permission sets granted
+       * directly, so the §04 sharing rules — which grant by POSITION — never
+       * materialised for them), on top of `owner_id` being NULL on all 120
+       * seeded contracts (#28). PR #25's position-provisioned users read 120 /
+       * 82 / 78. Recorded this way because "a requester sees only their own"
+       * is the kind of runtime claim that is easy to assert and was worth
+       * measuring.
+       *
+       * Narrowing the ROWS is what this app can express; narrowing the NAV per
+       * audience needs an OR the platform does not have, and inventing a
+       * per-board capability would be a §04 change this card does not own.
        *
        * `type: 'dashboard'` + `dashboardName`, the only shape
        * `DashboardNavItemSchema` accepts. Each name matches a dashboard
        * registered in `objectstack.config.ts`; a name that matched nothing
-       * would be the same dead row the 报表 note above refuses.
+       * would be the same dead row the 报表 note above refuses — and that is
+       * enforced, not hoped: `validate` exits 1 with "App 'clm' navigation
+       * references dashboard '…' which is not defined in dashboards."
        */
       id: 'group_analytics',
       type: 'group',
       label: 'Analytics',
       icon: 'chart-line',
       expanded: true,
-      requiredPermissions: ['clm_legal.access'],
+      requiredPermissions: ['clm_requester.access'],
       children: [
         { id: 'nav_legal_workbench',    type: 'dashboard', dashboardName: 'legal_workbench',    label: 'Legal Workbench',    icon: 'scale' },
         { id: 'nav_executive_overview', type: 'dashboard', dashboardName: 'executive_overview', label: 'Executive Overview', icon: 'trending-up' },
