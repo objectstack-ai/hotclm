@@ -28,6 +28,33 @@ import type { Dashboard } from '@objectstack/spec/ui';
  * persisted select columns instead, which is what §09 asks for
  * ("所有看板筛选字段都是持久化字段", gap #10).
  */
+/**
+ * ## Why the `globalFilters` copy below is inline `{ en, 'zh-CN' }` (card 11)
+ *
+ * The same reason as `src/pages/contract_detail.page.ts`, on a different
+ * surface: the translation bundle has NO KEY for it. `TranslationData`'s
+ * `dashboards.<name>` group is `label` · `description` · `actions.<url>.label` ·
+ * `widgets.<id>.{title,description,subCaption}` and nothing else, so a filter
+ * label and its option labels cannot be addressed from a bundle at all — while
+ * the filter bar is drawn at the top of every board, above the widget titles the
+ * bundle does translate. Measured in a zh-CN console before this change: the
+ * board read `Category: 全部` / `Requesting Department: 全部` over six Chinese
+ * widget titles.
+ *
+ * Both keys are `I18nLabelSchema` (`GlobalFilterSchema.label`,
+ * `.options[].label`), so the inline locale map is the authorized second form,
+ * not a workaround.
+ *
+ * ⚠️ The gate cannot see these — `os i18n check` counts bundle keys and an
+ * inline map produces none. A filter added later with a plain-string label
+ * ships English on a zh-CN board with `pnpm lint:i18n-gate` still green.
+ *
+ * ⚠️ These option labels DUPLICATE `objects.<object>.fields.<field>.options.*`
+ * in the bundle, which is not ideal and is not avoidable here: the filter
+ * declares its own option list (the schema requires it for a `select` filter),
+ * and the two are separate authored strings that happen to say the same thing.
+ * If they drift, the bundle's copy is the one the grid and the record page use.
+ */
 export const LegalDashboard: Dashboard = {
   name: 'legal_workbench',
   label: 'Legal Workbench',
@@ -45,38 +72,38 @@ export const LegalDashboard: Dashboard = {
       name: 'category',
       field: 'category',
       object: 'clm_contract',
-      label: 'Category',
+      label: { en: 'Category', 'zh-CN': '类别' },
       type: 'select',
       scope: 'dashboard',
       options: [
-        { value: 'nda', label: 'NDA' },
-        { value: 'sales', label: 'Sales' },
-        { value: 'purchase', label: 'Purchase' },
-        { value: 'service', label: 'Service' },
-        { value: 'lease', label: 'Lease' },
-        { value: 'employment', label: 'Employment / Contractor' },
-        { value: 'framework', label: 'Framework' },
-        { value: 'dpa', label: 'Data Processing (DPA)' },
-        { value: 'amendment', label: 'Amendment' },
-        { value: 'other', label: 'Other' },
+        { value: 'nda', label: { en: 'NDA', 'zh-CN': '保密协议' } },
+        { value: 'sales', label: { en: 'Sales', 'zh-CN': '销售' } },
+        { value: 'purchase', label: { en: 'Purchase', 'zh-CN': '采购' } },
+        { value: 'service', label: { en: 'Service', 'zh-CN': '服务' } },
+        { value: 'lease', label: { en: 'Lease', 'zh-CN': '租赁' } },
+        { value: 'employment', label: { en: 'Employment / Contractor', 'zh-CN': '劳动 / 承揽' } },
+        { value: 'framework', label: { en: 'Framework', 'zh-CN': '框架协议' } },
+        { value: 'dpa', label: { en: 'Data Processing (DPA)', 'zh-CN': '数据处理协议' } },
+        { value: 'amendment', label: { en: 'Amendment', 'zh-CN': '补充协议' } },
+        { value: 'other', label: { en: 'Other', 'zh-CN': '其他' } },
       ],
     },
     {
       name: 'department',
       field: 'department',
       object: 'clm_contract',
-      label: 'Requesting Department',
+      label: { en: 'Requesting Department', 'zh-CN': '发起部门' },
       type: 'select',
       scope: 'dashboard',
       options: [
-        { value: 'sales', label: 'Sales' },
-        { value: 'procurement', label: 'Procurement' },
-        { value: 'legal', label: 'Legal' },
-        { value: 'finance', label: 'Finance' },
-        { value: 'operations', label: 'Operations' },
-        { value: 'people', label: 'People / HR' },
-        { value: 'it', label: 'IT' },
-        { value: 'other', label: 'Other' },
+        { value: 'sales', label: { en: 'Sales', 'zh-CN': '销售' } },
+        { value: 'procurement', label: { en: 'Procurement', 'zh-CN': '采购' } },
+        { value: 'legal', label: { en: 'Legal', 'zh-CN': '法务' } },
+        { value: 'finance', label: { en: 'Finance', 'zh-CN': '财务' } },
+        { value: 'operations', label: { en: 'Operations', 'zh-CN': '运营' } },
+        { value: 'people', label: { en: 'People / HR', 'zh-CN': '人力资源' } },
+        { value: 'it', label: { en: 'IT', 'zh-CN': '信息技术' } },
+        { value: 'other', label: { en: 'Other', 'zh-CN': '其他' } },
       ],
     },
   ],

@@ -9,6 +9,33 @@ import type { Dashboard } from '@objectstack/spec/ui';
  * measured list of widget keys the renderer reads and for why no dashboard
  * `dateRange` is declared.
  */
+/**
+ * ## Why the `globalFilters` copy below is inline `{ en, 'zh-CN' }` (card 11)
+ *
+ * The same reason as `src/pages/contract_detail.page.ts`, on a different
+ * surface: the translation bundle has NO KEY for it. `TranslationData`'s
+ * `dashboards.<name>` group is `label` · `description` · `actions.<url>.label` ·
+ * `widgets.<id>.{title,description,subCaption}` and nothing else, so a filter
+ * label and its option labels cannot be addressed from a bundle at all — while
+ * the filter bar is drawn at the top of every board, above the widget titles the
+ * bundle does translate. Measured in a zh-CN console before this change: the
+ * board read `Category: 全部` / `Requesting Department: 全部` over six Chinese
+ * widget titles.
+ *
+ * Both keys are `I18nLabelSchema` (`GlobalFilterSchema.label`,
+ * `.options[].label`), so the inline locale map is the authorized second form,
+ * not a workaround.
+ *
+ * ⚠️ The gate cannot see these — `os i18n check` counts bundle keys and an
+ * inline map produces none. A filter added later with a plain-string label
+ * ships English on a zh-CN board with `pnpm lint:i18n-gate` still green.
+ *
+ * ⚠️ These option labels DUPLICATE `objects.<object>.fields.<field>.options.*`
+ * in the bundle, which is not ideal and is not avoidable here: the filter
+ * declares its own option list (the schema requires it for a `select` filter),
+ * and the two are separate authored strings that happen to say the same thing.
+ * If they drift, the bundle's copy is the one the grid and the record page use.
+ */
 export const ExecutiveDashboard: Dashboard = {
   name: 'executive_overview',
   label: 'Executive Overview',
@@ -22,26 +49,26 @@ export const ExecutiveDashboard: Dashboard = {
       name: 'direction',
       field: 'direction',
       object: 'clm_contract',
-      label: 'Direction',
+      label: { en: 'Direction', 'zh-CN': '方向' },
       type: 'select',
       scope: 'dashboard',
       options: [
-        { value: 'sales', label: 'Sales' },
-        { value: 'purchase', label: 'Purchase' },
-        { value: 'other', label: 'Other' },
+        { value: 'sales', label: { en: 'Sales', 'zh-CN': '销售' } },
+        { value: 'purchase', label: { en: 'Purchase', 'zh-CN': '采购' } },
+        { value: 'other', label: { en: 'Other', 'zh-CN': '其他' } },
       ],
     },
     {
       name: 'risk_level',
       field: 'risk_level',
       object: 'clm_contract',
-      label: 'Risk Level',
+      label: { en: 'Risk Level', 'zh-CN': '风险等级' },
       type: 'select',
       scope: 'dashboard',
       options: [
-        { value: 'low', label: 'Low' },
-        { value: 'medium', label: 'Medium' },
-        { value: 'high', label: 'High' },
+        { value: 'low', label: { en: 'Low', 'zh-CN': '低' } },
+        { value: 'medium', label: { en: 'Medium', 'zh-CN': '中' } },
+        { value: 'high', label: { en: 'High', 'zh-CN': '高' } },
       ],
     },
   ],
