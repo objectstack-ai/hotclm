@@ -12,6 +12,7 @@ import * as datasets from './src/datasets/index.js';
 import * as dashboards from './src/dashboards/index.js';
 import * as pages from './src/pages/index.js';
 import * as views from './src/views/index.js';
+import * as translations from './src/translations/index.js';
 
 /**
  * HotCLM — contract lifecycle management on ObjectStack.
@@ -133,6 +134,35 @@ export default defineStack({
   // The rest arrive with the cards that need them. Capability expansion stays
   // tight — a card names the token it adds (AGENTS.md).
   requires: ['ui', 'auth', 'sharing', 'hierarchy-security', 'automation', 'triggers', 'approvals', 'messaging', 'analytics'],
+
+  // Internationalization (DESIGN.md §01 全球优先, card 11). English is the
+  // DEFAULT and the SOURCE language — every label is authored in English inline
+  // on the metadata and `en` is the locale the inline strings ARE. `zh-CN` is a
+  // complete second bundle, not a partial one.
+  //
+  // ⚠️ `fallbackLocale` is what makes this block dangerous as well as useful: a
+  // key missing from `zh-CN` renders its English source string SILENTLY — no
+  // error, no warning, no log line, and nothing on screen that distinguishes a
+  // gap from a translation. `objectstack lint` will not fail on it either
+  // (a non-default-locale miss is a WARNING there; measured — see
+  // `scripts/check-lint-i18n-gate.mjs`). `pnpm lint:i18n-gate` is the only
+  // instrument that fails the build on one, which is why removing that script
+  // silently unpicks this whole block.
+  //
+  // The three keys below are the whole of `TranslationConfigSchema`. Four more
+  // were removed at protocol 17 (`fileOrganization`, `messageFormat`,
+  // `lazyLoad`, `cache`) because no runtime read them; the schema now rejects
+  // them by name rather than dropping them, so this block cannot silently grow
+  // a setting that does nothing.
+  i18n: {
+    defaultLocale: 'en',
+    supportedLocales: ['en', 'zh-CN'],
+    fallbackLocale: 'en',
+  },
+
+  // One bundle carrying both locales — `translations` is an array of bundles,
+  // and a bundle is `Record<locale, TranslationData>`.
+  translations: Object.values(translations),
 
   objects: Object.values(objects),
   apps: Object.values(apps),
