@@ -24,9 +24,14 @@ import {
  * refuses it. What no seed can do is produce the HISTORY that state normally
  * implies — F5 opens a `sys_approval_request` on entering `in_approval`, and
  * `skipTriggers` means F5 never fires over a seeded row. Even if it did, it
- * could not complete: the seed loader runs BEFORE the first user account
- * exists (measured — the dev admin is minted ~1.8s after the last seed write),
- * so rung 1 (`type: 'manager'`) has nobody to resolve, and `pnpm validate`
+ * could not complete: rung 1 is `type: 'manager'`, and at seed time there is
+ * nobody for it to resolve — every contract is launched by one of the three
+ * business requesters DESIGN.md §10 leaves to the OPERATOR to create
+ * (`keys.ts`), so on a fresh database no owner exists to have a manager
+ * (measured on 17.4.0: 120 `owner_id` references unresolved after pass 2).
+ * WHICH boot mints the dev admin is a separate fact, measured in exactly one
+ * place — `scripts/demo.mjs` — and this argument does not rest on it: #21's
+ * two-boot handover primes that account BEFORE the seed runs. `pnpm validate`
  * already warns that an approval node whose approvers resolve empty "waits
  * forever, and (lockRecord) the record stays locked with no in-product
  * recovery". Driving 42 contracts through the ladder at seed time would not be

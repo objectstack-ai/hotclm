@@ -78,7 +78,7 @@ export const demoSeeds: Seed[] = [
 //
 // This is a product decision, not a switch bolted on to route around a defect.
 // HotCLM is a sellable standard product (AGENTS.md), and a standard product
-// does not install 780 rows of a fictional group's contract book into every
+// does not install 820 rows of a fictional group's contract book into every
 // fresh deployment. Someone evaluating HotCLM FOR THEIR OWN LEGAL TEAM wants
 // an empty app to put their own contract types into; handing them somebody
 // else's counterparties to delete first is not a neutral default, it is a
