@@ -728,7 +728,26 @@ const contractArchive: Hook = {
     // roll-ups under an elevated context on every child write, and a frozen
     // parent would make an archived contract's children unwritable.
     if (alreadyArchived && ctx.session?.isSystem !== true) {
-      const OPEN_AFTER_ARCHIVE = ['summary', 'id', 'organization_id', 'modified_at', 'modified_by'];
+      // The platform's own audit columns ride along on every update and are
+      // NOT the caller's payload, so they can never be the reason a write is
+      // refused. They are named here exactly as the engine spells them —
+      // `updated_at` / `updated_by`, which is what `clm_contract` actually
+      // carries. MEASURED with the earlier `modified_at` / `modified_by`
+      // spelling on a booted app: `PATCH { summary: '…' }` on an archived
+      // contract was refused 422 "Fields refused: updated_at", so the ONE
+      // field this rule exists to keep open was the one it closed, and an
+      // archived contract could not be annotated at all — the outcome the
+      // comment above says the exemption exists to avoid. A field-name typo in
+      // an allow-list is silent until something runs.
+      const OPEN_AFTER_ARCHIVE = [
+        'summary',
+        'id',
+        'organization_id',
+        'created_at',
+        'created_by',
+        'updated_at',
+        'updated_by',
+      ];
       const attempted = Object.keys(input).filter(
         (key) => !OPEN_AFTER_ARCHIVE.includes(key) && input[key] !== previous[key],
       );

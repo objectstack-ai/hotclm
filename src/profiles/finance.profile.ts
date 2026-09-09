@@ -3,7 +3,7 @@ import { Contract } from '../objects/contract.object.js';
 import { Party } from '../objects/party.object.js';
 import { Review } from '../objects/review.object.js';
 import { POST_APPROVAL_STATUSES } from '../sharing/_lifecycle.js';
-import { CONTRACT_LEGAL_FIELDS, CONTRACT_STAMPED_FIELDS, editableOnly, hidden, inList, readOnly } from './_grants.js';
+import { CONTRACT_LEGAL_FIELDS, CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, editableOnly, hidden, inList, readOnly } from './_grants.js';
 
 /**
  * `clm_finance` — the finance controller (DESIGN.md §04).
@@ -42,8 +42,10 @@ export const FinanceSet = definePermissionSet({
   },
   fields: {
     ...readOnly(Contract, CONTRACT_STAMPED_FIELDS),
-    // §04 "FLS 锁法律字段" + §13 Q1 "与 status".
-    ...readOnly(Contract, [...CONTRACT_LEGAL_FIELDS, 'status']),
+    // §04 "FLS 锁法律字段" + §13 Q1 "与 status". The termination reason travels
+    // with `status` on the same write, so locking one without the other would
+    // leave finance able to author half of a transition it may not make.
+    ...readOnly(Contract, [...CONTRACT_LEGAL_FIELDS, 'status', CONTRACT_TERMINATION_REASON]),
     ...hidden(Review, ['internal_note']),
     ...editableOnly(Party, ['bank_name', 'bank_account']),
   },
