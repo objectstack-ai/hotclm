@@ -12,9 +12,13 @@
 //
 // On a BRAND-NEW database it is not, and the reason is an ordering fact that
 // was measured rather than assumed. The declarative seed runs BEFORE the dev
-// admin account is minted and before the first organization is founded — on
-// 17.3.0, the seed's last write landed at 18:59:54.118Z and the account was
-// created at 18:59:54.931Z. Two things follow, and both are silent:
+// admin account is minted and before the first organization is founded —
+// re-measured on 17.4.0 (issue #35), one boot with the demo on and
+// `--seed-admin` against an empty `.objectstack/data`: the seed's last pass-1
+// write landed at 2026-09-09T14:26:53.833Z and the account was created at
+// 2026-09-09T14:26:57.396Z, 3.563s later. This IS the interval — it is
+// measured here and nowhere else, so there is one place to be wrong.
+// Two things follow, and both are silent:
 //
 //   1. `clm_review.reviewer` is `required: true` and resolves against
 //      `sys_user.name`. On a first boot the name matches nothing, the loader
