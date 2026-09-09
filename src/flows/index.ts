@@ -9,7 +9,7 @@ import { ObligationDueFlow } from './obligation-due.flow.js';
 import { PaymentOverdueFlow } from './payment-overdue.flow.js';
 import { RenewalNoticeFlow, RenewalStartFlow, renewalDraft, renewalWindow } from './renewal-notice.flow.js';
 import { ExpirationSweepFlow } from './expiration-sweep.flow.js';
-import { ExecutedUploadFlow, backfillStamps } from './executed-upload.flow.js';
+import { ExecutedUploadFlow, backfillStamps, refuseBackfill } from './executed-upload.flow.js';
 
 // F1–F16 of DESIGN.md §06; this barrel is what `defineStack({ flows })` reads.
 // F8 (e-signature) and F15 (CRM hand-off) arrive with cards 12 and 13.
@@ -60,4 +60,7 @@ export const flowFunctions = {
   clm_renewal_window: renewalWindow,
   clm_renewal_draft: renewalDraft,
   clm_backfill_stamps: backfillStamps,
+  // The refusal channel both action-launched flows share. `end` nodes with
+  // `outcome: 'refused'` parse but do nothing on 17.4.0 — see `refuseBackfill`.
+  clm_backfill_refuse: refuseBackfill,
 };

@@ -84,6 +84,37 @@ export function backfillStamps({ input }: { input: Record<string, unknown> }): {
   return { signedAt: new Date(ms).toISOString(), ok: true, problem: null };
 }
 
+/**
+ * The refusal channel, and why it is a THROWING `script` node rather than an
+ * `end` node carrying `outcome: 'refused'`.
+ *
+ * The spec declares that refusal contract (`EndConfigSchema`) and its own text
+ * says the halves land in sequence: "this contract, then the engine's `end`
+ * handling (stamping the outcome, persisting the rendered message), then the
+ * runner." MEASURED on the pinned 17.4.0 runtime, the second half has not
+ * landed: a run that took the refusing edge recorded `status: "completed"` in
+ * `GET /api/v1/automation/executed_upload/runs`, carried no `refusalMessage`,
+ * and the invoking action's `successMessage` was NOT suppressed — so a
+ * backfill refused for a future signing date answered HTTP 200 with
+ * "Executed contract recorded." while recording nothing. The guard protected
+ * the data and lied to the clerk, which is precisely the dishonest capability
+ * AGENTS.md forbids. Reported upstream, not patched here.
+ *
+ * `contract_intake` (F1) already refuses this way in this very directory —
+ * `clm_intake_refuse` — because a `script` node is the only node that can end
+ * a run with a message the caller actually receives. Same idiom, same
+ * ADR-0112 envelope (`code` + `status`), so both flows refuse alike.
+ */
+export function refuseBackfill({ input }: { input: Record<string, unknown> }): never {
+  const message = typeof input.message === 'string' && input.message.trim()
+    ? input.message.trim()
+    : 'This contract cannot be backfilled.';
+  const err = new Error(message) as Error & { code: string; status: number };
+  err.code = typeof input.code === 'string' && input.code ? input.code : 'INVALID_STATE';
+  err.status = 422;
+  throw err;
+}
+
 const DATE_OK = 'has(vars.stamps) && vars.stamps.ok == true';
 const DATE_BAD = '!has(vars.stamps) || vars.stamps.ok != true';
 const PARTY_OK = 'has(vars.partyRecord) && vars.partyRecord != null && has(vars.partyRecord.id) && vars.partyRecord.risk_flag != "blocked"';
@@ -134,9 +165,11 @@ export const ExecutedUploadFlow: Flow = {
     { id: 'decide_date', type: 'decision', label: 'Signing Date Usable?' },
     {
       id: 'refuse_date',
-      type: 'end',
+      type: 'script',
       label: 'Refuse — Signing Date',
-      config: { outcome: 'refused', message: '{stamps.problem}' },
+      // The message `check_date` computed, handed back to the caller. See
+      // `refuseBackfill` for why this is a throwing script and not an `end`.
+      config: { function: 'clm_backfill_refuse', inputs: { message: '{stamps.problem}', code: 'VALIDATION_FAILED' } },
     },
 
     {
@@ -153,14 +186,17 @@ export const ExecutedUploadFlow: Flow = {
     { id: 'decide_party', type: 'decision', label: 'Counterparty Usable?' },
     {
       id: 'refuse_party',
-      type: 'end',
+      type: 'script',
       label: 'Refuse — Counterparty',
       config: {
         // The same refusal `draft → submitted` makes in `contract.hook.ts`,
         // repeated here because the backfill never passes that guard: a
         // blocked counterparty is blocked whichever door the contract came in.
-        outcome: 'refused',
-        message: 'That counterparty cannot be used: it is either missing or flagged blocked. A contract with a blocked counterparty is not recorded, even retrospectively.',
+        function: 'clm_backfill_refuse',
+        inputs: {
+          message: 'That counterparty cannot be used: it is either missing or flagged blocked. A contract with a blocked counterparty is not recorded, even retrospectively.',
+          code: 'INVALID_REFERENCE',
+        },
       },
     },
 
@@ -243,5 +279,11 @@ export const ExecutedUploadFlow: Flow = {
     { id: 'b7', source: 'decide_party', target: 'create_contract', type: 'default', label: 'Usable', condition: PARTY_OK },
     { id: 'b8', source: 'create_contract', target: 'file_executed_copy', type: 'default' },
     { id: 'b9', source: 'file_executed_copy', target: 'end', type: 'default' },
+
+    // Never traversed: `clm_backfill_refuse` throws, so the run ends at the
+    // refusal. The edges exist so the graph has no dangling node, exactly as
+    // `contract_intake` wires its four refusals.
+    { id: 'b10', source: 'refuse_date', target: 'end', type: 'default' },
+    { id: 'b11', source: 'refuse_party', target: 'end', type: 'default' },
   ],
 };

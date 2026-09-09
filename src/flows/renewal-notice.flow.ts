@@ -261,16 +261,24 @@ export const RenewalStartFlow: Flow = {
     { id: 'decide_existing', type: 'decision', label: 'Already Renewed?' },
     {
       id: 'refuse_existing',
-      type: 'end',
+      type: 'script',
       label: 'Already Renewed',
       config: {
-        // A first-class refusal, not a silent completion: pressing the button
-        // twice must say what happened, and the run must not report a draft it
-        // did not make. `refused` is distinct from `failed` — a successful
-        // evaluation that says no — and the runner shows the message with
-        // Close only.
-        outcome: 'refused',
-        message: 'This contract already has a renewal draft ({existingRenewal.contract_number}). Open that one instead of starting a second.',
+        // Not a silent completion: pressing the button twice must say what
+        // happened, and the run must not report a draft it did not make.
+        //
+        // This was authored as an `end` node with `outcome: 'refused'` — the
+        // shape the spec declares — and MEASURED inert on the pinned 17.4.0
+        // runtime: the second press recorded `status: "completed"` and
+        // answered HTTP 200 with the action's own "Renewal draft created."
+        // while creating nothing. `refuseBackfill` carries the full reading;
+        // the working idiom on this version is the throwing `script` node
+        // `contract_intake` already uses, so that is what both flows use.
+        function: 'clm_backfill_refuse',
+        inputs: {
+          message: 'This contract already has a renewal draft ({existingRenewal.contract_number}). Open that one instead of starting a second.',
+          code: 'INVALID_STATE',
+        },
       },
     },
     {
@@ -333,6 +341,9 @@ export const RenewalStartFlow: Flow = {
     },
     { id: 'r6', source: 'compute_draft', target: 'create_draft', type: 'default' },
     { id: 'r7', source: 'create_draft', target: 'end', type: 'default' },
+    // Never traversed — `clm_backfill_refuse` throws. Declared so the refusal
+    // node is not a dangling one, as `contract_intake` declares its four.
+    { id: 'r8', source: 'refuse_existing', target: 'end', type: 'default' },
   ],
 };
 
