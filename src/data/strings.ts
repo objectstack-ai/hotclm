@@ -86,6 +86,18 @@ export interface DemoStrings {
   readonly deviationJustifications: Strings<6>;
   /** Notes on a signature round. */
   readonly signatureNotes: Strings<4>;
+  /**
+   * Why each of the four `terminated` contracts was ended early.
+   *
+   * `clm_contract.termination_reason` is `requiredWhen` the status is
+   * `terminated` (decision #6, ruled A on 2026-09-09), and ADR-0113's
+   * transition gate refuses "an INSERT born inside the gate" — so a seeded
+   * `terminated` row with no reason is REFUSED, not merely incomplete.
+   * Measured before this existed: 4 contracts and their child rows were lost
+   * from the fixture with `ValidationError: Termination Reason is required`
+   * while the seed reported success for everything else.
+   */
+  readonly terminationReasons: Strings<4>;
   /** Version-negotiation notes, kept for the day versions can be seeded. */
   readonly jurisdictions: Strings<3>;
 }

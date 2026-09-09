@@ -123,6 +123,13 @@ export const SIGNATURE_NOTES: readonly string[] & { length: 4 } = [
 ] as const;
 
 /** 与 `../plan.ts` 中三个适用法律一一对应的法院或仲裁地。 */
+export const TERMINATION_REASONS: readonly string[] & { length: 4 } = [
+  '对方严重违约：连续三个交付节点逾期，书面催告后仍未补正。',
+  '业务需求撤销——该合同支持的项目在年中评审时取消。',
+  '双方协商一致终止；已结清余款并相互免责。',
+  '对方进入破产程序，依破产条款即时终止。',
+] as const;
+
 export const JURISDICTIONS: readonly string[] & { length: 3 } = [
   '美国纽约州纽约县法院',
   '英格兰和威尔士法院（伦敦）',

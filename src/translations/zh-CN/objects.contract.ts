@@ -277,6 +277,10 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: '关闭时间',
         help: '终止时写入。',
       },
+      termination_reason: {
+        label: '终止原因',
+        help: '为什么在期限届满前结束这份合同。终止时必填（设计方案第 3 章「生效 → 已终止」守卫）；只在按下「终止」时问一次，发起表单上不出现。',
+      },
       archived_at: {
         label: '归档时间',
       },
@@ -322,7 +326,31 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       activate_contract: {
         label: '生效',
-        description: '让已签署的合同正式生效。系统会写入生效时间，并建好续约提醒和收付款计划。',
+        description: '让已签署的合同正式生效。系统会写入生效时间，并建好续约提醒义务。',
+      },
+      executed_upload: {
+        label: '补录已签合同',
+        description: '登记一份在本系统之前、或在本系统之外签好的合同：直接建成「生效中」并标记为补录，跳过审查与审批，执行副本作为终版签署件归档。',
+        successMessage: '已签合同已登记。',
+        params: {
+          contract_type: {
+            helpText: '这份合同本该走哪条流程。类型仍决定合同编号、类别与执行形式。',
+          },
+          party: {
+            helpText: '执行副本上的相对方。',
+          },
+          signed_date: {
+            label: '签署日期',
+            helpText: '执行副本上的日期，同时写入签署时间与执行完成时间。',
+          },
+          executed_file: {
+            label: '执行副本',
+            helpText: '已签署的 PDF 或扫描件，归档为第 1 版、终版签署件。',
+          },
+          archive_no: {
+            helpText: '可选。这份合同已有的纸质档案编号。',
+          },
+        },
       },
       launch_contract: {
         label: '发起合同',
@@ -419,9 +447,19 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: '提交',
         description: '把草稿交给法务。系统会盖上审批标记，并指派审查人或直接送审。',
       },
+      start_renewal: {
+        label: '发起续签',
+        description: '按这份合同预填一份续签草稿，并回链到它。续签是一份新合同，不是状态变更。',
+        successMessage: '续签草稿已创建。',
+      },
       terminate_contract: {
         label: '终止',
-        description: '在期限届满前结束一份生效中的合同。',
+        description: '确定终止这份合同吗？终止是终态——合同不能再恢复生效，只能另行续签。终止原因必填，会记录在合同上。',
+        params: {
+          termination_reason: {
+            helpText: '为什么提前结束：对方违约、不再需要、双方协商一致。法务与审计第一个问的就是这个。',
+          },
+        },
       },
     },
     _views: {

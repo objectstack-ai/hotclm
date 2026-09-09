@@ -145,6 +145,17 @@ export const contractSeed = defineSeed(Contract, {
       executed_at: t.executedAt === null ? null : dayOffset(t.executedAt),
       activated_at: t.activatedAt === null ? null : dayOffset(t.activatedAt),
       closed_at: t.closedAt === null ? null : dayOffset(t.closedAt),
+      // Required to BE terminated, not merely expected: `termination_reason`
+      // is `requiredWhen` the status is `terminated` (decision #6, ruled A),
+      // and ADR-0113's transition gate refuses an insert born inside the gate.
+      // Measured on this fixture without it: 4 contracts refused with
+      // "Termination Reason is required", taking their reviews, signature
+      // rounds and obligations with them, while the seed summary still read
+      // like a clean load.
+      termination_reason:
+        contract.status === 'terminated'
+          ? STRINGS.terminationReasons[contract.index % STRINGS.terminationReasons.length]!
+          : null,
 
       // DESIGN.md §13 Q8's own definition: an already-executed contract
       // entered after the fact, which started active and skipped review and

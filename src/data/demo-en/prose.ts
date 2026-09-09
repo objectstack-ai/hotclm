@@ -125,6 +125,18 @@ export const SIGNATURE_NOTES: readonly string[] & { length: 4 } = [
   'Notarisation booked; the witnessed copy is still outstanding.',
 ] as const;
 
+/**
+ * Why the four terminated contracts were ended early — the answer legal and
+ * audit ask for first, which is why `termination_reason` is required to
+ * terminate at all (DESIGN.md §03, decision #6).
+ */
+export const TERMINATION_REASONS: readonly string[] & { length: 4 } = [
+  'Counterparty in material breach: three consecutive missed delivery milestones, unremedied after written notice.',
+  'Business need withdrawn — the programme this contract supported was cancelled at the mid-year review.',
+  'Terminated by mutual agreement; the parties settled the outstanding balance and released each other.',
+  'Counterparty entered insolvency proceedings; terminated on the insolvency clause with immediate effect.',
+] as const;
+
 /** Court or arbitral seat, paired with the three governing laws in `../plan.ts`. */
 export const JURISDICTIONS: readonly string[] & { length: 3 } = [
   'Courts of New York County, New York',

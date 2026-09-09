@@ -7,4 +7,6 @@ export {
   StartSigningAction,
   ActivateContractAction,
   TerminateContractAction,
+  StartRenewalAction,
 } from './contract-lifecycle.actions.js';
+export { ExecutedUploadAction } from './contract-backfill.actions.js';
