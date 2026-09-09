@@ -269,7 +269,8 @@ export const RenewalStartFlow: Flow = {
         //
         // This was authored as an `end` node with `outcome: 'refused'` — the
         // shape the spec declares — and MEASURED inert on the pinned 17.4.0
-        // runtime: the second press recorded `status: "completed"` and
+        // runtime (`objectstack-ai/objectstack#15788`, open): the second press
+        // recorded `status: "completed"` and
         // answered HTTP 200 with the action's own "Renewal draft created."
         // while creating nothing. `refuseBackfill` carries the full reading;
         // the working idiom on this version is the throwing `script` node

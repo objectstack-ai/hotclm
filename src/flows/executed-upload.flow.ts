@@ -98,7 +98,12 @@ export function backfillStamps({ input }: { input: Record<string, unknown> }): {
  * backfill refused for a future signing date answered HTTP 200 with
  * "Executed contract recorded." while recording nothing. The guard protected
  * the data and lied to the clerk, which is precisely the dishonest capability
- * AGENTS.md forbids. Reported upstream, not patched here.
+ * AGENTS.md forbids.
+ *
+ * The engine half is `objectstack-ai/objectstack#15788` — open, "lane 2 of the
+ * #14945 ruling 2′" — so this is a platform gap already on the record, not one
+ * to file again and not one to patch here (AGENTS.md: report, never patch).
+ * When it lands, these two nodes can go back to being `end` nodes.
  *
  * `contract_intake` (F1) already refuses this way in this very directory —
  * `clm_intake_refuse` — because a `script` node is the only node that can end

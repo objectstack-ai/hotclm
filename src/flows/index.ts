@@ -61,6 +61,7 @@ export const flowFunctions = {
   clm_renewal_draft: renewalDraft,
   clm_backfill_stamps: backfillStamps,
   // The refusal channel both action-launched flows share. `end` nodes with
-  // `outcome: 'refused'` parse but do nothing on 17.4.0 — see `refuseBackfill`.
+  // `outcome: 'refused'` parse but do nothing on 17.4.0 (objectstack#15788) —
+  // see `refuseBackfill` for the reading.
   clm_backfill_refuse: refuseBackfill,
 };
