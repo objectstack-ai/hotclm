@@ -105,6 +105,34 @@ export function inList(field: string, values: readonly string[]): string {
 }
 
 /**
+ * The one member of the `lifecycle` group a PERSON writes.
+ *
+ * `group` does double duty on `clm_contract`: it is the detail page's section
+ * layout AND, through `fieldsInGroups` below, the source of the "only the
+ * platform writes this" lock. Every other `lifecycle` field is a timestamp a
+ * hook or a flow stamps, so deriving the lock from the group is right for all
+ * of them — and wrong for exactly this one. `termination_reason` (decision #6,
+ * ruled A on 2026-09-09) belongs on the lifecycle section because that is
+ * where a reader looks for it, but it is answered by the person ending the
+ * contract, in the Terminate dialog.
+ *
+ * MEASURED before this exclusion existed, on a booted app as an admin holding
+ * `clm_admin` and every position: `PATCH /api/v1/data/clm_contract/<id>` with
+ * `{status: 'terminated', termination_reason: '…'}` was refused 403
+ * "[Security] Field write denied: not permitted to edit [termination_reason]".
+ * The state machine requires the reason and FLS forbade writing it, so
+ * `active → terminated` — a transition DESIGN.md §03 declares — could not be
+ * taken by anybody through any surface. A field nobody may write is not a
+ * required field, it is a closed door.
+ *
+ * It stays read-only for `clm_requester` and `clm_finance`, which say so in
+ * their own grants, and for `clm_records` through its `editableOnly` list.
+ * `clm_legal` and `clm_admin` — the two sets holding the `terminate_contract`
+ * capability the action is gated on (§04) — get it through `openAllExcept`.
+ */
+export const CONTRACT_TERMINATION_REASON = 'termination_reason';
+
+/**
  * DESIGN.md §04 field-level security, the two rows that apply to EVERY
  * position: `route_*` and `approval_status` (written only by the routing hook
  * and the approval flow), the stage timestamps (written only by the state
@@ -112,7 +140,8 @@ export function inList(field: string, values: readonly string[]): string {
  * suggestion" action). Read from the object's field groups so a new stamp
  * lands under the lock without a second edit here.
  */
-export const CONTRACT_STAMPED_FIELDS = fieldsInGroups(Contract, ['routing', 'lifecycle', 'ai']);
+export const CONTRACT_STAMPED_FIELDS = fieldsInGroups(Contract, ['routing', 'lifecycle', 'ai'])
+  .filter((field) => field !== CONTRACT_TERMINATION_REASON);
 
 /**
  * The legal fields of a contract — what DESIGN.md §04 locks for finance

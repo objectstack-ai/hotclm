@@ -24,6 +24,15 @@ import type { HookApi } from './_hook-api.js';
  *   submitted` continues to `in_review` (a legal owner was assigned) or to
  *   `in_approval` (the type needs no legal review) in the same write, and the
  *   hop is validated by the same guard block a hand-made transition meets.
+ * - `contract_archive` (beforeUpdate, F14 of §06): a closed contract that
+ *   gains an `archive_no` is stamped `archived_at`, an archive number on a
+ *   live contract is refused, and an archived contract is frozen against
+ *   everything but its `summary`.
+ * - `contract_activate` (afterUpdate, F9 of §06): a contract ENTERING
+ *   `active` gets its `activated_at` if the transition guard did not stamp
+ *   one, and the renewal-reminder obligation §06 asks for. It expands NO
+ *   payment arrangement — decision #14, ruled A on 2026-09-09. Insert-time
+ *   activation is deliberately NOT bound; the measurement is on the hook.
  * - `deviation_gate` (afterUpdate on `clm_deviation`, F6 of §06): an accepted
  *   deviation from a clause that `requires_legal_head` stamps
  *   `route_legal_head` on the parent contract. The other half of F6 — no
@@ -526,7 +535,25 @@ const contractStateMachine: Hook = {
         throw refuse('Only the expiry job marks a contract expired; terminate it to end it by hand.', 'INVALID_STATE', 422);
       }
 
+      // DESIGN.md §03: `active → terminated` requires `closed_at` AND a
+      // termination reason. `closed_at` is stamped here rather than demanded
+      // (the moment IS this write); the reason cannot be — only the person
+      // ending the contract knows it. Decision #6 ruled A on 2026-09-09 and
+      // `clm_contract.termination_reason` is that field.
+      //
+      // The field also carries `requiredWhen`, which the engine enforces on
+      // its own. This guard is not a duplicate of it: it refuses with the
+      // machine's `INVALID_STATE` envelope and names the transition, which is
+      // what the rest of §03's guards do, and AGENTS.md puts a state guard in
+      // the hook rather than only in a declaration a form reads.
       if (to === 'terminated') {
+        if (!isSet(get('termination_reason'))) {
+          throw refuse(
+            'A termination reason is required to terminate a contract; it is the first thing legal and audit ask for. Terminate from the contract page, which asks for it.',
+            'INVALID_STATE',
+            422,
+          );
+        }
         input.closed_at = now;
       }
 
@@ -534,6 +561,217 @@ const contractStateMachine: Hook = {
       from = to;
       to = onward;
       input.status = onward;
+    }
+  },
+};
+
+const contractActivate: Hook = {
+  name: 'contract_activate',
+  object: 'clm_contract',
+  // `afterUpdate` ONLY, which is what DESIGN.md §06 F9 says — and the reason
+  // is MEASURED, not deference. An earlier draft of this hook also bound
+  // `afterInsert`, to cover the F16 backfill (a contract born `active`). One
+  // `pnpm demo` showed what that costs: the demo fixture writes its 60 active
+  // contracts as INSERTS, every one of them entered `active` on insert, and
+  // the hook opened a renewal obligation on each — 60 rows nobody asked for,
+  // in a fixture whose counts DESIGN.md §10 pins and whose plan asserts them
+  // (`assertCount('clm_obligation', …, 200)` counts the PLAN, not the table,
+  // so nothing caught it). Eleven of those 60 were already past their due
+  // date, so the next arrears sweep would have moved them to `overdue` and
+  // shifted `overdue_obligation_count` on eleven contracts.
+  //
+  // A hook cannot tell a seed insert from a backfill insert: both are
+  // `isSystem`. So the insert leg is not narrowed, it is removed, and F16
+  // stamps its own `activated_at` instead. A backfilled contract still gets
+  // its renewal reminder — from F12, when its notice window arrives, which is
+  // the path §06 gives every active contract.
+  events: ['afterUpdate'],
+  priority: 300,
+  // The renewal obligation is a child row on a `private` object, written for
+  // a contract the acting user may not own (the backfill path is a records
+  // clerk entering somebody else's executed contract), and `activated_at` is
+  // `readonly` and field-secured for every position (§04). `runAs` elevates
+  // `ctx.api` only; `ctx.session` still describes the caller, which is what
+  // the `isSystem` reads elsewhere in this file rely on.
+  runAs: 'system',
+  description: 'F9: on a contract entering active, stamp activated_at if unstamped and open the renewal-reminder obligation the type asks for.',
+  handler: async (ctx: HookContext) => {
+    function refuse(message: string, code: string, status: number): Error {
+      const err = new Error(message) as Error & { code: string; status: number };
+      err.code = code;
+      err.status = status;
+      return err;
+    }
+    const { input } = ctx;
+    const previous = ctx.previous ?? {};
+    const isSet = (value: unknown): boolean =>
+      !(value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0));
+    const get = (key: string): unknown => (input[key] !== undefined ? input[key] : previous[key]);
+
+    // ENTERING active, not "is active": the status moved here on THIS write.
+    // §03 gives `active` exactly one inbound edge (`signing → active`), so
+    // this fires once per contract, and a re-entrant write that touches other
+    // columns leaves `previous.status` already `active` and returns.
+    const status = get('status');
+    if (status !== 'active') return;
+    if (previous.status === 'active') return;
+
+    const api = ctx.api as HookApi | undefined;
+    if (!api) throw refuse('The data API is not available to the contract activation hook.', 'INTERNAL_ERROR', 500);
+
+    // The id rides on the update pre-image.
+    const id = typeof previous.id === 'string' && previous.id ? previous.id : typeof input.id === 'string' ? input.id : '';
+    if (!id) return;
+
+    if (!isSet(get('activated_at'))) {
+      // Belt and braces on the one column §06 F9 names first. The
+      // `signing → active` guard in `contract_state_machine` stamps it on the
+      // only edge §03 draws into `active`, so on every path that exists today
+      // this write does not happen — and if a future edge is added without
+      // the stamp, the contract still gets one rather than silently carrying
+      // an empty activation date.
+      await api.object('clm_contract').update({ id, activated_at: new Date().toISOString() }, { where: { id } });
+    }
+
+    // ── The renewal reminder ────────────────────────────────────────────
+    //
+    // DESIGN.md §06 F9: "按类型默认建续签提醒义务". The date the reminder is
+    // FOR is `end_date` minus the contract's own notice period — the day by
+    // which a non-renewal notice has to be given — so a contract with no
+    // `end_date` has nothing to remind anyone about and gets no obligation
+    // rather than one with an invented date (`due_date` is required).
+    //
+    // ⛔ NOTHING here expands a payment arrangement, and there is deliberately
+    // no hook, flag or placeholder for one. Decision #14 was ruled A on
+    // 2026-09-09: F9 does not read any intake-captured payment schedule,
+    // because nothing at intake can fill one and §04 gives the requester read
+    // only on `clm_payment_plan`. Payment plans are created by finance after
+    // activation, on the contract's own tab (§04 grants finance RCU).
+    const endDate = get('end_date');
+    if (!isSet(endDate)) return;
+    const endMs = typeof endDate === 'string' ? Date.parse(endDate) : endDate instanceof Date ? endDate.getTime() : NaN;
+    if (!Number.isFinite(endMs)) return;
+
+    // Idempotent on the CHILD, not on a flag: a second entry into `active` is
+    // not reachable through §03 (active's only exits are terminal), but a
+    // re-run of this hook is — the platform dispatches `after*` inside the
+    // unit of work, so a retried write re-enters it. One renewal obligation
+    // per contract, checked live.
+    const existing = await api.object('clm_obligation').count({ where: { contract: id, kind: 'renewal' } });
+    if (existing > 0) return;
+
+    const rawNotice = get('renewal_notice_days');
+    const noticeDays = typeof rawNotice === 'number' && Number.isFinite(rawNotice) && rawNotice >= 0
+      ? Math.floor(rawNotice)
+      : 30;
+    const dueMs = endMs - noticeDays * 86_400_000;
+    const dueDate = new Date(dueMs).toISOString().slice(0, 10);
+    const title = get('title');
+    const owner = get('owner_id');
+
+    await api.object('clm_obligation').insert({
+      contract: id,
+      // English is the source language (AGENTS.md 命名): a stored row is
+      // written once and cannot be re-rendered per reader, the same reason
+      // `clm_payment_plan.display_name` is ASCII.
+      title: `Renewal decision: ${typeof title === 'string' && title ? title : 'contract'}`.slice(0, 200),
+      kind: 'renewal',
+      due_date: dueDate,
+      owner: typeof owner === 'string' && owner ? owner : null,
+      status: 'pending',
+      notes: `Opened by F9 on activation. Decide renewal or notice by ${dueDate} — ${noticeDays} days before the contract ends.`,
+    });
+  },
+};
+
+const contractArchive: Hook = {
+  name: 'contract_archive',
+  object: 'clm_contract',
+  events: ['beforeUpdate'],
+  priority: 250,
+  description: 'F14: stamp archived_at when the records desk gives a closed contract its archive number, refuse an archive number on a live one, and freeze an archived contract against everything but its summary.',
+  handler: async (ctx: HookContext) => {
+    function refuse(message: string, code: string, status: number): Error {
+      const err = new Error(message) as Error & { code: string; status: number };
+      err.code = code;
+      err.status = status;
+      return err;
+    }
+    const { input } = ctx;
+    const previous = ctx.previous ?? {};
+    const isSet = (value: unknown): boolean =>
+      !(value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0));
+    const get = (key: string): unknown => (input[key] !== undefined ? input[key] : previous[key]);
+
+    // DESIGN.md §03: the three terminal states. Archiving is what happens
+    // AFTER the lifecycle ends, so it is gated on the state the record is
+    // LANDING in — `terminated` and its archive number can arrive on one write.
+    const TERMINAL = ['expired', 'terminated', 'cancelled'];
+    const status = get('status');
+    const terminal = typeof status === 'string' && TERMINAL.includes(status);
+
+    const alreadyArchived = isSet(previous.archived_at);
+    const gainsArchiveNo = input.archive_no !== undefined && isSet(input.archive_no) && !isSet(previous.archive_no);
+
+    // ── The freeze ──────────────────────────────────────────────────────
+    //
+    // "此后除 notes 外只读" (§06 F14). `clm_contract` carries no `notes` field —
+    // §03's field list gives the contract `summary` and puts `notes` on the
+    // CHILD objects — so `summary`, the contract's one free-text column, is
+    // the field that stays open. Freezing it too would leave an archived
+    // record with a factual error and no in-product way to annotate it, since
+    // `archived_at` is `readonly` and the terminal states have no outgoing
+    // edge. Reported as a §06/§03 wording mismatch rather than resolved by
+    // adding a field: §03 is a governed surface.
+    //
+    // System writes are exempt: the engine recomputes the five `summary`
+    // roll-ups under an elevated context on every child write, and a frozen
+    // parent would make an archived contract's children unwritable.
+    if (alreadyArchived && ctx.session?.isSystem !== true) {
+      // The platform's own audit columns ride along on every update and are
+      // NOT the caller's payload, so they can never be the reason a write is
+      // refused. They are named here exactly as the engine spells them —
+      // `updated_at` / `updated_by`, which is what `clm_contract` actually
+      // carries. MEASURED with the earlier `modified_at` / `modified_by`
+      // spelling on a booted app: `PATCH { summary: '…' }` on an archived
+      // contract was refused 422 "Fields refused: updated_at", so the ONE
+      // field this rule exists to keep open was the one it closed, and an
+      // archived contract could not be annotated at all — the outcome the
+      // comment above says the exemption exists to avoid. A field-name typo in
+      // an allow-list is silent until something runs.
+      const OPEN_AFTER_ARCHIVE = [
+        'summary',
+        'id',
+        'organization_id',
+        'created_at',
+        'created_by',
+        'updated_at',
+        'updated_by',
+      ];
+      const attempted = Object.keys(input).filter(
+        (key) => !OPEN_AFTER_ARCHIVE.includes(key) && input[key] !== previous[key],
+      );
+      if (attempted.length > 0) {
+        throw refuse(
+          `This contract was archived on ${String(previous.archived_at)}; only its summary can still be edited. Fields refused: ${attempted.join(', ')}.`,
+          'INVALID_STATE',
+          422,
+        );
+      }
+      return;
+    }
+
+    if (gainsArchiveNo) {
+      if (!terminal) {
+        throw refuse(
+          `An archive number is given when the contract is closed; this one is ${String(status)}. Let it expire, terminate it or cancel it first.`,
+          'INVALID_STATE',
+          422,
+        );
+      }
+      // The stamp IS the archive event — DESIGN.md §06 F14: the records desk
+      // fills the number, the platform records when.
+      input.archived_at = new Date().toISOString();
     }
   },
 };
@@ -663,7 +901,7 @@ const obligationStateMachine: Hook = {
   object: 'clm_obligation',
   events: ['beforeInsert', 'beforeUpdate'],
   priority: 200,
-  description: 'Obligation transitions: pending → in_progress / done / waived / overdue, in_progress → done / waived, overdue → done / waived; overdue is reserved for the daily job; stamp completed_at on done.',
+  description: 'Obligation transitions: pending → in_progress / done / waived / overdue, in_progress → done / waived / overdue, overdue → done / waived; overdue is reserved for the daily job; stamp completed_at on done.',
   handler: async (ctx: HookContext) => {
     function refuse(message: string, code: string, status: number): Error {
       const err = new Error(message) as Error & { code: string; status: number };
@@ -692,12 +930,18 @@ const obligationStateMachine: Hook = {
     const from = typeof previous.status === 'string' ? previous.status : 'pending';
     if (to === from) return;
 
-    // DESIGN.md §03 状态机 — done and waived are terminal. in_progress has no
-    // edge to overdue there; an obligation being worked on is reported through
-    // its due date, not by moving it into arrears.
+    // DESIGN.md §03 状态机 — done and waived are terminal.
+    //
+    // `in_progress → overdue` is decision #10's question 1, ruled 1A on
+    // 2026-09-09: the table drew `pending → overdue` and not this one, so an
+    // obligation nobody had touched could be marked late while one somebody
+    // had STARTED could not. The ruling's own consequence is written into the
+    // daily job (`obligation-due.flow.ts`): the arrears sweep selects
+    // `pending` AND `in_progress`, because skipping the started rows is the
+    // silent under-reporting that card's analysis named as the thing to avoid.
     const TRANSITIONS: Record<string, string[]> = {
       pending:     ['in_progress', 'done', 'waived', 'overdue'],
-      in_progress: ['done', 'waived'],
+      in_progress: ['done', 'waived', 'overdue'],
       overdue:     ['done', 'waived'],
       done:        [],
       waived:      [],
@@ -727,7 +971,7 @@ const paymentPlanStateMachine: Hook = {
   object: 'clm_payment_plan',
   events: ['beforeInsert', 'beforeUpdate'],
   priority: 200,
-  description: 'Payment instalment transitions: planned → due, due → partial / paid / overdue, overdue → partial / paid; overdue is reserved for the daily job; stamp actual_date on partial and paid.',
+  description: 'Payment instalment transitions: planned → due, due → partial / paid / overdue, overdue → partial / paid, partial → paid / overdue; overdue is reserved for the daily job; stamp actual_date on partial and paid.',
   handler: async (ctx: HookContext) => {
     function refuse(message: string, code: string, status: number): Error {
       const err = new Error(message) as Error & { code: string; status: number };
@@ -752,15 +996,24 @@ const paymentPlanStateMachine: Hook = {
     const from = typeof previous.status === 'string' ? previous.status : 'planned';
     if (to === from) return;
 
-    // DESIGN.md §03 状态机, transcribed edge for edge. `partial` and `paid`
-    // carry no outgoing edge there — see the PR's 验收备注: whether a partial
-    // instalment may later be completed to `paid` is a §03 question, and §03
-    // is a governed surface this card does not get to widen.
+    // DESIGN.md §03 状态机. `partial` had NO outgoing edge — a dead end that
+    // §03 marked terminal only by omission, which is decision #10's question 2,
+    // ruled 2A on 2026-09-09: `partial → paid` (they paid half, then the rest)
+    // and `partial → overdue` (they paid half and the date passed).
+    //
+    // The second of those is what makes the edge real rather than declared:
+    // `overdue` has exactly one writer, the daily job, so if
+    // `payment-overdue.flow.ts` did not sweep `partial` rows nothing in the
+    // product could ever take that edge. It does (`due` and `partial`, both
+    // past `planned_date`).
+    //
+    // `paid` stays terminal: the remainder of a settled instalment is a
+    // further instalment row, which the unique `(contract, seq)` index shapes.
     const TRANSITIONS: Record<string, string[]> = {
       planned: ['due'],
       due:     ['partial', 'paid', 'overdue'],
       overdue: ['partial', 'paid'],
-      partial: [],
+      partial: ['paid', 'overdue'],
       paid:    [],
     };
     const allowed = TRANSITIONS[from] ?? [];
@@ -787,6 +1040,8 @@ export default [
   contractTypeStamp,
   contractRoute,
   contractStateMachine,
+  contractArchive,
+  contractActivate,
   deviationStateMachine,
   deviationGate,
   signatureStateMachine,

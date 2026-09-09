@@ -1,3 +1,4 @@
+import { P } from '@objectstack/spec';
 import { ObjectSchema, Field } from '@objectstack/spec/data';
 
 /**
@@ -403,6 +404,38 @@ export const Contract = ObjectSchema.create({
       group: 'lifecycle',
       readonly: true,
       description: 'Stamped on termination.',
+    }),
+    // DESIGN.md §03's `active → terminated` guard is "closed_at 与终止原因必填",
+    // and the field list had no reason field to satisfy the second half —
+    // decision #6, ruled A on 2026-09-09: declare it, textarea, required at
+    // termination and nowhere else.
+    //
+    // Two enforcers, on purpose, and they are not redundant:
+    //
+    //  - `requiredWhen` is the ENGINE's transition gate (ADR-0113): the write
+    //    that flips `status` to `terminated` while this cell is empty is
+    //    refused by `evaluateValidationRules`, on every write path including
+    //    a bare REST PATCH. It is also what the Console form reads, so the
+    //    cell turns required exactly when the reason is being asked for.
+    //  - `contract.hook.ts`'s state machine refuses the same edge with the
+    //    machine's own `INVALID_STATE` envelope and a sentence naming the
+    //    transition. AGENTS.md is explicit that a §03 guard lives in the
+    //    hook, not only in a declaration a form happens to read.
+    //
+    // NO `storage.notNull`: the column must stay nullable — every contract
+    // that is not terminated has no reason, and ADR-0113 rejects the pair
+    // outright ("a conditional contract cannot be an unconditional column
+    // constraint").
+    //
+    // It is NOT on any type's `intake_fields`, which is what keeps it off the
+    // launch form (F1 renders exactly that list): the question is asked once,
+    // at termination, by the Terminate action's param dialog.
+    termination_reason: Field.textarea({
+      label: 'Termination Reason',
+      group: 'lifecycle',
+      requiredWhen: P`record.status == "terminated"`,
+      maxLength: 2000,
+      description: 'Why the contract was ended before its term ran out. Required to terminate (DESIGN.md §03 active → terminated); asked once, by the Terminate action, and never on the intake form.',
     }),
     archived_at:       Field.datetime({ label: 'Archived At',       group: 'lifecycle', readonly: true }),
 

@@ -277,6 +277,10 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: 'Closed At',
         help: 'Stamped on termination.',
       },
+      termination_reason: {
+        label: 'Termination Reason',
+        help: 'Why the contract was ended before its term ran out. Required to terminate (DESIGN.md §03 active → terminated); asked once, by the Terminate action, and never on the intake form.',
+      },
       archived_at: {
         label: 'Archived At',
       },
@@ -322,7 +326,31 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       activate_contract: {
         label: 'Activate',
-        description: 'Bring a signed contract into force. F9 stamps `activated_at` and builds the renewal reminder and payment schedule.',
+        description: 'Bring a signed contract into force. F9 stamps `activated_at` and opens the renewal-reminder obligation.',
+      },
+      executed_upload: {
+        label: 'Backfill Executed Contract',
+        description: 'Record a contract that was signed before this system, or outside it: it is created directly in active with is_backfilled set, skipping review and approval, and the executed copy is filed as its final signed version.',
+        successMessage: 'Executed contract recorded.',
+        params: {
+          contract_type: {
+            helpText: 'The workflow this contract would have run. It still stamps the number, the category and the execution formalities.',
+          },
+          party: {
+            helpText: 'The counterparty on the executed document.',
+          },
+          signed_date: {
+            label: 'Signed On',
+            helpText: 'The date on the executed document. It becomes both signed_at and executed_at.',
+          },
+          executed_file: {
+            label: 'Executed Copy',
+            helpText: 'The signed PDF or scan. It is filed as version 1, kind final_signed.',
+          },
+          archive_no: {
+            helpText: 'Optional. The existing paper file reference, if this contract already has one.',
+          },
+        },
       },
       launch_contract: {
         label: 'Launch Contract',
@@ -419,9 +447,19 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: 'Submit',
         description: 'Hand the draft to legal. Routing (F2) stamps the approval flags and either assigns a reviewer or sends it straight to approval.',
       },
+      start_renewal: {
+        label: 'Start Renewal',
+        description: 'Create a renewal draft pre-filled from this contract and linked back to it. Renewal is a new contract, not a status change.',
+        successMessage: 'Renewal draft created.',
+      },
       terminate_contract: {
         label: 'Terminate',
-        description: 'End an active contract before its term runs out.',
+        description: 'Terminate this contract? It is a terminal state — the contract cannot be reactivated, only renewed as a new one. The reason is required and is recorded on the contract.',
+        params: {
+          termination_reason: {
+            helpText: 'Why the contract is ending early — counterparty breach, no longer needed, agreed between the parties. Legal and audit ask this first.',
+          },
+        },
       },
     },
     _views: {

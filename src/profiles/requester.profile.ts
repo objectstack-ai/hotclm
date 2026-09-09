@@ -3,7 +3,7 @@ import { Contract } from '../objects/contract.object.js';
 import { Party } from '../objects/party.object.js';
 import { Review } from '../objects/review.object.js';
 import { REQUESTER_EDITABLE_STATUSES } from '../sharing/_lifecycle.js';
-import { CONTRACT_STAMPED_FIELDS, hidden, inList, readOnly } from './_grants.js';
+import { CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, hidden, inList, readOnly } from './_grants.js';
 
 /**
  * `clm_requester` — every employee (DESIGN.md §04 "所有员工默认").
@@ -83,6 +83,9 @@ export const RequesterSet = definePermissionSet({
     ...readOnly(Contract, CONTRACT_STAMPED_FIELDS),
     // Assessed by legal (§04 FLS table).
     ...readOnly(Contract, ['risk_level', 'liability_cap']),
+    // Ending a contract is legal's act (§04 gives only clm_legal and clm_admin
+    // `terminate_contract`), so the reason is readable here and not writable.
+    ...readOnly(Contract, [CONTRACT_TERMINATION_REASON]),
     // Legal's working note; the conclusion for the requester goes in `comments`.
     ...hidden(Review, ['internal_note']),
     // Payment and contact details are the easiest to leak (§04 FLS table).

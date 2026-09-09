@@ -13,6 +13,7 @@ import {
   REVIEW_INTERNAL_NOTES,
   RISK_NOTES,
   SIGNATURE_NOTES,
+  TERMINATION_REASONS,
   TITLE_QUALIFIERS,
 } from './prose.js';
 
@@ -38,5 +39,6 @@ export const ZH_CN: DemoStrings = {
   deviationTexts: DEVIATION_TEXTS,
   deviationJustifications: DEVIATION_JUSTIFICATIONS,
   signatureNotes: SIGNATURE_NOTES,
+  terminationReasons: TERMINATION_REASONS,
   jurisdictions: JURISDICTIONS,
 };

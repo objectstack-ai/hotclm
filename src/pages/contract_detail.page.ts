@@ -70,8 +70,13 @@ import type { Page } from '@objectstack/spec/ui';
  *   is a list-page visualization, not something a tab can mount. The versions
  *   tab is therefore a related list ordered newest-first, which is the same
  *   chronology in a different frame. Reported, not silently substituted.
- * - **发起续签** is missing from the header action list because F12 is card 09;
- *   see `contract-lifecycle.actions.ts` for the full accounting of §05's seven.
+ * - **发起续签** is now the seventh header action (`start_renewal`), which is
+ *   what card 09 owed: F12's sweep flags a contract `is_expiring` and the
+ *   notification tells the owner a renewal decision is due, and this is the
+ *   button that decision is taken with. It is a flow action, not a transition
+ *   — §03 is explicit that renewal creates a NEW contract carrying
+ *   `renewed_from` rather than moving this one — so it sits beside the six
+ *   status writes without being one.
  */
 export const ContractDetailPage: Page = {
   name: 'contract_detail',
@@ -91,16 +96,18 @@ export const ContractDetailPage: Page = {
 
   slots: {
     /**
-     * §05: header 挂「提交 / 受理 / 送审 / 发起签署 / 生效 / 终止」动作,按 status
-     * 与门控显隐.
+     * §05: header 挂「提交 / 受理 / 送审 / 发起签署 / 生效 / 终止 / 发起续签」
+     * 动作,按 status 与门控显隐.
      *
      * `PageHeaderProps.actions` is `z.array(z.string())` — action IDs, not
      * definitions — so the display rules travel with the ACTION, not with this
-     * list: each of the six carries `visible` (a CEL predicate on
+     * list: each of the seven carries `visible` (a CEL predicate on
      * `record.status`) and, where §04 names one, `requiredPermissions`. Listing
-     * all six here and letting each decide is what makes the header change
+     * all seven here and letting each decide is what makes the header change
      * shape as a contract moves; a custom record page replaces the default
-     * header, so an action not named here is unreachable from the record.
+     * header, so an action not named here is unreachable from the record —
+     * MEASURED: `start_renewal` was declared, translated and wired to its flow
+     * and still had no button on the contract page until it was named here.
      */
     header: {
       type: 'page:header',
@@ -116,6 +123,7 @@ export const ContractDetailPage: Page = {
           'start_signing',
           'activate_contract',
           'terminate_contract',
+          'start_renewal',
         ],
       },
     },
