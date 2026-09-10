@@ -8,7 +8,7 @@ import { Signature } from '../objects/signature.object.js';
 
 import { dayOffset } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
-import { DEMO_USER, titleOfIndex } from './keys.js';
+import { DEMO_USER, deviationDeciderOf, titleOfIndex } from './keys.js';
 import { CONTRACT_PLAN, DEVIATION_PLAN, typeOf } from './plan-contracts.js';
 import { REVIEW_PLAN, SIGNATURE_PLAN } from './plan-children.js';
 import { contactEmailFor } from './plan.js';
@@ -65,6 +65,12 @@ export const reviewSeed = defineSeed(Review, {
  * `in_approval` while any deviation is open. A seed is exempt from that gate;
  * the plan applies it anyway, so no seeded row is in a state the write layer
  * would have refused.
+ *
+ * The same rule decides `decided_by`: `deviation_state_machine` stamps the
+ * acting user on any decision that leaves the column empty, so a decided
+ * deviation always names a decider and an open one never does. WHICH lawyer it
+ * names is {@link deviationDeciderOf}, and it is a lawyer because §04 gives
+ * `clm_legal` the only non-admin `U` on this object.
  */
 export const deviationSeed = defineSeed(Deviation, {
   externalId: ['contract', 'clause'],
@@ -76,7 +82,7 @@ export const deviationSeed = defineSeed(Deviation, {
     requested_position: deviation.requestedPosition,
     justification: STRINGS.deviationJustifications[deviation.justificationIndex]!,
     status: deviation.status,
-    decided_by: deviation.status === 'open' ? null : DEMO_USER,
+    decided_by: deviationDeciderOf(deviation),
     decided_at: deviation.decidedAt === null ? null : dayOffset(deviation.decidedAt),
   })),
 });

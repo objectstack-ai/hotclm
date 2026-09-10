@@ -72,13 +72,13 @@ const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
  * whole row, so it must name an account that exists while the seed runs, and
  * on a first boot the dev admin is the only account there is.
  *
- * NOT `clm_contract.owner_id`, NOT `clm_contract.legal_owner` and NOT
- * `clm_obligation.owner`. All three name accounts of DESIGN.md §10's persona
- * mix — three business requesters and two legal counsel — which no seed may
- * create and this script does not mint. They can afford to be missing: all
- * three are optional, so a name with no account lands NULL and the row
- * survives, and re-running `pnpm demo` once the operator has created them
- * hands the rows over. See `src/data/keys.ts`.
+ * NOT `clm_contract.owner_id`, NOT `clm_contract.legal_owner`, NOT
+ * `clm_obligation.owner` and NOT `clm_deviation.decided_by`. All four name
+ * accounts of DESIGN.md §10's persona mix — three business requesters and two
+ * legal counsel — which no seed may create and this script does not mint. They
+ * can afford to be missing: all four are optional, so a name with no account
+ * lands NULL and the row survives, and re-running `pnpm demo` once the operator
+ * has created them hands the rows over. See `src/data/keys.ts`.
  *
  * ⚠️ This MIRRORS `DEMO_USER` in `src/data/keys.ts`. They have to agree, and
  * they cannot be one constant: this file is plain `.mjs` that runs before
