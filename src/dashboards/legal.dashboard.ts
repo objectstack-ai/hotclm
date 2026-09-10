@@ -206,11 +206,74 @@ export const LegalDashboard: Dashboard = {
     },
     {
       /**
-       * 各阶段合同数, drawn as a RANKED BAR. Scoped to the seven PIPELINE
-       * stages: `rejected`, `expired`, `terminated` and `cancelled` are
-       * terminal outcomes, not rungs a contract climbs, and a chart of
-       * pipeline stages that lists them reads as if a contract were meant to
-       * reach them.
+       * 各阶段合同数, drawn as a RANKED BAR over the SIX IN-FLIGHT stages —
+       * the ones legal still has work to do on.
+       *
+       * ## The admission rule, restated (issue #59)
+       *
+       * This widget used to admit seven statuses and justify excluding
+       * `rejected`, `expired`, `terminated` and `cancelled` as "terminal
+       * outcomes, not rungs a contract climbs". #59 was right that `active`
+       * did not belong, and wrong about why: a contract IS meant to reach
+       * `active`, which is precisely what separates it from the four excluded
+       * outcomes, so "terminal" is not the criterion doing the work. Nor is it
+       * terminality in the state machine — `contract.hook.ts` gives `rejected`
+       * an edge back to `draft` and `active` two edges out, and both are
+       * excluded here all the same.
+       *
+       * The criterion that does discriminate, and the one this filter now
+       * states: WHETHER LEGAL HAS WORK TO DO ON THE STAGE. This is a work-queue
+       * board — the other five widgets are `awaiting_intake`, `in_review`,
+       * `review_ageing`, `negotiation_stalled` and `approval_throughput`, each
+       * one a queue or a throughput. `draft` … `signing` are contracts legal is
+       * moving; `active`, `expired`, `terminated`, `cancelled` and `rejected`
+       * are contracts legal has finished moving. Legal's work on an in-force
+       * book is renewal and expiry, and that is a DATED slice of it (the 到期日历
+       * view in this app's Legal Desk, `expiring_90_days` on 管理层), never its
+       * size.
+       *
+       * ## What admitting `active` cost, measured
+       *
+       * Bar length is proportional to the measure and the axis maximum is set
+       * by the largest bar, so one stage of 60 was setting the scale for six
+       * stages of 4 to 12. Measured in Chromium at 1440px, en and zh-CN
+       * identically, before #59's change: `active` 615px — the WHOLE 615px plot
+       * area, x 771→1386 — against In Review 123 · Draft 102.5 · In Approval
+       * 82 · Submitted 61.5 · Signing 61.5 · Approved 41. The six stages legal
+       * works were confined to at most a fifth of the axis, where a 3×
+       * difference (4 against 12) reads as a barely-visible one.
+       *
+       * Counted out of the running database rather than inherited (`POST
+       * /api/v1/analytics/dataset/query` on `contract_metrics`, dimension
+       * `status`, no filter): draft 10 · submitted 6 · in_review 12 ·
+       * in_approval 8 · approved 4 · signing 6 · active 60 · expired 8 ·
+       * terminated 4 · cancelled 2, and `rejected` absent at 0 — 120 contracts,
+       * DESIGN.md §10's spread exactly. This widget now plots 46 of them;
+       * `active` was 60 of the 106 it used to admit.
+       *
+       * ⛔ The answer is not to reshape the book. A book that is 60/120 in force
+       * is correct (§10, pinned by `assertSpread` in `src/data/plan-contracts.ts`);
+       * the chart serves the data, not the other way round.
+       *
+       * ## Why no contracts-in-force METRIC replaces it (#59 recommendation 2)
+       *
+       * #59 offered to add the in-force count back as a `metric` tile, the
+       * shape the other five use, and asked for a reading of the legal
+       * audience rather than an argument from symmetry. The reading: legal
+       * never acts on the SIZE of the in-force book. Every job §06 gives them
+       * over a live contract — renewal, obligations, amendment, termination
+       * formalities, archive — is a dated or event-driven slice of it, and each
+       * of those already has its own destination. A tile reading "60" would not
+       * change on any day legal works, would name no queue, and would put back
+       * on this board the one thing this card is removing 615px of: a number
+       * with nothing to do about it.
+       *
+       * It is also not missing from what legal can SEE. §09 assigns the
+       * in-force sense to 管理层 and it is there — `active_contract_value` by
+       * currency, plus `expiring_90_days` — and all three boards sit in one nav
+       * group gated on `clm_requester.access`, the single capability every CLM
+       * audience holds (measured in `src/apps/clm.app.ts`). It is one click
+       * away, in the richer form (value, not count), on the board that owns it.
        *
        * ## Why not a funnel (issue #48) — the mark was making a false claim
        *
@@ -221,7 +284,7 @@ export const LegalDashboard: Dashboard = {
        * database for the card: draft 10 · submitted 6 · in_review 12 ·
        * in_approval 8 · approved 4 · signing 6 · active 60. Rendered as a
        * funnel that is a BOWTIE — narrow, wide, narrow, then eleven times
-       * wider at the end. Measured in Chromium on the widget before this
+       * wider at the end. Measured in Chromium on the widget before #48's
        * change, band widths in px: 115 · 138 · 138 · 92 · 69 · 692 · 692.
        *
        * The cost is not that it looked broken. It is that the mark ASSERTED
@@ -280,12 +343,12 @@ export const LegalDashboard: Dashboard = {
       // hint prescribes this suppression for exactly that case.
       id: 'stage_funnel',
       title: 'Pipeline by Stage',
-      description: 'Contracts at each lifecycle stage right now — a snapshot, largest stage first, not a conversion sequence',
+      description: 'The six stages a contract is still moving through — a snapshot of what legal has in hand, largest queue first, not a conversion sequence. Contracts already in force are not plotted.',
       type: 'horizontal-bar',
       dataset: 'contract_metrics',
       dimensions: ['status'],
       values: ['contract_count'],
-      filter: { status: { $in: ['draft', 'submitted', 'in_review', 'in_approval', 'approved', 'signing', 'active'] } },
+      filter: { status: { $in: ['draft', 'submitted', 'in_review', 'in_approval', 'approved', 'signing'] } },
       options: {
         sortBy: 'contract_count',
         sortOrder: 'desc',
