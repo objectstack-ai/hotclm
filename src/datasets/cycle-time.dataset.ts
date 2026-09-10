@@ -41,8 +41,11 @@ import { defineDataset } from '@objectstack/spec/ui';
  *
  * Those five are deliberately NOT read as a monotone funnel: `signed_at` (72)
  * exceeds `submitted_at` (60) because the demo's in-force book was backfilled
- * with signature dates and no intake. The status funnel on the legal workbench
- * is the honest funnel; these are per-stage coverage counts.
+ * with signature dates and no intake. There is no funnel on the legal
+ * workbench to contrast them with either — that board's per-stage brick is a
+ * bar chart, and DESIGN.md §09 gives this same non-monotone book as the reason
+ * (#48 / PR #57). These five are per-stage coverage counts: stamps that were
+ * set at some point and never clear, not a conversion sequence.
  */
 export const CycleTimeDataset = defineDataset({
   name: 'contract_cycle_time',
