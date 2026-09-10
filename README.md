@@ -90,12 +90,14 @@ references them by name:
 | Name it exactly | Give it | It receives |
 |---|---|---|
 | `Business Requester 1` · `Business Requester 2` · `Business Requester 3` | the default `clm_requester` set | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 |
-| `Legal Counsel 1` · `Legal Counsel 2` | the `clm_legal_counsel` position | the `legal_owner` of every contract legal has accepted — 34 / 34 · and all 56 compliance obligations, by the same counterparty relationship — 29 / 27 |
+| `Legal Counsel 1` · `Legal Counsel 2` | the `clm_legal_counsel` position | the `legal_owner` of every contract legal has accepted — 34 / 34 · all 56 compliance obligations, by the same counterparty relationship — 29 / 27 · and the `decided_by` of all 17 decided deviations — 10 / 7 |
 
 Each requester's **我的合同 › Launched by Me** and **› My Obligations**, and each
 lawyer's **法务工作台 › 审查中** and their own **My Obligations**, fill the moment
-the account exists. All three columns are optional references, so naming an
-account that is not there yet costs nothing and no row: it simply stays empty.
+the account exists; a decided deviation's **Decided By** shows its lawyer on the
+contract page's Deviations grid. All four columns are optional references, so
+naming an account that is not there yet costs nothing and no row: it simply
+stays empty.
 Every dataset is an upsert, so **create the accounts and run `pnpm demo` again**
 and their contracts and obligations are handed over. Get a name wrong by one
 character and the column stays empty with no error — that is the one thing to
