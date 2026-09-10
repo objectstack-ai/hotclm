@@ -174,8 +174,9 @@ export const ExecutiveDashboard: Dashboard = {
     //
     // What IS persisted is the routing: F2 stamps four booleans on the contract,
     // one per rung. These four tiles read them — how much traffic each rung
-    // carries. Each tile is titled `Routes: <rung>` and no string on this board
-    // says "bottleneck" or "dwell", because volume is neither.
+    // carries. Each tile is titled `Routes: <rung>`; no title or description on
+    // this board — here or in either translation bundle — says "bottleneck" or
+    // "dwell", because volume is neither.
     //
     // FOUR TILES, not one four-measure chart, and the shape was forced by a
     // measurement. The rungs are four COLUMNS, not four values of one column, so
