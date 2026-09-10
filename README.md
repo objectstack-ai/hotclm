@@ -44,9 +44,10 @@ titles, so seeding one on top of the other gives you both books.
 Every metadata change is gated:
 
 ```bash
-pnpm validate     # protocol schema + CEL predicates + bindings
-pnpm lint         # data-model conventions (reserved vocabulary, titles, master-detail)
+pnpm validate        # protocol schema + CEL predicates + bindings
+pnpm lint            # data-model conventions (reserved vocabulary, titles, master-detail)
 pnpm typecheck
+pnpm lint:i18n-gate  # every zh-CN key present — a missing one renders as English, silently
 ```
 
 ## Layout
