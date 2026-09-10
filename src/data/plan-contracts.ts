@@ -193,7 +193,40 @@ const dealStatuses = (): ContractStatus[] => {
     [bag[i], bag[donor]] = [bag[donor] as ContractStatus, bag[i] as ContractStatus];
   }
 
-  // Second repair: DESIGN.md §10 wants two signature rounds whose execution
+  // Second repair: `in_review` is only reachable by a contract whose TYPE asks
+  // for legal review. `contract_state_machine` refuses `submitted → in_review`
+  // twice over — "This contract type does not require legal review; a
+  // submitted contract of this type goes straight to in_approval" and "Assign
+  // a legal owner before the contract enters review" — and F2 never assigns a
+  // `legal_owner` to a type that skips review. So a random deal that parks a
+  // statement of work or an order form in `in_review` produces a row no
+  // surface in this app could have made, AND a row F3's daily nudge selects
+  // and can tell nobody about.
+  //
+  // That is not hypothetical: measured on the deal before this repair, 6 of
+  // the 12 `in_review` contracts sat on the two types whose
+  // `requiresLegalReview` is false, and those six ARE F3's "10 selected, 5
+  // notified" reading (10 of the 12 fall in the over-30-day band; 5 of those
+  // 10 were type-impossible and therefore ownerless). Property 1 at the top of
+  // `plan.ts` — no row is in a state the write layer would have refused — is
+  // what this repair enforces for the one edge the first two do not cover.
+  //
+  // Swapped, not re-dealt, so §10's spread survives and {@link assertSpread}
+  // still proves it. The donor must be a legal-review type and must not be a
+  // blocked counterparty, which is the first repair's invariant; the swap runs
+  // BEFORE the formalities repair below so that repair still gets its pick.
+  const reviewedAt = (index: number) =>
+    CONTRACT_TYPE_PLAN[(PAIRINGS[index] as Pairing).typeIndex]?.requiresLegalReview === true;
+  for (let i = 0; i < bag.length; i += 1) {
+    if (bag[i] !== 'in_review' || reviewedAt(i)) continue;
+    const donor = bag.findIndex((status, j) => status !== 'in_review' && reviewedAt(j) && !isBlocked(j));
+    if (donor < 0) {
+      throw new Error('demo fixture: no legal-review contract type left to hold an `in_review` status, which `contract_state_machine` refuses on every other type.');
+    }
+    [bag[i], bag[donor]] = [bag[donor] as ContractStatus, bag[i] as ContractStatus];
+  }
+
+  // Third repair: DESIGN.md §10 wants two signature rounds whose execution
   // formalities are not yet complete, and "not complete" is only a fact about
   // a contract whose TYPE asks for a formality at all. A random deal can leave
   // all six `signing` contracts on formality-free types (an NDA needs nothing
@@ -224,8 +257,30 @@ const assertSpread = (statuses: readonly ContractStatus[]): void => {
   }
 };
 
+/**
+ * The two per-row invariants the three repairs exist to hold, proven after all
+ * of them have run rather than trusted from the order they run in.
+ *
+ * Each repair swaps a pair, and a swap moves TWO rows — so a later repair can
+ * in principle undo an earlier one's work. Counting statuses would not notice:
+ * the spread is preserved by construction under any swap.
+ */
+const assertDealtStates = (statuses: readonly ContractStatus[]): void => {
+  for (let i = 0; i < statuses.length; i += 1) {
+    const pairing = PAIRINGS[i] as Pairing;
+    const status = statuses[i] as ContractStatus;
+    if (PARTY_PLAN[pairing.partyIndex]?.riskFlag === 'blocked' && status !== 'draft' && status !== 'cancelled') {
+      throw new Error(`demo fixture: contract ${i} is on a blocked counterparty in '${status}'; contract_state_machine refuses to submit one at all.`);
+    }
+    if (status === 'in_review' && CONTRACT_TYPE_PLAN[pairing.typeIndex]?.requiresLegalReview !== true) {
+      throw new Error(`demo fixture: contract ${i} is 'in_review' on a contract type that does not require legal review; contract_state_machine refuses that edge.`);
+    }
+  }
+};
+
 const STATUSES = dealStatuses();
 assertSpread(STATUSES);
+assertDealtStates(STATUSES);
 
 const EXECUTED: readonly ContractStatus[] = ['active', 'expired', 'terminated'];
 const isExecuted = (status: ContractStatus) => EXECUTED.includes(status);
@@ -463,6 +518,11 @@ const buildContracts = (): ContractPlan[] => {
       riskLevel: assessed ? (['low', 'medium', 'high', 'medium', 'low'][Math.floor(random() * 5)] as 'low' | 'medium' | 'high') : null,
       currentTurn: negotiating ? 'counterparty' : status === 'in_review' ? 'internal' : 'none',
       turnSince: negotiating ? -(9 + Math.floor(random() * 25)) : status === 'in_review' ? -(1 + Math.floor(random() * 5)) : null,
+      // F2's own condition, mirrored: a legal owner exists exactly where
+      // `contract_route` would have assigned one — the type asks for legal
+      // review, the contract is past submission, and it is not still sitting
+      // in the 待受理 queue (§05: "submitted 且未分配"). {@link handBackInReview}
+      // then takes it away again from a deliberate few.
       hasLegalOwner: pastSubmission && type.requiresLegalReview && status !== 'submitted',
       route,
       timeline: timelineFor(status, backfilled, expiringSoon, type.requiresLegalReview, termMonths, random),
@@ -482,7 +542,81 @@ const buildContracts = (): ContractPlan[] => {
   return contracts;
 };
 
-export const CONTRACT_PLAN: readonly ContractPlan[] = buildContracts();
+/**
+ * How many contracts in review are deliberately left with NO `legal_owner`.
+ *
+ * ## ⛔ This is test coverage. Do not "tidy it up" by giving them an owner.
+ *
+ * The six scheduled jobs of DESIGN.md §06 all end in a PARTITIONED decision:
+ * `_daily-sweep.ts` sends the notification when someone can receive it and
+ * takes a "Nobody to tell" edge when nobody can, so the run stays green rather
+ * than failing a row over an unassignable notification. Card 09 (#39 / PR #42)
+ * measured that edge working, and it is the only thing between one unassigned
+ * row and a sweep that reports `acted: 0` for every row after it —
+ * `loop-node.ts` iterates with a bare `await`, so the first failing row ends
+ * the whole run.
+ *
+ * F3 (`legal_review_sla`), over-30 stage, is the ONLY place this corpus can
+ * exercise that edge, and both halves of that sentence are load-bearing:
+ *
+ *  - F4 and F11 address `owner_id`, F12 and F13 address `owner_id` with the
+ *    legal owner merely copied, and every contract carries an `owner_id`
+ *    ({@link ../keys.ts}) — so none of them can ever go quiet.
+ *  - F3's over-SIXTY stage copies `clm_legal_head`, so a row that has been in
+ *    review past 60 days still has somebody to tell and takes the notify edge.
+ *    Only the over-30 stage has `legal_owner` as its sole recipient.
+ *
+ * ⇒ Fill every `in_review` contract's legal owner and that edge is never taken
+ * again by any job on this corpus; a regression in it would ship invisibly.
+ *
+ * ## Why ONE, and why one is also the MOST
+ *
+ * One row is what coverage costs. Every row beyond it is a reminder the demo
+ * does not send — the exact defect this fixture change exists to fix — so the
+ * set is deliberately the minimum that keeps the edge live, not a sprinkle.
+ * Raising this constant is a one-line change and {@link handBackInReview}
+ * re-proves reachability for whatever number it is given.
+ *
+ * ## Why these rows are legal and the ones this replaced were not
+ *
+ * `contract_state_machine` guards the TRANSITION into review ("Assign a legal
+ * owner before the contract enters review"); nothing holds the column set
+ * afterwards, and `legal_owner` is in the `parties` group, so it is not one of
+ * the fields `_grants.ts` locks read-only — a lawyer handing a file back to the
+ * queue clears it through the ordinary edit form. So an `in_review` contract
+ * with no legal owner is a state this app reaches. An `in_review` contract on a
+ * type that skips legal review is NOT, and the second repair in
+ * {@link dealStatuses} is what stopped the fixture producing six of those.
+ */
+export const UNASSIGNED_IN_REVIEW = 1;
+
+/**
+ * Hand {@link UNASSIGNED_IN_REVIEW} contracts back to the queue — and prove
+ * that F3's over-30 stage, and only that stage, will select them.
+ *
+ * The eligible band is `(-60, -30]` days: past F3's 30-day threshold so the
+ * over-30 stage selects the row, and inside 60 so it is not selected by the
+ * over-60 stage instead, whose `also: {legalHeads.userIds}` would give the
+ * notification a recipient and take the notify edge. Longest review first,
+ * because a file nobody has owned for eight weeks is the case the nudge is for.
+ */
+const handBackInReview = (contracts: readonly ContractPlan[]): ContractPlan[] => {
+  const eligible = contracts
+    .filter((contract) =>
+      contract.status === 'in_review' &&
+      contract.hasLegalOwner &&
+      (contract.timeline.reviewStartedAt ?? 0) <= -30 &&
+      (contract.timeline.reviewStartedAt ?? 0) > -60)
+    .sort((a, b) => (a.timeline.reviewStartedAt ?? 0) - (b.timeline.reviewStartedAt ?? 0));
+  if (eligible.length < UNASSIGNED_IN_REVIEW) {
+    throw new Error(`demo fixture: ${eligible.length} contracts are in review between 30 and 60 days with a legal owner, so ${UNASSIGNED_IN_REVIEW} cannot be handed back — F3's over-30 stage would select none of them and its "nobody to tell" edge would stop being exercised.`);
+  }
+  const indexes = new Set(eligible.slice(0, UNASSIGNED_IN_REVIEW).map((contract) => contract.index));
+  return contracts.map((contract) =>
+    indexes.has(contract.index) ? { ...contract, hasLegalOwner: false } : contract);
+};
+
+export const CONTRACT_PLAN: readonly ContractPlan[] = handBackInReview(buildContracts());
 
 /** The counterparty a contract is with. */
 export const partyOf = (contract: ContractPlan) => PARTY_PLAN[contract.partyIndex]!;
