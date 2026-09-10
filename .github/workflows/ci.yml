@@ -65,3 +65,11 @@ jobs:
       - run: pnpm lint
 
       - run: pnpm typecheck
+
+      # Same silent class as `validate`, one layer up: `fallbackLocale: 'en'`
+      # renders a key missing from `zh-CN` as its English source string — no
+      # error, no warning, nothing on screen that tells a gap from a
+      # translation. `pnpm lint` does not catch it either; a non-default-locale
+      # gap is a WARNING there, and `objectstack lint` exits non-zero only on
+      # ERRORS. This is the step that fails the build on one.
+      - run: pnpm lint:i18n-gate
