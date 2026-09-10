@@ -59,7 +59,7 @@
 // that boot compiles.
 
 import { spawn } from 'node:child_process';
-import { createServer } from 'node:net';
+import { connect, createServer } from 'node:net';
 
 const DEMO_SEED_ENV_VAR = 'CLM_DEMO_SEED';
 const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
@@ -95,6 +95,25 @@ const PRIMING_TIMEOUT_MS = 180_000;
 const SHUTDOWN_GRACE_MS = 10_000;
 /** Tail of the priming boot's output kept for the failure path. */
 const LOG_TAIL_LINES = 40;
+
+/**
+ * How long the demo boot gets to start listening before the closing note is
+ * printed anyway. Generous on purpose: printing the note EARLY is the defect
+ * being fixed (issue #49), so the deadline exists only so a boot that never
+ * opens its port still ends with the note rather than losing it.
+ */
+const ANNOUNCE_DEADLINE_MS = 300_000;
+/**
+ * Quiet gap between the port answering and the note being printed.
+ *
+ * `os dev` opens the socket and then prints the rest of its banner — the URLs,
+ * the dev-admin credentials, the config summary, the boot diagnostics and
+ * `Press Ctrl+C to stop`. Measured on a clean database (17.4.0, this container):
+ * 172 lines of boot output, of which the 25 after `✓ Server is ready` all land
+ * inside the same second, and nothing at all is emitted for the next 150s. This
+ * gap is what puts the note after that block instead of inside it.
+ */
+const BANNER_SETTLE_MS = 2_500;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -164,8 +183,13 @@ const fail = (headline, detail, log) => {
  *
  * Idempotent: on a database that already has an account this boot mints
  * nothing, the first probe succeeds, and it costs one short boot.
+ *
+ * Returns how long it took, in ms. That number is a MEASUREMENT of what a
+ * compile-and-boot costs on this box right now, and the closing note below
+ * uses it as its own timescale rather than carrying a guessed constant.
  */
 const primeAdminAccount = async () => {
+  const startedAt = Date.now();
   const port = await freePort();
 
   // Deleted rather than set to a falsy string: this must be off regardless of
@@ -247,7 +271,7 @@ const primeAdminAccount = async () => {
           log,
         );
       }
-      return;
+      return Date.now() - startedAt;
     }
     await sleep(1_000);
   }
@@ -267,6 +291,137 @@ const primeAdminAccount = async () => {
     ],
     log,
   );
+};
+
+/**
+ * Is something accepting TCP connections on this port right now?
+ *
+ * Deliberately not an HTTP request: the question is whether the server has
+ * reached `listen()`, and every answer an HTTP route could give — 200, 404,
+ * 401 — means the same thing here.
+ */
+const accepting = (port) =>
+  new Promise((resolve) => {
+    const socket = connect({ port, host: '127.0.0.1' });
+    const done = (up) => { socket.destroy(); resolve(up); };
+    socket.setTimeout(1_000);
+    socket.once('connect', () => done(true));
+    socket.once('timeout', () => done(false));
+    socket.once('error', () => done(false));
+  });
+
+/**
+ * The port the demo boot is EXPECTED to bind, resolved the way `os dev`
+ * resolves it: `--port` first, then `OS_PORT`, then `PORT`, then 3000
+ * (node_modules/@objectstack/cli/dist/commands/dev.js — `flags.port ??
+ * readEnvWithDeprecation('OS_PORT', 'PORT')`, defaulting to `'3000'`).
+ *
+ * ⚠️ EXPECTED, not guaranteed: `os dev` auto-shifts off a busy port (3000 busy
+ * → 3001) and only its own banner knows where it landed. That is why the
+ * caller treats a port that was ALREADY busy before the boot as no signal at
+ * all rather than as readiness — see `announceOperatorSetup`.
+ */
+const expectedPort = (argv) => {
+  const flag = argv.indexOf('--port');
+  const inline = argv.find((arg) => arg.startsWith('--port='));
+  const raw =
+    (flag !== -1 ? argv[flag + 1] : undefined) ??
+    (inline ? inline.slice('--port='.length) : undefined) ??
+    process.env.OS_PORT ??
+    process.env.PORT ??
+    '3000';
+  const port = Number.parseInt(String(raw).trim(), 10);
+  return Number.isInteger(port) && port > 0 && port < 65_536 ? port : 3000;
+};
+
+/**
+ * What the operator has to do next, printed WHERE THE TERMINAL COMES TO REST.
+ *
+ * ── Why this is not printed inline, above the boot ─────────────────────────
+ *
+ * It used to be, and that was issue #49. Measured on `main` @ a7b7db5, one
+ * clean-database `pnpm demo`: the note was log line 12 of 172, `✓ Server is
+ * ready` was line 147, and the last line was 172 — the one instruction that
+ * decides whether the app has anything in it scrolled 160 lines out of sight,
+ * past a wall of author-time warnings, before the terminal stopped moving. The
+ * dogfood pass (#45) found the same thing with the seed's per-row errors on
+ * screen too. Printing it EARLIER, LOUDER or TWICE does not fix that: anything
+ * emitted before the boot finishes is buried by definition.
+ *
+ * ── Why the child's output is not piped ────────────────────────────────────
+ *
+ * Reading the boot stream would give an exact "it has stopped printing" signal,
+ * and it would cost the thing this note is about. `stdio: 'inherit'` hands the
+ * child a real TTY; through a pipe the same boot loses its colour, so the
+ * seed's `ERROR` lines would arrive dimmed by the very edit that set out to
+ * explain them. The port probe below keeps the boot's own output untouched,
+ * byte for byte, and the note lands after it.
+ *
+ * ── What happens when the probe cannot see the boot ────────────────────────
+ *
+ * Two cases, and both degrade to the OLD behaviour (a note printed mid-stream),
+ * never to a lost note:
+ *
+ *   · the port was already busy before the boot — `os dev` will auto-shift and
+ *     the socket that answers is somebody else's, so readiness is unknowable.
+ *     The note waits one priming-boot's worth of time instead, that being a
+ *     measurement of what a compile-and-boot costs on this box today.
+ *   · nothing ever listens — `ANNOUNCE_DEADLINE_MS` fires and the note prints.
+ *
+ * A boot that DIES is the one case with no note at all: `os dev` has already
+ * said why on its way out, and an instruction about accounts to create would
+ * be the loudest thing on a failed screen.
+ */
+const OPERATOR_SETUP_NOTE = [
+  '',
+  '  ────────────────────────────────────────────────────────────────────────',
+  '  Before you open the app — one setup step, and one thing about the log',
+  '  ────────────────────────────────────────────────────────────────────────',
+  '',
+  '  1. The seeded contracts have no owner yet, and that is this database, not',
+  '     a bug. Every contract is launched by one of the three business',
+  '     requesters DESIGN.md §10 asks you to create, and no seed may create a',
+  '     user (§10) — so until those accounts exist, `owner_id` is NULL on every',
+  '     contract row and 我的合同 stays empty. Add them in Setup → Users and',
+  '     run this again; the README names them and says who gets what.',
+  '',
+  '  2. `ERROR [SeedLoader]` lines above, if you saw them, are those same',
+  '     unresolved owners — one per contract row, and expected on a first boot.',
+  '     This script boots twice: the first boot mints the admin account, the',
+  '     second loads the fixture. The fixture names owners that the handover',
+  '     between those two boots cannot create, the loader defers the column,',
+  '     finds no such account, and says so once per row. The row is still',
+  '     written — every other field lands and only `owner_id` stays NULL.',
+  '     Measured on a clean database: 120 contracts, 300 payment plans, 200',
+  '     obligations, 60 reviews, 40 parties, all present, all unowned. The',
+  '     loader also prints a success summary that contradicts its own errors;',
+  '     that contradiction is filed upstream as objectstack#17177.',
+  '',
+  '     A boot whose inline seed overran its budget prints `WARN [Seeder] …',
+  '     continuing in background` instead and no per-row errors at all — same',
+  '     fixture, same NULL owners, quieter log.',
+  '',
+];
+
+const announceOperatorSetup = async (child, port, blindWaitMs) => {
+  const alive = () => child.exitCode === null && child.signalCode === null;
+  const deadline = Date.now() + ANNOUNCE_DEADLINE_MS;
+
+  if (blindWaitMs !== null) {
+    await sleep(blindWaitMs);
+  } else {
+    while (Date.now() < deadline) {
+      if (!alive()) return;
+      if (await accepting(port)) {
+        await sleep(BANNER_SETTLE_MS);
+        break;
+      }
+      await sleep(1_000);
+    }
+  }
+
+  if (!alive()) return;
+  for (const line of OPERATOR_SETUP_NOTE) console.log(line);
 };
 
 /** Boot with the demo ON, in the foreground. This is the server you keep. */
@@ -291,6 +446,7 @@ const startDemo = () => {
   child.once('exit', (code, signal) => {
     process.exit(signal ? 1 : (code ?? 0));
   });
+  return child;
 };
 
 const locale = (process.env[SEED_LOCALE_ENV_VAR] ?? '').trim() || 'en (default)';
@@ -298,18 +454,29 @@ console.log('');
 console.log(`  HotCLM demo — two steps, then the server is yours. Locale: ${locale}`);
 console.log('');
 console.log('  1/2  preparing an admin account and the organization (quiet, a few seconds)…');
-await primeAdminAccount();
+const primingMs = await primeAdminAccount();
 console.log('  1/2  done — admin account ready.');
 console.log('  2/2  starting HotCLM with the demo group loaded…');
 console.log('');
-// The one thing about this fixture an evaluator cannot see from the app: every
-// contract is launched by one of the three business-requester accounts
-// DESIGN.md §10 has the operator create, and no seed may create a user (§10).
-// Said here rather than left to be discovered, because a name no account
-// carries resolves to NULL in silence — no error, no boot warning.
-console.log('  Every contract is launched by one of the three business requesters DESIGN.md');
-console.log('  §10 asks you to create — no seed may create a user, so until those accounts');
-console.log('  exist the contracts have no owner and 我的合同 stays empty. Add them in Setup');
-console.log('  → Users and run this again; the README names them and says who gets what.');
-console.log('');
-startDemo();
+
+// The demo boot owns the terminal from here to the ready banner. The one thing
+// about this fixture an evaluator cannot see from the app — that every contract
+// names a business-requester account no seed may create (DESIGN.md §10), so
+// every `owner_id` lands NULL in silence — is said AFTER that banner, by
+// `announceOperatorSetup`, because said here it is 160 lines from the bottom of
+// the screen (issue #49).
+const port = expectedPort(process.argv.slice(2));
+const portWasBusy = await accepting(port);
+const demo = startDemo();
+
+// Not awaited: `startDemo` hands back a foreground server that only ends on
+// Ctrl+C, and its own `exit` handler is what ends this process. This promise
+// races the boot, prints once, and resolves.
+void announceOperatorSetup(
+  demo,
+  port,
+  // A port that already answered before the boot started tells us nothing
+  // about the boot (`os dev` will auto-shift off it), so fall back to the
+  // timescale the priming boot just measured on this box.
+  portWasBusy ? Math.min(Math.max(primingMs, 20_000), 180_000) : null,
+);
