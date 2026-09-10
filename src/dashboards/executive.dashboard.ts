@@ -1,8 +1,16 @@
 import type { Dashboard } from '@objectstack/spec/ui';
 
 /**
- * 管理层 — DESIGN.md §09's second dashboard: 生效合同额 · 90 天内到期 ·
- * 高风险合同 · 审批瓶颈（各台阶平均停留）· 按方向的合同额趋势.
+ * 管理层 — DESIGN.md §09's second dashboard.
+ *
+ * §09's brick list is deliberately NOT copied here, for the reason PR #74 gave
+ * when it took the sibling copy off `legal.dashboard.ts`: a copy drifts, a
+ * pointer cannot. This one had already drifted. It advertised one brick this
+ * file has never built — 审批瓶颈（各台阶平均停留）— and §09 stopped asking for
+ * that brick on 2026-09-09 (维护者裁定, PR #40 `1127e52`), replacing it with the
+ * per-rung routing volume the four `route_*` tiles below deliver. §09 as merged
+ * (PR #70, `30fd863`) is the source; every widget below carries its own comment
+ * for its own shape.
  *
  * Every widget binds `contract_metrics`, so the two global filters below reach
  * a column that exists on every one of them. See `legal.dashboard.ts` for the
@@ -136,10 +144,19 @@ export const ExecutiveDashboard: Dashboard = {
       colorVariant: 'danger',
       layout: { x: 9, y: 0, w: 3, h: 2 },
     },
-    // ─── §09's 审批瓶颈, as the four rungs of DESIGN.md §04's ladder ───────
+    // ─── The four rungs of DESIGN.md §04's ladder, read as ROUTING VOLUME ───
     //
-    // §09 asks for 各台阶平均停留 — average DWELL per approval step. Two
-    // independent facts rule the dwell out, both measured rather than assumed:
+    // These four tiles are the brick §09 puts at this position, and they build
+    // it in full: one tile per rung, reading the four `route_*` flags F2 stamps
+    // on the contract. §09 says of this position that it carries traffic and
+    // not dwell — the board and the design agree here, and §09 (PR #70,
+    // `30fd863`) is where that wording lives rather than a copy of it here.
+    //
+    // The average DWELL per rung that §09 listed BEFORE 2026-09-09 is not
+    // deliverable, and §09 no longer asks for it: the maintainer ruling in
+    // PR #40 (`1127e52`) placed it outside the V1.0 surface, and §09 now gives
+    // these two measurements — both taken on this board — as the reasons it
+    // declines:
     //
     //   1. There is no dwell to read. `sys_approval_request` holds 0 rows on a
     //      stock `pnpm demo` — the seed stamps `approval_status` directly and
@@ -147,10 +164,19 @@ export const ExecutiveDashboard: Dashboard = {
     //   2. Even with rows, a duration is not expressible in the semantic layer:
     //      see the measurement in `cycle-time.dataset.ts`.
     //
+    // ⚠️ Neither reads as a TODO. Fact 1 is independent of the platform and
+    // survives any upgrade; and the in-flight platform work
+    // (`objectstack-ai/objectstack#16737`) makes the wrong path ERROR rather
+    // than adding date arithmetic, so the dwell does not arrive when it closes
+    // either. ⛔ Do not re-promise the metric on the strength of that issue, and
+    // ⛔ do not stamp it from an application-side daily job — §09 forbids that
+    // route in as many words, as replicating a platform rule in the app.
+    //
     // What IS persisted is the routing: F2 stamps four booleans on the contract,
     // one per rung. These four tiles read them — how much traffic each rung
-    // carries. Each title names its rung and the group title says "Routing
-    // Load", never "bottleneck", because volume is not dwell.
+    // carries. Each tile is titled `Routes: <rung>`; no title or description on
+    // this board — here or in either translation bundle — says "bottleneck" or
+    // "dwell", because volume is neither.
     //
     // FOUR TILES, not one four-measure chart, and the shape was forced by a
     // measurement. The rungs are four COLUMNS, not four values of one column, so

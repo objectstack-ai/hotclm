@@ -4,8 +4,15 @@ import { defineDataset } from '@objectstack/spec/ui';
  * How far contracts get, and when — DESIGN.md §09's second dataset, by
  * contract type and legal owner.
  *
- * ## ⚠️ §09 asks for 各段时长 (per-stage DURATIONS). This dataset does not carry
- * one, because on this platform version none can be computed honestly.
+ * ## ⚠️ No duration measure — and §09 does not ask for one
+ *
+ * §09's bullet for this dataset asks for stage-reached counts and rules out any
+ * duration measure, which is exactly what is declared below. 各段时长 (per-stage
+ * DURATIONS) was placed outside the V1.0 delivery surface by the maintainer
+ * ruling of 2026-09-09 (PR #40, `1127e52`; §09 as merged, PR #70, `30fd863`),
+ * and the measurements in this comment are the ones §09 now cites as its
+ * reason. They were taken here, on this dataset — which is why they are
+ * recorded here, and not because this file falls short of the design.
  *
  * Measured on `@objectstack/spec` 17.3.0 + `@objectstack/service-analytics`
  * 17.3.0 + better-sqlite3 13.0.3, against the 820-row demo:
@@ -27,10 +34,19 @@ import { defineDataset } from '@objectstack/spec/ui';
  * form is the one that renders a clean, plausible number. Shipping it would be
  * exactly the "seeded number that looks computed" AGENTS.md forbids.
  *
- * A duration needs a PERSISTED numeric — the same shape DESIGN.md §12 already
- * prescribes for the other date-arithmetic gap (#7: "到期、逾期由日任务盖戳字段"),
- * i.e. a daily job stamping `clm_contract`. That field does not exist and
- * creating it is a schema change, not an analytics one. Raised on the PR.
+ * ⚠️ None of this changes when `objectstack-ai/objectstack#16737` closes. The
+ * in-flight platform fix makes the wrong path ERROR instead of returning that
+ * plausible number; it does not add date arithmetic, so a duration remains
+ * uncomputable after it lands. The unlock criterion decision #31 records is
+ * "this repo upgrades to a version where the wrong path actually errors" — the
+ * end of a fake number, not the arrival of the metric.
+ *
+ * A duration would need a PERSISTED numeric — the shape DESIGN.md §12 gives the
+ * other date-arithmetic gap (#7), a daily job stamping the column, as the
+ * obligation and payment sweeps do for 到期 / 逾期. ⛔ That route is closed for
+ * this one, and not merely unbuilt: §09 forbids filling 各段时长 or the per-type
+ * 「超 SLA」 from an application-side daily job, because it replicates a platform
+ * rule inside the application.
  *
  * ## What it DOES carry
  *
