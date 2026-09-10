@@ -65,8 +65,8 @@ const DEMO_SEED_ENV_VAR = 'CLM_DEMO_SEED';
 const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
 
 /**
- * The account name the fixture's `clm_review.reviewer`, `clm_obligation.owner`
- * and `clm_contract.legal_owner` references resolve against.
+ * The account name the fixture's `clm_review.reviewer` and
+ * `clm_obligation.owner` references resolve against.
  *
  * NOT `clm_contract.owner_id`: that one names the three business-requester
  * accounts of DESIGN.md §10, which no seed may create and this script does not
@@ -260,8 +260,8 @@ const primeAdminAccount = async () => {
         fail(
           `the account you log in as is named ${JSON.stringify(session.name)}, not ${JSON.stringify(DEMO_USER)}.`,
           [
-            'The demo fixture resolves `clm_review.reviewer`, `clm_obligation.owner` and',
-            `\`clm_contract.legal_owner\` against a \`sys_user\` named ${JSON.stringify(DEMO_USER)}.`,
+            'The demo fixture resolves `clm_review.reviewer` and `clm_obligation.owner`',
+            `against a \`sys_user\` named ${JSON.stringify(DEMO_USER)}.`,
             'Against any other name those references resolve to nothing, and every',
             'review row is refused while the rest of the seed reports success — so',
             'nothing was seeded and the database is exactly as it was.',
