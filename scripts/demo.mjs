@@ -108,10 +108,12 @@ const ANNOUNCE_DEADLINE_MS = 300_000;
  *
  * `os dev` opens the socket and then prints the rest of its banner — the URLs,
  * the dev-admin credentials, the config summary, the boot diagnostics and
- * `Press Ctrl+C to stop`. Measured on a clean database (17.4.0, this container):
- * 172 lines of boot output, of which the 25 after `✓ Server is ready` all land
- * inside the same second, and nothing at all is emitted for the next 150s. This
- * gap is what puts the note after that block instead of inside it.
+ * `Press Ctrl+C to stop`. That tail is 22 lines, and it is the whole reason for
+ * a gap: measured on a clean database (17.4.0, this container), `✓ Server is
+ * ready` was line 147 and the terminal came to rest at line 169, after which
+ * NOTHING was emitted for the 150s the run was held open to check. So the
+ * settle only has to outlast a banner tail, and the note lands after that block
+ * instead of inside it.
  */
 const BANNER_SETTLE_MS = 2_500;
 
@@ -340,13 +342,14 @@ const expectedPort = (argv) => {
  * ── Why this is not printed inline, above the boot ─────────────────────────
  *
  * It used to be, and that was issue #49. Measured on `main` @ a7b7db5, one
- * clean-database `pnpm demo`: the note was log line 12 of 172, `✓ Server is
- * ready` was line 147, and the last line was 172 — the one instruction that
- * decides whether the app has anything in it scrolled 160 lines out of sight,
- * past a wall of author-time warnings, before the terminal stopped moving. The
- * dogfood pass (#45) found the same thing with the seed's per-row errors on
- * screen too. Printing it EARLIER, LOUDER or TWICE does not fix that: anything
- * emitted before the boot finishes is buried by definition.
+ * clean-database `pnpm demo` captured to a file: the note was line 12, `✓
+ * Server is ready` was line 147, and the terminal came to rest at line 169 —
+ * the one instruction that decides whether the app has anything in it scrolled
+ * 157 lines out of sight, past a wall of author-time warnings, before the
+ * terminal stopped moving. The dogfood pass (#45) found the same thing with the
+ * seed's per-row errors on screen too. Printing it EARLIER, LOUDER or TWICE
+ * does not fix that: anything emitted before the boot finishes is buried by
+ * definition.
  *
  * ── Why the child's output is not piped ────────────────────────────────────
  *
@@ -371,35 +374,54 @@ const expectedPort = (argv) => {
  * A boot that DIES is the one case with no note at all: `os dev` has already
  * said why on its way out, and an instruction about accounts to create would
  * be the loudest thing on a failed screen.
+ *
+ * ── What the ready banner does NOT settle, and why the note says so ────────
+ *
+ * The banner is where the BOOT comes to rest, and on a first boot that is not
+ * always where the SEED does. Measured on this branch, one clean-database run
+ * on a contended box: the inline seed overran its 8000ms budget, the boot
+ * carried on and printed `⚠ Boot diagnostics … WARN [Seeder] … continuing in
+ * background`, the banner and this note landed at 07:03:48, and the seed's 120
+ * `ERROR [SeedLoader]` lines arrived from that background continuation at
+ * 07:05:09 — 82 seconds AFTER the note. A second run of the same command never
+ * emitted them at all inside a 150s window, while its database held the same
+ * 820 seeded rows.
+ *
+ * Nothing this script can observe distinguishes those cases: the WARN, the
+ * errors and the loader's summary are all in the child's inherited stream. So
+ * the note does not claim the errors are above it. It says which clock puts
+ * them above and which puts them below, and it is the frame either way —
+ * ⛔ never printed twice to cover both.
  */
 const OPERATOR_SETUP_NOTE = [
   '',
   '  ────────────────────────────────────────────────────────────────────────',
-  '  Before you open the app — one setup step, and one thing about the log',
+  '   Before you open the app — one setup step, and one thing about the log',
   '  ────────────────────────────────────────────────────────────────────────',
   '',
-  '  1. The seeded contracts have no owner yet, and that is this database, not',
-  '     a bug. Every contract is launched by one of the three business',
-  '     requesters DESIGN.md §10 asks you to create, and no seed may create a',
-  '     user (§10) — so until those accounts exist, `owner_id` is NULL on every',
-  '     contract row and 我的合同 stays empty. Add them in Setup → Users and',
-  '     run this again; the README names them and says who gets what.',
+  '  1. The seeded contracts have no owner yet. Every contract is launched by',
+  '     one of the three business requesters DESIGN.md §10 asks you to create,',
+  '     and no seed may create a user (§10) — so until those accounts exist,',
+  '     `owner_id` is NULL on every contract row and 我的合同 stays empty. Add',
+  '     them in Setup → Users and run this again; the README names them and',
+  '     says who gets what.',
   '',
-  '  2. `ERROR [SeedLoader]` lines above, if you saw them, are those same',
-  '     unresolved owners — one per contract row, and expected on a first boot.',
-  '     This script boots twice: the first boot mints the admin account, the',
-  '     second loads the fixture. The fixture names owners that the handover',
-  '     between those two boots cannot create, the loader defers the column,',
-  '     finds no such account, and says so once per row. The row is still',
-  '     written — every other field lands and only `owner_id` stays NULL.',
-  '     Measured on a clean database: 120 contracts, 300 payment plans, 200',
-  '     obligations, 60 reviews, 40 parties, all present, all unowned. The',
-  '     loader also prints a success summary that contradicts its own errors;',
-  '     that contradiction is filed upstream as objectstack#17177.',
+  '  2. The 120 `ERROR [SeedLoader]` lines are that same missing owner, once',
+  '     per contract row. They are expected on a first boot and nothing is',
+  '     lost to them: the loader defers `owner_id`, finds no such account on',
+  '     its last pass, writes the row anyway and leaves that one column NULL.',
+  '     Counted on a clean database: 820 rows seeded — 120 contracts, 300',
+  '     payment plans, 200 obligations, 60 reviews, 40 parties, 30 clauses,',
+  '     30 signatures, 25 deviations, 9 contract types, 6 approval rules —',
+  '     all present, all unowned. Fix them by doing step 1.',
   '',
-  '     A boot whose inline seed overran its budget prints `WARN [Seeder] …',
-  '     continuing in background` instead and no per-row errors at all — same',
-  '     fixture, same NULL owners, quieter log.',
+  '     Two things about those lines are worth knowing before you judge them.',
+  '     The loader signs off with `120 dropped record(s)` while all 820 rows',
+  '     are in the database — the summary is wrong, not the data, and that',
+  '     contradiction is upstream as objectstack#17177. And where the lines',
+  '     sit relative to this note is a clock, not a verdict: above it when the',
+  '     seed finished inside its 8s inline budget, up to a couple of minutes',
+  '     below it when the boot said `WARN [Seeder] … continuing in background`.',
   '',
 ];
 
