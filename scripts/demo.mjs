@@ -392,6 +392,10 @@ const expectedPort = (argv) => {
  * the note does not claim the errors are above it. It says which clock puts
  * them above and which puts them below, and it is the frame either way —
  * ⛔ never printed twice to cover both.
+ *
+ * ⛔ SHAPE, never a census: no error-line count, no row totals, nothing quoted
+ * from the loader's summary. Dealing owners differently or seeding differently
+ * moves such a number, no gate reads printed prose, and it reads as a promise.
  */
 const OPERATOR_SETUP_NOTE = [
   '',
@@ -406,22 +410,20 @@ const OPERATOR_SETUP_NOTE = [
   '     them in Setup → Users and run this again; the README names them and',
   '     says who gets what.',
   '',
-  '  2. The 120 `ERROR [SeedLoader]` lines are that same missing owner, once',
-  '     per contract row. They are expected on a first boot and nothing is',
-  '     lost to them: the loader defers `owner_id`, finds no such account on',
-  '     its last pass, writes the row anyway and leaves that one column NULL.',
-  '     Counted on a clean database: 820 rows seeded — 120 contracts, 300',
-  '     payment plans, 200 obligations, 60 reviews, 40 parties, 30 clauses,',
-  '     30 signatures, 25 deviations, 9 contract types, 6 approval rules —',
-  '     all present, all unowned. Fix them by doing step 1.',
+  '  2. The `ERROR [SeedLoader]` lines are that same missing owner: one per',
+  '     contract whose requester account does not exist yet, expected on a',
+  '     first boot, and nothing is lost to them. The loader defers `owner_id`,',
+  '     finds no such account on its last pass, writes the row anyway and',
+  '     leaves that one column NULL — every seeded row is in the database and',
+  '     only its owner is missing. Step 1 is what fills it in.',
   '',
-  '     Two things about those lines are worth knowing before you judge them.',
-  '     The loader signs off with `120 dropped record(s)` while all 820 rows',
-  '     are in the database — the summary is wrong, not the data, and that',
-  '     contradiction is upstream as objectstack#17177. And where the lines',
-  '     sit relative to this note is a clock, not a verdict: above it when the',
-  '     seed finished inside its 8s inline budget, up to a couple of minutes',
-  '     below it when the boot said `WARN [Seeder] … continuing in background`.',
+  '     The loader then signs off with a summary that counts those rows as',
+  '     dropped while they sit in the database: its own accounting, not the',
+  '     state of your data, and upstream as objectstack#17177. And where those',
+  '     lines fall relative to this note is a clock, not a verdict — above it',
+  '     when the seed finished inside its inline budget, up to a couple of',
+  '     minutes below it when the boot said `WARN [Seeder] … continuing in',
+  '     background`.',
   '',
 ];
 
