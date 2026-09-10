@@ -383,9 +383,9 @@ const expectedPort = (argv) => {
  * carried on and printed `⚠ Boot diagnostics … WARN [Seeder] … continuing in
  * background`, the banner and this note landed at 07:03:48, and the seed's 120
  * `ERROR [SeedLoader]` lines arrived from that background continuation at
- * 07:05:09 — 82 seconds AFTER the note. A second run of the same command never
- * emitted them at all inside a 150s window, while its database held the same
- * 820 seeded rows.
+ * 07:05:09 — 82 seconds AFTER the note. The same command on `main`, held open
+ * for 150s past its banner, never emitted them at all, while its database held
+ * the same 820 seeded rows. Same code, same fixture, two different clocks.
  *
  * Nothing this script can observe distinguishes those cases: the WARN, the
  * errors and the loader's summary are all in the child's inherited stream. So
