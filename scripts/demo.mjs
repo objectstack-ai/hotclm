@@ -65,14 +65,20 @@ const DEMO_SEED_ENV_VAR = 'CLM_DEMO_SEED';
 const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
 
 /**
- * The account name the fixture's `clm_review.reviewer` and
- * `clm_obligation.owner` references resolve against.
+ * The account name the fixture's `clm_review.reviewer` resolves against.
  *
- * NOT `clm_contract.owner_id`: that one names the three business-requester
- * accounts of DESIGN.md §10, which no seed may create and this script does not
- * mint. It can afford to — `owner_id` is optional, so a name with no account
- * lands NULL and the row survives — where `reviewer` is `required: true` and
- * must name an account that exists while the seed runs. See `src/data/keys.ts`.
+ * It is the ONLY reference this boot has to satisfy, and the reason is the
+ * `required: true` on that one column: a name resolving to nothing costs the
+ * whole row, so it must name an account that exists while the seed runs, and
+ * on a first boot the dev admin is the only account there is.
+ *
+ * NOT `clm_contract.owner_id`, NOT `clm_contract.legal_owner` and NOT
+ * `clm_obligation.owner`. All three name accounts of DESIGN.md §10's persona
+ * mix — three business requesters and two legal counsel — which no seed may
+ * create and this script does not mint. They can afford to be missing: all
+ * three are optional, so a name with no account lands NULL and the row
+ * survives, and re-running `pnpm demo` once the operator has created them
+ * hands the rows over. See `src/data/keys.ts`.
  *
  * ⚠️ This MIRRORS `DEMO_USER` in `src/data/keys.ts`. They have to agree, and
  * they cannot be one constant: this file is plain `.mjs` that runs before
@@ -260,11 +266,10 @@ const primeAdminAccount = async () => {
         fail(
           `the account you log in as is named ${JSON.stringify(session.name)}, not ${JSON.stringify(DEMO_USER)}.`,
           [
-            'The demo fixture resolves `clm_review.reviewer` and `clm_obligation.owner`',
-            `against a \`sys_user\` named ${JSON.stringify(DEMO_USER)}.`,
-            'Against any other name those references resolve to nothing, and every',
-            'review row is refused while the rest of the seed reports success — so',
-            'nothing was seeded and the database is exactly as it was.',
+            `The demo fixture resolves \`clm_review.reviewer\` against a \`sys_user\` named`,
+            `${JSON.stringify(DEMO_USER)}. Against any other name that reference resolves to`,
+            'nothing, and every review row is refused while the rest of the seed reports',
+            'success — so nothing was seeded and the database is exactly as it was.',
             '',
             'Start over on a clean database:',
             '',
@@ -403,10 +408,11 @@ const OPERATOR_SETUP_NOTE = [
   '   Before you open the app — one setup step, and one thing about the log',
   '  ────────────────────────────────────────────────────────────────────────',
   '',
-  '  1. The seeded contracts have no owner yet. Every contract is launched by',
-  '     one of the three business requesters DESIGN.md §10 asks you to create,',
-  '     and no seed may create a user (§10) — so until those accounts exist,',
-  '     `owner_id` is NULL on every contract row and 我的合同 stays empty. Add',
+  '  1. The seeded rows have no people on them yet. Contracts are launched by',
+  '     business requesters, reviewed by legal counsel and their obligations',
+  '     performed by both — the persona mix DESIGN.md §10 asks you to create —',
+  '     and no seed may create a user (§10). Until those accounts exist every',
+  '     column naming one is NULL, so 我的合同 and 法务工作台 stay empty. Add',
   '     them in Setup → Users and run this again; the README names them and',
   '     says who gets what.',
   '',
