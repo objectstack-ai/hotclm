@@ -200,7 +200,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         stage_funnel: {
           title: 'Pipeline by Stage',
-          description: 'Contracts at each lifecycle stage right now — a snapshot, largest stage first, not a conversion sequence',
+          description: 'The six stages a contract is still moving through — a snapshot of what legal has in hand, largest queue first, not a conversion sequence. Contracts already in force are not plotted.',
         },
       },
     },
