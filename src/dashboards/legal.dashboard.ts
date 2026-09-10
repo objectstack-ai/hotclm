@@ -140,15 +140,29 @@ export const LegalDashboard: Dashboard = {
     },
     {
       /**
-       * §09's 超 SLA tile, with the one honest change its threshold had to
-       * take. The SLA is PER TYPE (`clm_contract_type.review_sla_days`: 2, 3, 5
-       * or 10 days across the nine seeded types), and a breach is a row-wise
-       * comparison of `review_started_at` against another object's column.
-       * Analytics cannot express that: there is no formula filter (§12 gap
-       * #10), and a cross-object filter is refused outright on the strategy
-       * every bucketed query lands on. The alternative — a persisted
-       * `review_due_at` stamped by the daily job — is the §12 gap-#7 shape and
-       * belongs to card 09, not here.
+       * The review-ageing tile, at a FIXED 30-day threshold written into its
+       * own title — which is the brick §09 prescribes here, not a degraded
+       * stand-in for one. §09 places the per-type「超 SLA」 outside the V1.0
+       * delivery surface (维护者裁定 2026-09-09, PR #40 `1127e52`; §09 as
+       * merged, PR #70 `30fd863`) and asks in its place for exactly this: a
+       * fixed threshold, self-declared in the brick's title.
+       *
+       * The measurement behind that ruling was taken here, which is why it is
+       * recorded here. The SLA is PER TYPE (`clm_contract_type.review_sla_days`:
+       * 2, 3, 5 or 10 days across the nine seeded types), and a breach is a
+       * row-wise comparison of `review_started_at` against another object's
+       * column. Analytics cannot express that: there is no formula filter
+       * (§12 gap #10), and a cross-object filter is refused outright on the
+       * strategy every bucketed query lands on.
+       *
+       * ⛔ The remaining route — a persisted `review_due_at` stamped by a daily
+       * job, the §12 gap-#7 shape — is closed for this metric, and not merely
+       * unbuilt: §09 forbids filling the per-type breach from an
+       * application-side job because that replicates a platform rule inside the
+       * application, and decision #31 ruled the same way on the notification
+       * side (1C + 2B, 2026-09-09 — see `legal-review-sla.flow.ts`, whose F3
+       * reminder fires on this same fixed 30 days so the tile and the reminder
+       * cannot tell two stories).
        *
        * So the threshold is FIXED, stated in the title, and above every seeded
        * SLA: a review older than 30 days is late under any of the nine. The
@@ -179,20 +193,29 @@ export const LegalDashboard: Dashboard = {
     // ─── Row 2: throughput, period over period ───────────────────────────
     {
       /**
-       * §09 asks for 平均周转（本月 vs 上月） — an AVERAGE TURNAROUND compared
-       * with the previous period. The comparison half is delivered exactly as
-       * the card requires, with the platform primitive (`compareTo`, the one
-       * shape `DatasetSelection.compareTo` implements) rather than a hardcoded
-       * delta. The average-duration half is NOT delivered, and this tile
-       * measures THROUGHPUT instead: how many contracts legal got to `approved`
-       * in the window.
+       * §09's 审批吞吐 brick: how many contracts legal got to `approved` in the
+       * window, against the previous period — and the period comparison uses
+       * the platform primitive §09 names (`compareTo`, the one shape
+       * `DatasetSelection.compareTo` implements) rather than a hardcoded delta.
+       * This tile IS that brick; it is not a substitute for a missing one.
        *
-       * Why: a duration cannot be computed in the semantic layer on this
+       * §09 did ask for 平均周转 — an AVERAGE TURNAROUND — until 2026-09-09,
+       * when the maintainer ruling in PR #40 (`1127e52`) placed 各段时长 outside
+       * the V1.0 delivery surface and rewrote this brick to throughput (§09 as
+       * merged: PR #70, `30fd863`). The measurement behind that ruling was
+       * taken here: a duration cannot be computed in the semantic layer on this
        * platform version — `Field.datetime` persists ISO text, so `AVG()` over
        * a stage stamp answers the average YEAR (2025.9166…), and the dataset
        * layer has no expression in which to subtract two dates. The full
-       * measurement is in `cycle-time.dataset.ts`. Substituting a number that
-       * is honest and saying so beats rendering a plausible one that is not.
+       * measurement is in `cycle-time.dataset.ts`. A number that is honest and
+       * says so beats a plausible one that is not, which is the reasoning §09
+       * itself now carries.
+       *
+       * ⚠️ This tile does not become an average turnaround when
+       * `objectstack-ai/objectstack#16737` closes. That in-flight fix makes the
+       * wrong path ERROR instead of returning a plausible fake number; it does
+       * not add date arithmetic, so the duration stays uncomputable after it
+       * lands. ⛔ Do not read the tracker as a queue this metric is waiting in.
        *
        * The window is stated HERE, on the widget, and it is bounded on both
        * ends on purpose: `DatasetWidget` lowers only a `{ $gte, $lte }` pair
