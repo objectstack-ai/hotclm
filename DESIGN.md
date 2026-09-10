@@ -324,7 +324,7 @@ Dataset（语义层）：
 | clm_obligation | 200 | 未来 30 天内到期 40 条，逾期 10 条 |
 | clm_payment_plan | 300 | 本月到期 30 条，逾期 12 条 |
 
-用户不可种子；各岗位账号在 Setup 建用户后分配 position（法务经办 ×2、法务负责人、财务负责人、分管领导、总经理、档案与记录管理员、业务承办 ×3）。
+用户不可种子；各岗位账号在 Setup 建用户后分配 position（法务经办 ×2、法务负责人、财务负责人、分管领导、总经理、档案与记录管理员、CLM 管理员）；业务承办 ×3 不是 position，`clm_requester` 是全员默认集，在 Setup 直接授予。
 
 ## 11 仓库与里程碑
 
@@ -349,7 +349,7 @@ docs/backlog/              派发卡片
 
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
-| M1 数据与权限骨架 | 11 对象 · 状态机守卫 · 8 position / 6 set · 共享与 FLS · 配置域种子 | `validate`/`lint`/`typecheck` 绿；业务承办经 REST 看不到他人合同；财务看不到 `in_review` 合同 |
+| M1 数据与权限骨架 | 11 对象 · 状态机守卫 · 7 position / 5 set · 共享与 FLS · 配置域种子 | `validate`/`lint`/`typecheck` 绿；业务承办经 REST 看不到他人合同；财务看不到 `in_review` 合同 |
 | M2 发起与审批 | F1 · F2 · F5 · F6 · F7 · 法务工作台 · 详情页 · 全量种子 | 走通 发起→受理→偏离→会签→签署与执行形式→生效，审批记录与审计齐全 |
 | M3 签后与分析 | F9–F14 · 履约与收付款 · 4 dataset · 3 看板 · zh/en | 演示数据下无空图；到期、逾期提醒在收件箱可见 |
 | M4 集成与可发布 | F8 电子签 · F15 CRM 交接 · S1–S6 与审批备忘录 · MCP 工具面 · 导入映射 · 文档 · 截图 · marketplace 发布 | 陌生人 clone 一条命令跑起；marketplace 一键安装；需求书逐条对应 feature-inventory 与测试 |

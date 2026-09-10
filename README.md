@@ -82,9 +82,15 @@ accounts in **Setup → Users** and assign the seven positions:
 | `clm_executive` | 1 | Rung 4, and reads every contract with `route_executive` |
 | `clm_general_manager` | 1 | Rung 5, and reads every contract with `route_gm` |
 | `clm_records_manager` | 1 | Execution formalities, the executed copy and the archive number |
-| (business requesters) | 3 | The default `clm_requester` set — launches contracts, sees their own |
+| `clm_admin` | 1 | Maintains the configuration objects and holds full reach over every CLM object: the only position that may write `clm_contract_type` and `clm_approval_rule`, and the only one the app's **Administration** group is served to |
 
-**Five of these accounts have to be named exactly**, because the fixture
+**Three more accounts are business requesters, which is not a position.**
+`clm_requester` is every employee's default set ([DESIGN.md](./DESIGN.md) §04),
+so a requester holds no position at all: the set is granted in Setup as a
+`sys_user_permission_set` row — a different object from the `sys_user_position`
+rows above. They launch contracts and see their own.
+
+**Five of the accounts above have to be named exactly**, because the fixture
 references them by name:
 
 | Name it exactly | Give it | It receives |
@@ -109,7 +115,7 @@ to tell" edge when there is none — the demo keeps exactly one unowned row, due
 seven days after boot, so that edge stays exercised. `src/data/plan-children.ts`
 proves it reachable and says why one is both the minimum and the maximum.
 
-The other five positions are named however you like; they are reached through
+The other six positions are named however you like; they are reached through
 the position, not by name.
 
 The dev admin is deliberately none of them: it holds no `clm_*` permission set,
