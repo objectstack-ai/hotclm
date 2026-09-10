@@ -206,16 +206,68 @@ export const LegalDashboard: Dashboard = {
     },
     {
       /**
-       * 各阶段合同数漏斗. Scoped to the seven PIPELINE stages: `rejected`,
-       * `expired`, `terminated` and `cancelled` are terminal outcomes, not
-       * rungs a contract climbs, and a funnel that lists them reads as if a
-       * contract were meant to reach them.
+       * 各阶段合同数, drawn as a RANKED BAR. Scoped to the seven PIPELINE
+       * stages: `rejected`, `expired`, `terminated` and `cancelled` are
+       * terminal outcomes, not rungs a contract climbs, and a chart of
+       * pipeline stages that lists them reads as if a contract were meant to
+       * reach them.
        *
-       * `options.stageOrder` carries the STORED values in lifecycle order.
-       * Without it the renderer falls back to the dimension's picklist order,
-       * which is already correct on `clm_contract.status` — it is declared
-       * anyway because the funnel's meaning depends on the order, and a field
-       * re-ordered for a form should not silently re-order a funnel.
+       * ## Why not a funnel (issue #48) — the mark was making a false claim
+       *
+       * A funnel encodes MONOTONIC DECLINE: each stage narrower than the one
+       * before, because contracts drop out between them. This book does not
+       * decline. DESIGN.md §10's spread, pinned by `assertSpread` in
+       * `src/data/plan-contracts.ts` and re-counted out of the running
+       * database for the card: draft 10 · submitted 6 · in_review 12 ·
+       * in_approval 8 · approved 4 · signing 6 · active 60. Rendered as a
+       * funnel that is a BOWTIE — narrow, wide, narrow, then eleven times
+       * wider at the end. Measured in Chromium on the widget before this
+       * change, band widths in px: 115 · 138 · 138 · 92 · 69 · 692 · 692.
+       *
+       * The cost is not that it looked broken. It is that the mark ASSERTED
+       * something the numbers do not say — that contracts fall out at each
+       * stage. They do not: this is a snapshot of where a live book currently
+       * sits, and `active` holds sixty contracts because sixty contracts are
+       * in force. A real conversion funnel is a DIFFERENT widget over a
+       * DIFFERENT measure (contracts entering vs leaving each stage over a
+       * window) and needs the stage-duration data #31 is blocked on.
+       *
+       * A bar over the stage dimension says exactly what the data says and
+       * cannot bowtie at ANY distribution — which is the requirement, not a
+       * preference: the corpus is dealt by a fixture and re-dealt by other
+       * cards, so a mark that merely happens to suit today's counts would
+       * break again quietly.
+       *
+       * ## Why the order is the MEASURE and not the lifecycle
+       *
+       * `options.stageOrder` (which this widget used to carry) is lowered by
+       * the dashboard renderer onto EVERY chart type as `categoryOrder`, and
+       * only the funnel branch reads it. Measured twice on
+       * `@objectstack/console` 17.4.0 — in its code, where `categoryOrder` is
+       * consumed inside the `chartType === 'funnel'` branch and nowhere else,
+       * and in the browser, where this widget as a bar with `stageOrder` still
+       * authored came out Active · Approved · Draft · In Approval · In Review ·
+       * Signing · Submitted, i.e. alphabetically. Lifecycle order is therefore
+       * NOT authorable for a bar on this platform version, and keeping
+       * `stageOrder` here would be metadata that does nothing. Reported
+       * upstream rather than patched (AGENTS.md 平台缺口).
+       *
+       * What IS authorable is an order that cannot depend on a LABEL, and that
+       * is the robustness this card was really after. Measured in a zh-CN
+       * console BEFORE this change: the category labels fell back to English
+       * and the funnel lost stage order entirely — Active · Approved · Draft ·
+       * In Approval · In Review · Signing · Submitted — with `stageOrder`
+       * authored and silently ignored, because the rows carry the API's
+       * English labels while the client's order map carries the bundle's
+       * Chinese ones and nothing matches. `sortBy` on the MEASURE cannot be
+       * reordered by any label in any locale: it lowers to
+       * `order: { contract_count: 'desc' }` on the dataset query (measured in
+       * the request body), so the biggest queue is first, in both locales and
+       * at every distribution.
+       *
+       * The widget id stays `stage_funnel`: it is the key both translation
+       * bundles address this widget by, it is not user-visible, and `type`
+       * one line below is what states the mark.
        */
       // `chart-config-missing` suppressed — MEASURED, not waved away. The rule's
       // message asserts "the renderer cannot determine which measure to plot,
@@ -228,14 +280,15 @@ export const LegalDashboard: Dashboard = {
       // hint prescribes this suppression for exactly that case.
       id: 'stage_funnel',
       title: 'Pipeline by Stage',
-      description: 'Contracts at each lifecycle stage, intake through activation',
-      type: 'funnel',
+      description: 'Contracts at each lifecycle stage right now — a snapshot, largest stage first, not a conversion sequence',
+      type: 'horizontal-bar',
       dataset: 'contract_metrics',
       dimensions: ['status'],
       values: ['contract_count'],
       filter: { status: { $in: ['draft', 'submitted', 'in_review', 'in_approval', 'approved', 'signing', 'active'] } },
       options: {
-        stageOrder: ['draft', 'submitted', 'in_review', 'in_approval', 'approved', 'signing', 'active'],
+        sortBy: 'contract_count',
+        sortOrder: 'desc',
       },
       suppressWarnings: ['chart-config-missing'],
       layout: { x: 4, y: 2, w: 8, h: 4 },

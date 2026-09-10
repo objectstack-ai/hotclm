@@ -200,7 +200,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         stage_funnel: {
           title: 'Pipeline by Stage',
-          description: 'Contracts at each lifecycle stage, intake through activation',
+          description: 'Contracts at each lifecycle stage right now — a snapshot, largest stage first, not a conversion sequence',
         },
       },
     },

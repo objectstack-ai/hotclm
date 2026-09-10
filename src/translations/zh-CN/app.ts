@@ -200,7 +200,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         stage_funnel: {
           title: '各阶段合同数',
-          description: '从受理到生效，各生命周期阶段上的合同数',
+          description: '当前各生命周期阶段上的合同数 —— 反映合同簿现状的快照，按数量从多到少排列，不是转化流程',
         },
       },
     },
