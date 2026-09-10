@@ -118,10 +118,10 @@ owner or legal owner, an obligation's owner — belongs to the one account that
 cannot open the screen it is for, and its reminders go to somebody who cannot
 act on them.
 
-`clm_review.reviewer` is now the only user reference in the fixture that still
-points at the dev admin, and it has to: it is `required: true`, so a name that
-resolves to nothing takes the row with it, and the dev admin is the only account
-that exists while the seed runs. Reassign it once the real accounts are there.
+`clm_review.reviewer` is the one reference that still **has to** name the dev
+admin: it is `required: true`, so a name that resolves to nothing takes the row
+with it, and the dev admin is the only account that exists while the seed runs.
+Reassign it once the real accounts are there.
 
 ### Assigning a position from a script
 
