@@ -1,6 +1,7 @@
 // Copyright (c) 2026 ObjectStack. Licensed under the Apache-2.0 license.
 
 import { STRINGS } from './demo-locale.js';
+import type { ObligationPlan } from './plan-children.js';
 import { CONTRACT_PLAN, type ContractPlan } from './plan-contracts.js';
 import { assertUniqueKeys } from './_shared.js';
 
@@ -30,8 +31,15 @@ import { assertUniqueKeys } from './_shared.js';
  * The only account that exists while the seed runs, so it is what every
  * REQUIRED user reference has to name: `clm_review.reviewer` is
  * `required: true`, and a name resolving to nothing costs the whole row.
- * `clm_contract.legal_owner` is no longer one of them — see
- * {@link LEGAL_OWNERS} for what it names now and why.
+ *
+ * `clm_review.reviewer` is now the last REFERENCE that has to name it.
+ * `clm_contract.legal_owner` left for {@link LEGAL_OWNERS} and
+ * `clm_obligation.owner` for {@link obligationOwnerOf} — both optional, so
+ * both may name accounts that do not exist yet. What still spells this
+ * constant besides `reviewer` is `clm_deviation.decided_by` (the
+ * administrator did decide those, on this database) and the `our`-side entry
+ * of `clm_signature.signers`, which is a JSON string rather than a reference
+ * and resolves against nothing at all.
  */
 export const DEMO_USER = 'Dev Admin';
 
@@ -131,6 +139,19 @@ export const LEGAL_OWNERS: readonly string[] = [
 ];
 
 /**
+ * The lawyer who knows this counterparty — the one rule both columns that
+ * name a lawyer are dealt by, extracted so there is one of it.
+ *
+ * ⚠️ Being the counterparty's lawyer is NOT the same fact as owning that
+ * contract's review: {@link legalOwnerOf} additionally requires that F2 would
+ * have assigned one at all, and {@link obligationOwnerOf} deliberately does
+ * not — a compliance filing under a signed contract needs a lawyer whether or
+ * not that particular contract ever went through legal review.
+ */
+const counselFor = (contract: ContractPlan): string =>
+  LEGAL_OWNERS[contract.partyIndex % LEGAL_OWNERS.length]!;
+
+/**
  * The lawyer who accepted this contract into review, by counterparty
  * relationship — or `null` where F2 would never have assigned one.
  *
@@ -141,7 +162,74 @@ export const LEGAL_OWNERS: readonly string[] = [
  * handed-back half that keeps F3's "nobody to tell" edge exercised.
  */
 export const legalOwnerOf = (contract: ContractPlan): string | null =>
-  contract.hasLegalOwner ? LEGAL_OWNERS[contract.partyIndex % LEGAL_OWNERS.length]! : null;
+  contract.hasLegalOwner ? counselFor(contract) : null;
+
+/**
+ * Who is accountable for PERFORMING an obligation — or `null` for the one row
+ * this fixture deliberately leaves unassigned.
+ *
+ * ## Why not {@link DEMO_USER}, which is what this column held before
+ *
+ * Measured on `main` @ `2d63324`, clean database, README operator setup
+ * performed, one run of each scheduled job: **all 200 obligations carried the
+ * dev admin, and F10's were the only notification receipts still addressed to
+ * it** — `clm_obligation_due_soon -> Dev Admin x2`, every other topic already
+ * reaching a real account after #26 and #47. The argument against leaving them
+ * there is the one {@link CONTRACT_OWNERS} makes for `owner_id` and
+ * {@link LEGAL_OWNERS} makes for `legal_owner`, and it is sharper here than in
+ * either: the dev admin holds no `clm_*` permission set, so `clm_requester`'s
+ * `RU（本人负责）` row of DESIGN.md §04 grants it nothing, `clm_requester.access`
+ * hides 我负责的履约 from it, and F10's reminder is the one kind of notice whose
+ * whole point is that the person receiving it goes and does the thing.
+ *
+ * `owner` is optional (DESIGN.md §03, and the field's own description: "Empty
+ * means unassigned, not the contract owner"), so like the other two optional
+ * references it may name accounts that do not exist yet — an unresolvable name
+ * lands NULL, silently, and never refuses the row. Every dataset is an upsert,
+ * so the operator creates the accounts and runs `pnpm demo` again to hand the
+ * obligations over. The README names them where the operator reads it, and it
+ * names NO new account: this deal spends only the five the fixture already
+ * asks for.
+ *
+ * ## The rule: the desk that performs it, and the counterparty decides which
+ *
+ * A `compliance` obligation goes to the lawyer who knows that counterparty; a
+ * `deliverable` or a `report` goes to the requester who launched the contract.
+ * Both halves are grounded rather than picked:
+ *
+ *  - §04's permission matrix gives `clm_legal` **RCU** on `clm_obligation` —
+ *    the only non-admin set that may CREATE one — and the four compliance
+ *    titles this fixture draws from are all legal-and-compliance work (an
+ *    insurance certificate, a sanctions re-screen, a data-transfer safeguard
+ *    confirmation, an anti-bribery statement). Nobody in the business does
+ *    those.
+ *  - `clm_requester` holds `RU（本人负责）` and §05 puts 我负责的履约 in the
+ *    我的合同 group every employee reaches, which is exactly what a delivery
+ *    or a periodic report is: the launching desk's own work.
+ *
+ * ⚠️ And it deliberately does NOT make the obligation owner a copy of the
+ * contract's `owner_id`. DESIGN.md §03 declines to default this column to the
+ * contract owner; a fixture that put all 200 on the launching requester would
+ * assert by construction the very thing §03 refuses to assert by default, and
+ * a reader could no longer tell from the data that the two columns are
+ * independent. Dealing the compliance third away from the business owner is
+ * what makes that independence visible — and it is why `obligation_metrics`
+ * (§09's third dataset, whose first dimension after status and kind is
+ * `owner`) reads as five bars rather than one.
+ *
+ * ⚠️ Nothing here claims to reproduce a flow. No flow assigns this column:
+ * F9 creates renewal obligations from the type's defaults and leaves the owner
+ * to a person, and S5's `extract_obligations` proposes a 负责人 that a person
+ * confirms (§07). The deal states a rule a legal desk would recognise, in the
+ * same counterparty-relationship style {@link ownerOf} and {@link legalOwnerOf}
+ * already use — so `demo-en` and `demo-zh` deal identically, no locale bundle
+ * being consulted for any of it.
+ */
+export const obligationOwnerOf = (obligation: ObligationPlan): string | null => {
+  if (!obligation.hasOwner) return null;
+  const contract = CONTRACT_PLAN[obligation.contractIndex]!;
+  return obligation.kind === 'compliance' ? counselFor(contract) : ownerOf(contract);
+};
 
 /**
  * `<type> — <counterparty>`, with a qualifier when a counterparty has more

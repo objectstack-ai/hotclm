@@ -89,16 +89,23 @@ references them by name:
 
 | Name it exactly | Give it | It receives |
 |---|---|---|
-| `Business Requester 1` · `Business Requester 2` · `Business Requester 3` | the default `clm_requester` set | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 |
-| `Legal Counsel 1` · `Legal Counsel 2` | the `clm_legal_counsel` position | the `legal_owner` of every contract legal has accepted — 34 / 34 |
+| `Business Requester 1` · `Business Requester 2` · `Business Requester 3` | the default `clm_requester` set | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 |
+| `Legal Counsel 1` · `Legal Counsel 2` | the `clm_legal_counsel` position | the `legal_owner` of every contract legal has accepted — 34 / 34 · and all 56 compliance obligations, by the same counterparty relationship — 29 / 27 |
 
-Each requester's **我的合同 › Launched by Me** and each lawyer's **法务工作台 ›
-审查中** fills the moment the account exists. Both columns are optional
-references, so naming an account that is not there yet costs nothing and no
-row: it simply stays empty. Every dataset is an upsert, so **create the accounts
-and run `pnpm demo` again** and their contracts are handed over. Get a name
-wrong by one character and the column stays empty with no error — that is the
-one thing to double-check.
+Each requester's **我的合同 › Launched by Me** and **› My Obligations**, and each
+lawyer's **法务工作台 › 审查中** and their own **My Obligations**, fill the moment
+the account exists. All three columns are optional references, so naming an
+account that is not there yet costs nothing and no row: it simply stays empty.
+Every dataset is an upsert, so **create the accounts and run `pnpm demo` again**
+and their contracts and obligations are handed over. Get a name wrong by one
+character and the column stays empty with no error — that is the one thing to
+double-check.
+
+**One obligation is deliberately left with no owner** and is not a name you have
+missed. F10 (`obligation_due`) reminds an obligation's owner and takes a "nobody
+to tell" edge when there is none — the demo keeps exactly one unowned row, due
+seven days after boot, so that edge stays exercised. `src/data/plan-children.ts`
+proves it reachable and says why one is both the minimum and the maximum.
 
 The other five positions are named however you like; they are reached through
 the position, not by name.
@@ -106,14 +113,15 @@ the position, not by name.
 The dev admin is deliberately none of them: it holds no `clm_*` permission set,
 so `clm_requester.access` hides every 我的合同 item from it,
 `GET /api/v1/meta/app/clm` serves it `navigation: []`, and `clm_legal.access`
-gates the legal workbench away too. A contract parked there — as a business
-owner or as a legal owner — belongs to the one account that cannot open the
-screen it is for, and its reminders go to somebody who cannot act on them.
+gates the legal workbench away too. A row parked there — a contract's business
+owner or legal owner, an obligation's owner — belongs to the one account that
+cannot open the screen it is for, and its reminders go to somebody who cannot
+act on them.
 
-`clm_review.reviewer` and `clm_obligation.owner` still point at the dev admin,
-and `reviewer` has to: it is `required: true`, so a name that resolves to
-nothing takes the row with it, and the dev admin is the only account that exists
-while the seed runs. Reassign those two once the real accounts are there.
+`clm_review.reviewer` is now the only user reference in the fixture that still
+points at the dev admin, and it has to: it is `required: true`, so a name that
+resolves to nothing takes the row with it, and the dev admin is the only account
+that exists while the seed runs. Reassign it once the real accounts are there.
 
 ### Assigning a position from a script
 

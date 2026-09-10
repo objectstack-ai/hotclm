@@ -7,7 +7,7 @@ import { PaymentPlan } from '../objects/payment-plan.object.js';
 
 import { assertUniqueKeys, dayOffset } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
-import { DEMO_USER, titleOfIndex } from './keys.js';
+import { obligationOwnerOf, titleOfIndex } from './keys.js';
 import { OBLIGATION_PLAN, PAYMENT_PLAN } from './plan-children.js';
 
 /**
@@ -32,10 +32,11 @@ const obligationRecords = OBLIGATION_PLAN.map((obligation) => ({
   title: obligationTitle(obligation.kind, obligation.titleIndex),
   kind: obligation.kind,
   due_date: dayOffset(obligation.dueDate),
-  // The only account that exists when the demo is driven. §05's "my
-  // obligations" list is empty without it, and the README says to reassign
-  // once the real position accounts have been created.
-  owner: DEMO_USER,
+  // The desk that performs it — a requester for deliverables and reports, the
+  // counterparty's lawyer for compliance filings, and `null` on the one row
+  // `leaveUnassigned` keeps F10's "nobody to tell" edge alive with. See
+  // `keys.ts` for why it is not the dev admin any more.
+  owner: obligationOwnerOf(obligation),
   status: obligation.status,
   completed_at: obligation.completedAt === null ? null : dayOffset(obligation.completedAt),
   notes: null,
