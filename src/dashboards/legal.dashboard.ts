@@ -1,8 +1,14 @@
 import type { Dashboard } from '@objectstack/spec/ui';
 
 /**
- * 法务工作台 — DESIGN.md §09's first dashboard: 待受理数 · 审查中 · 超 SLA ·
- * 谈判停滞 · 平均周转（本月 vs 上月）· 各阶段合同数漏斗.
+ * 法务工作台 — DESIGN.md §09's first dashboard.
+ *
+ * §09's brick list is deliberately NOT copied here. The copy that used to sit
+ * on these lines drifted three times in two days — two of its six items were
+ * rewritten by PR #40 (`1127e52`, 2026-09-09) and the third by PR #70
+ * (`30fd863`, 2026-09-10) — and by the end all three described bricks this file
+ * does not implement. §09 is the source and a pointer to it cannot drift; the
+ * widgets below each carry their own comment for their own shape.
  *
  * ## What a dataset widget actually reads (measured, not inherited)
  *
