@@ -6,7 +6,7 @@ import { Contract } from '../objects/contract.object.js';
 
 import { dayOffset } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
-import { contractTitle, ownerOf, titleOfIndex, DEMO_USER } from './keys.js';
+import { contractTitle, legalOwnerOf, ownerOf, titleOfIndex } from './keys.js';
 import { CONTRACT_PLAN, lawOf, typeOf, type ContractPlan } from './plan-contracts.js';
 
 /**
@@ -99,7 +99,15 @@ export const contractSeed = defineSeed(Contract, {
       //
       // Which requester owns which contract is {@link ownerOf} in `keys.ts`.
       owner_id: ownerOf(contract),
-      legal_owner: contract.hasLegalOwner ? DEMO_USER : null,
+      // Which lawyer accepted it is {@link legalOwnerOf} in `keys.ts`, and
+      // WHETHER one did is `hasLegalOwner` in `plan-contracts.ts`. Both halves
+      // are deliberate and both leave rows empty on purpose: F2 assigns no
+      // legal owner to a draft, to a `submitted` contract still in the 待受理
+      // queue, or to a type that skips legal review — and two contracts in
+      // review are handed back on purpose, so F3's "nobody to tell" edge stays
+      // exercised (`UNASSIGNED_IN_REVIEW`). ⛔ Filling every row would delete
+      // the coverage card 09 measured.
+      legal_owner: legalOwnerOf(contract),
 
       amount: contract.amount,
       currency_code: law.currency,
