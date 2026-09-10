@@ -118,10 +118,14 @@ while the seed runs. Reassign those two once the real accounts are there.
 ### Assigning a position from a script
 
 Clicking through Setup → Users needs nothing more than the table above. Automating it does: the
-assignment binds by the position's **name**, not by its id. `sys_user_position.position` is a plain
-text column carrying a `sys_position.name` — the one field on that row without an `_id` suffix, while
-its neighbour `user_id` is a real lookup and the analogous
-`sys_user_permission_set.permission_set_id` is genuinely id-typed.
+assignment binds by the position's **name**, not by its id. Read that off the declaration, not off
+the field name — `sys_user_position.position` is declared `text`, and its own description says what
+it carries: *"Position machine name (references `sys_position.name`)."* The field name tells you
+nothing here, because this object mixes both kinds freely: `user_id`, `granted_by`, `delegated_from`
+and `certified_by` are all genuine lookups, and only three of its fourteen fields carry an `_id`
+suffix at all. What makes the analogy tempting is the neighbouring API —
+`sys_user_permission_set.permission_set_id` really is id-typed — so the one you would reach for by
+analogy takes an id where this one does not.
 
 ```http
 POST /api/v1/data/sys_user_position
