@@ -7,8 +7,11 @@ Self-serve intake, a clause playbook, a data-driven approval matrix, e-signature
 
 **基于 ObjectStack 的合同全生命周期管理。** 业务自助发起、条款库与偏离、审批矩阵、电子签与执行形式、履约义务、收付款计划 —— 全部是类型化元数据。
 
-> Status: **M0 — scaffold and configuration domain.** See [DESIGN.md](./DESIGN.md) for the model and
-> [docs/backlog](./docs/backlog/README.md) for what is being built next. Sibling app of
+> Status: **M1–M3 are in.** The model and the permission layer, intake, the approval ladder, signing
+> and execution formalities, the post-signature reminder layer, the analytics and both locale bundles
+> all land in this tree. **M4 is what remains** — e-signature, the HotCRM hand-off, the AI skills and
+> the release: [DESIGN.md](./DESIGN.md) §11 is the milestone table, and cards 12 · 13 · 14 in
+> [docs/backlog](./docs/backlog/README.md) are what is left in it. Sibling app of
 > [HotCRM](https://github.com/objectstack-ai/hotcrm): commercial terms stay in the CRM, legal state lives here.
 
 ## What it is
@@ -111,6 +114,39 @@ screen it is for, and its reminders go to somebody who cannot act on them.
 and `reviewer` has to: it is `required: true`, so a name that resolves to
 nothing takes the row with it, and the dev admin is the only account that exists
 while the seed runs. Reassign those two once the real accounts are there.
+
+### Assigning a position from a script
+
+Clicking through Setup → Users needs nothing more than the table above. Automating it does: the
+assignment binds by the position's **name**, not by its id. `sys_user_position.position` is a plain
+text column carrying a `sys_position.name` — the one field on that row without an `_id` suffix, while
+its neighbour `user_id` is a real lookup and the analogous
+`sys_user_permission_set.permission_set_id` is genuinely id-typed.
+
+```http
+POST /api/v1/data/sys_user_position
+{ "user_id": "…", "position": "clm_legal_counsel" }
+```
+
+A name-spelled row grants that position's own permission set **and** `clm_requester`, because every
+position binds that set too (`src/security/bind-position-sets.ts`) — a lawyer holds `clm_legal` and
+`clm_requester` both. To read back what an account actually ended up with:
+
+```http
+POST /api/v1/security/explain
+{ "userId": "…", "object": "clm_contract", "operation": "read" }
+```
+
+`object` and `operation` are both required there — a body carrying only `userId` answers
+`400 VALIDATION_FAILED`.
+
+**An id in the `position` field is accepted, not refused.** Nothing resolves that column on write, so
+a row spelled with the position's id is stored verbatim, matches no position and grants no permission
+set — and the write still answers `201`, with no diagnostic anywhere to say so. The account lands in
+the state the dev admin is in above: signed in, holding no `clm_*` set, served `navigation: []` and
+empty lists, with nothing in the response that created it pointing at why. The silent acceptance is
+the platform's — `objectstack-ai/objectstack#16712`, still open — so until that lands, the spelling is
+the whole defence.
 
 ### What the seeded rows do NOT carry, and why
 
