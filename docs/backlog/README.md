@@ -26,7 +26,7 @@ dispatch is worth anything.
 | [13](./13-ai-skills.md) | AI participation: S1–S6 skills, the pre-review memo, MCP tool surface, honest degradation | M4 | 05 |
 | [14](./14-release.md) | Release: docs site, screenshots, feature inventory, marketplace publish | M4 | 10, 11, 12, 13 |
 
-Every card inherits the same acceptance floor: `pnpm validate && pnpm lint && pnpm typecheck` green,
-gate output pasted in the PR, one draft PR per card, no rider changes. Field lists, enum values and
-transitions are pinned in [`DESIGN.md`](../../DESIGN.md) §03–§06 — a card that needs a value not
-pinned there stops with `needs_decision` instead of inventing one.
+Every card inherits the same acceptance floor: `pnpm validate && pnpm lint && pnpm typecheck &&
+pnpm lint:i18n-gate` green, gate output pasted in the PR, one draft PR per card, no rider changes.
+Field lists, enum values and transitions are pinned in [`DESIGN.md`](../../DESIGN.md) §03–§06 — a
+card that needs a value not pinned there stops with `needs_decision` instead of inventing one.
