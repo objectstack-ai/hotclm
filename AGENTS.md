@@ -127,7 +127,7 @@ docs/backlog/           work cards                     docs/requirements/       
 | PR | **Draft** PR against `main`, title = issue title, body: what changed · gate output · `Fixes #<n>`. One issue per PR. |
 | Release notes | **None per PR.** `CHANGELOG.md` is written at release time by the maintainer. |
 | Files a code PR never touches | `LICENSE` · `CHANGELOG.md` · `DESIGN.md` §01–§04 without a `needs-user-decision` first |
-| Gates | `pnpm validate && pnpm lint && pnpm typecheck && pnpm lint:i18n-gate`. |
+| Gates | `pnpm verify`. |
 | Merge policy | **The loop merges its own green work** (maintainer, 2026-09-07, verbatim: 「你自己派发自己合并」 and 「改策略，让循环真的无人值守」). The PM seat squash-merges a PR when **all** of: CI green on the head · an ACCEPT review recorded on the issue · the diff touches no governed surface · it is not a second REWORK round. Anything else still goes to the maintainer. |
 | Governed surface (maintainer merges) | `DESIGN.md` §01–§04 · `AGENTS.md` · `CLAUDE.md` · `LICENSE` · `CHANGELOG.md` · `docs/design/**`. A PR touching any of these is ACCEPTed and left open with a `## 维护者速读` comment. |
 | Decisions stay with the maintainer | The merge authorization covers **merging**, not deciding. Product semantics, `DESIGN.md` §01–§04 wording, and anything on the escalation ladder still becomes a `needs-user-decision` card. |
