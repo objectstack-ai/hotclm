@@ -53,6 +53,13 @@ import type { Page } from '@objectstack/spec/ui';
  * where it declines to add `content` to the page-component key face: "The
  * inline locale map is the ruled route for page prose".
  *
+ * ⚠️ Superseded from 17.5 (spec 4bbf766, #16772), measured on 17.7.0 (#82):
+ * the walk now roots at a slotted page's `slots` too, and the same call above
+ * returns 14 on this page, so the bundle also addresses its header `title` /
+ * `subtitle` and `components.<id>.*`. The inline maps below still render; they
+ * are now a workaround that release made obsolete, and moving them into the
+ * bundle is a card of its own.
+ *
  * ⚠️ THE GATE CANNOT SEE THESE. `os i18n check` counts bundle keys, and an
  * inline map is invisible to it (the extractor skips a label already in map
  * form — it is multilingual, so no key is scaffolded). Adding an eighth tab
