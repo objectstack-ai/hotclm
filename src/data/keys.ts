@@ -49,14 +49,16 @@ export const DEMO_USER = 'Dev Admin';
  * Who launched each contract — the `业务承办 ×3` of DESIGN.md §10's persona
  * mix, as ACCOUNT NAMES the loader resolves against `sys_user.name`.
  *
- * ## A seed CAN name a user; nothing else fills this column
+ * ## A seed CAN name a user; only the platform admin fills the gap
  *
  * `clm_contract.owner_id` is a `lookup('sys_user')` exactly like `legal_owner`,
- * and `scripts/demo.mjs` sequences two boots so that a name resolves. Nothing
- * fills it otherwise: the security middleware that "stamps the acting user on
- * any insert that leaves it empty" stands aside for system writes at its first
- * line (`if (opCtx.context?.isSystem) return next()`), and a seed insert has no
- * acting user to stamp. `contract.seed.ts` carries both measurements.
+ * and `scripts/demo.mjs` sequences two boots so that a name resolves. The
+ * security middleware that "stamps the acting user on any insert that leaves it
+ * empty" stands aside for system writes at its first line
+ * (`if (opCtx.context?.isSystem) return next()`), and a seed insert has no
+ * acting user to stamp — but from 17.5 the seed-settle claim hands every row
+ * left NULL to the platform admin, so an unresolved name ends on the dev admin,
+ * not on nobody. `contract.seed.ts` carries the measurements.
  *
  * ## Why these three names and not {@link DEMO_USER}
  *

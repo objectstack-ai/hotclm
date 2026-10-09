@@ -86,16 +86,16 @@ export const contractSeed = defineSeed(Contract, {
       //    and lands NULL, silently — it never refuses the row.
       //  - "the runtime claims ownerless seeded rows for the dev admin once
       //    that account is minted": the routine is real
-      //    (`claimSeedOwnership`, `@objectstack/plugin-security`) but it runs
-      //    on exactly one path — the boot that PROMOTES the first human to
-      //    platform admin. Under `pnpm demo` that is the PRIMING boot, which
-      //    runs with the demo off and has no contract to claim; the demo boot
-      //    then reports `adminPromoted: false, reason: "already_have_admin"`
-      //    and claims nothing. Measured both ways on one database: a single
-      //    boot with the demo on logs `adminPromoted: true, ownershipClaimed:
-      //    260` and owns all 120, `pnpm demo`'s second boot leaves all 120
-      //    NULL. The annotation was true of the world before the two-boot
-      //    handover landed, and that handover is what turned it off.
+      //    (`claimSeedOwnership`, `@objectstack/plugin-security`). Through
+      //    17.4 it ran only on the boot that PROMOTES the first human to
+      //    platform admin — under `pnpm demo` the PRIMING boot, with no
+      //    contract to claim — so the demo boot left all 120 NULL. From 17.5
+      //    (17.7 widened it again) it also runs whenever a seed settles
+      //    (`app:seeded`), against the existing platform admin. Measured on
+      //    17.7.0 (#82): `pnpm demo`'s second boot ends with all 120 owned by
+      //    the dev admin, and once the operator has created the requesters
+      //    the next `pnpm demo` hands them over (43 / 43 / 34). The name below
+      //    is still what decides the owner; the claim only fills the gap.
       //
       // Which requester owns which contract is {@link ownerOf} in `keys.ts`.
       owner_id: ownerOf(contract),
