@@ -3,6 +3,7 @@
 import type { TranslationData } from '@objectstack/spec/system';
 
 import { appSurface } from './zh-CN/app.js';
+import { flowSurface } from './zh-CN/flows.js';
 import { catalog } from './zh-CN/objects.catalog.js';
 import { contract } from './zh-CN/objects.contract.js';
 import { lifecycle } from './zh-CN/objects.lifecycle.js';
@@ -34,4 +35,5 @@ export const zhCN: TranslationData = {
     ...lifecycle,
   },
   ...appSurface,
+  ...flowSurface,
 };

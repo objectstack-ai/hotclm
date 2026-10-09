@@ -429,6 +429,10 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     contract_detail: {
       label: 'Contract',
       description: 'The contract record: lifecycle path, key terms, versions, review, approvals, obligations, signing and discussion.',
+      // The `page:header` copy (17.5 made a slotted page's header addressable):
+      // record interpolation, so it reads the same in every locale.
+      title: '{contract_number}',
+      subtitle: '{title}',
     },
   },
 };
