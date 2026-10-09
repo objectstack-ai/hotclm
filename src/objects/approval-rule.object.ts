@@ -66,14 +66,12 @@ export const ApprovalRule = ObjectSchema.create({
     amount_min: Field.currency({
       label: 'Amount From',
       group: 'match',
-      scale: 2,
       min: 0,
       description: 'Inclusive lower bound of the contract amount this rule matches. Empty means no lower bound.',
     }),
     amount_max: Field.currency({
       label: 'Amount To',
       group: 'match',
-      scale: 2,
       min: 0,
       description: 'Exclusive upper bound. Empty means no upper bound.',
     }),

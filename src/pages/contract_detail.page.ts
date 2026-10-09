@@ -115,7 +115,6 @@ export const ContractDetailPage: Page = {
       properties: {
         title: '{contract_number}',
         subtitle: '{title}',
-        breadcrumb: true,
         actions: [
           'submit_contract',
           'accept_contract',

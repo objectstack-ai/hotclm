@@ -82,7 +82,6 @@ export const PaymentPlan = ObjectSchema.create({
       group: 'schedule',
       required: true,
       storage: { notNull: true },
-      scale: 2,
       min: 0,
       description: 'In the contract currency (clm_contract.currency_code); the instalment amounts are not separately denominated.',
     }),
@@ -114,7 +113,6 @@ export const PaymentPlan = ObjectSchema.create({
     actual_amount: Field.currency({
       label: 'Actual Amount',
       group: 'actual',
-      scale: 2,
       min: 0,
       description: 'What actually arrived, in the contract currency. Below planned_amount on a partial instalment.',
     }),
