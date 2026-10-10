@@ -718,6 +718,13 @@ const endingOn = (contract: ContractPlan, endDate: number): ContractPlan => {
   };
 };
 
+/** A count this placement owns (not one §10 pins), refused with what it would cost. */
+const assertPlaced = (rows: string, actual: number, expected: number, cost: string): void => {
+  if (actual !== expected) {
+    throw new Error(`demo fixture: ${actual} ${rows} after placing the sweep-window rows, expected ${expected} — ${cost} (#97).`);
+  }
+};
+
 const activeEndingIn = (contracts: readonly ContractPlan[], low: number, high: number) =>
   contracts.filter((c) => c.status === 'active' && c.timeline.endDate !== null &&
     c.timeline.endDate >= low && c.timeline.endDate <= high).length;
@@ -755,12 +762,16 @@ const placeInSweepWindows = (contracts: readonly ContractPlan[]): ContractPlan[]
   const active = placed.filter((c) => c.status === 'active');
   const deadlineToday = active.filter((c) =>
     c.renewalNoticeDays !== null && c.timeline.endDate !== null && c.timeline.endDate - c.renewalNoticeDays === 0);
-  assertCount('clm_contract (renewal deadline today, unflagged)', deadlineToday.filter((c) => !renewalFlagged(c)).length, RENEWAL_DEADLINE_TODAY);
+  assertPlaced('unflagged active contracts with a renewal deadline of today', deadlineToday.filter((c) => !renewalFlagged(c)).length, RENEWAL_DEADLINE_TODAY,
+    "F12 would select no row inside its window and the demo would send no renewal notice");
   const termEnded = active.filter((c) => c.timeline.endDate !== null && c.timeline.endDate < 0);
-  assertCount('clm_contract (active, term ended, not auto-renewing)', termEnded.filter((c) => !c.autoRenew).length, TERM_ENDED_YESTERDAY_PER_BRANCH);
-  assertCount('clm_contract (active, term ended, auto-renewing)', termEnded.filter((c) => c.autoRenew).length, TERM_ENDED_YESTERDAY_PER_BRANCH);
+  assertPlaced('active, non-renewing contracts past their end date', termEnded.filter((c) => !c.autoRenew).length, TERM_ENDED_YESTERDAY_PER_BRANCH,
+    "F13's expiry branch would have nothing to expire, or more than the fixture means to hand it");
+  assertPlaced('active, auto-renewing contracts past their end date', termEnded.filter((c) => c.autoRenew).length, TERM_ENDED_YESTERDAY_PER_BRANCH,
+    "F13's auto-renew branch would have nothing to draft, or more than the fixture means to hand it");
   assertCount('clm_contract (active, ending within 30 days)', activeEndingIn(placed, 0, EXPIRING_BAND_DAYS), 10);
-  assertCount('clm_contract (active, ending within 90 days)', activeEndingIn(placed, 0, EXPIRY_TILE_DAYS), activeEndingIn(contracts, 0, EXPIRY_TILE_DAYS));
+  assertPlaced('active contracts ending within 90 days', activeEndingIn(placed, 0, EXPIRY_TILE_DAYS), activeEndingIn(contracts, 0, EXPIRY_TILE_DAYS),
+    "the 管理层 board's 90-day expiry tile would move with a fixture change it has nothing to do with");
   if (placed.some((c) => moveTo.has(c.index) && (c.timeline.activatedAt ?? 0) > 0)) {
     throw new Error('demo fixture: a contract moved into a sweep window would start in the future while seeded active.');
   }
