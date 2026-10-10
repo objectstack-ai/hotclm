@@ -73,7 +73,8 @@ thirty days and the arrears lists are always in arrears.
 
 A seed cannot create a user, so `pnpm demo` produces exactly one account. To see
 the permission model of [DESIGN.md](./DESIGN.md) §04 do anything, create
-accounts in **Setup → Users** and assign the seven positions:
+accounts in **Setup → Users**, assign the seven positions, and give every business
+requester a manager ([below](#rung-1-of-the-approval-ladder-is-a-manager)):
 
 | Position | How many | What it changes |
 |---|---|---|
@@ -132,6 +133,35 @@ admin: it is `required: true`, so a name that resolves to nothing takes the row
 with it, and the dev admin is the only account that exists while the seed runs.
 Reassign it once the real accounts are there.
 
+### Rung 1 of the approval ladder is a manager
+
+Every contract sent for approval opens on rung 1: the direct manager of the
+contract's **owner** — the business requester who launched it, not the lawyer
+who pressed **Send for Approval** — read from that account's
+`sys_user.manager_id`. No seed, position or permission set fills that column,
+so on an install set up from the tables above alone, no contract gets past
+rung 1.
+
+Set it in **Setup → Users → the user → ⋯ → Set Manager**, for each of the three
+business requesters and for anyone else who launches contracts. Any other
+account in the organization will do — the persona mix has no line managers of
+its own, so point all three at one of the accounts above (the executive, say).
+The manager needs nothing more: `approve_contract`, the gate a rung acts
+through, is in `clm_requester`, which every account holds.
+
+Skip it and the request opens on a slot nobody holds — `pending_approvers`
+reads `manager:undefined` (upstream `objectstack-ai/objectstack#22558`) — and
+the contract stays locked for approval. Setting the manager afterwards does not
+reach a request that is already open: its approvers were resolved when the rung
+opened. Only a platform admin moves it on, from **Setup → Approvals → Approvals
+Inbox → All**, with **Override Reassign** (or Override Approve / Reject).
+
+No rung sends its approver a message when it opens — nothing in their inbox,
+no email. They see it waiting in the Console: the bell counts the approvals
+waiting on them and **我的合同 › Waiting on Me** lists them. A reminder sent on
+a request does arrive as a message; the missing one on opening is the
+platform's, not this app's.
+
 ### Assigning a position from a script
 
 Clicking through Setup → Users needs nothing more than the table above. Automating it does: the
@@ -168,6 +198,17 @@ the state the dev admin is in above: signed in, holding no `clm_*` set, served `
 empty lists, with nothing in the response that created it pointing at why. The silent acceptance is
 the platform's — `objectstack-ai/objectstack#16712`, still open — so until that lands, the spelling is
 the whole defence.
+
+A manager is an admin operation, not a data write. **Set Manager** posts exactly this, as a platform
+admin (the dev admin is one):
+
+```http
+POST /api/v1/auth/admin/set-user-manager
+{ "userId": "…", "managerId": "…" }
+```
+
+The data API refuses the column outright: a `PATCH /api/v1/data/sys_user/…` carrying `manager_id`
+answers `403 PERMISSION_DENIED`, because it edits only `name`, `image` and `locale` on a user.
 
 ### What the seeded rows do NOT carry, and why
 
