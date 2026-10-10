@@ -320,7 +320,7 @@ export const Contract = ObjectSchema.create({
     parent_contract: Field.lookup('clm_contract', {
       label: 'Parent Contract',
       group: 'term',
-      description: 'The framework agreement this order sits under, or the main contract an amendment (category: amendment) modifies.',
+      description: 'The framework agreement this order sits under, or the main contract an amendment modifies.',
     }),
     is_expiring: Field.boolean({
       label: 'Expiring Soon',
@@ -347,7 +347,8 @@ export const Contract = ObjectSchema.create({
     contract_language: Field.select({
       label: 'Contract Language',
       group: 'legal',
-      description: 'ISO 639-1 code of the governing text.',
+      // Option values are ISO 639-1 codes.
+      description: 'The language whose text governs the contract.',
       options: [
         { label: 'English',  value: 'en', default: true },
         { label: 'Chinese',  value: 'zh' },

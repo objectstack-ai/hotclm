@@ -177,7 +177,7 @@ export const LegalDashboard: Dashboard = {
        */
       id: 'review_ageing',
       title: 'In Review Over 30 Days',
-      description: 'Contracts in legal review for more than 30 days. A fixed threshold, not each contract type\'s own review SLA.',
+      description: 'A fixed 30-day threshold, not each contract type\'s own review SLA.',
       type: 'metric',
       dataset: 'contract_metrics',
       values: ['contract_count'],

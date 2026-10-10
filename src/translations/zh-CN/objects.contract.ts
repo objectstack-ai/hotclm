@@ -204,7 +204,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       contract_language: {
         label: '合同文本语言',
-        help: '以哪种语言的文本为准，填 ISO 639-1 代码。',
+        help: '以哪种语言的文本为准。',
         options: {
           en: '英语',
           zh: '中文',

@@ -188,7 +188,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       parent_contract: {
         label: 'Parent Contract',
-        help: 'The framework agreement this order sits under, or the main contract an amendment (category: amendment) modifies.',
+        help: 'The framework agreement this order sits under, or the main contract an amendment modifies.',
       },
       is_expiring: {
         label: 'Expiring Soon',
@@ -204,7 +204,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       contract_language: {
         label: 'Contract Language',
-        help: 'ISO 639-1 code of the governing text.',
+        help: 'The language whose text governs the contract.',
         options: {
           en: 'English',
           zh: 'Chinese',

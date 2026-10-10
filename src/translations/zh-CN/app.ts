@@ -188,7 +188,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         review_ageing: {
           title: '审查超过 30 天',
-          description: '在法务审查中超过 30 天的合同。这是一条固定阈值，不是各合同类型自己的审查时限。',
+          description: '固定的 30 天阈值，不是各合同类型自己的审查时限。',
         },
         negotiation_stalled: {
           title: '等待对方',
