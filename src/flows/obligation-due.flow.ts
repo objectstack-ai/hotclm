@@ -59,7 +59,7 @@ const flagOverdue: FlowNode = {
 export const ObligationDueFlow: Flow = sweepFlow({
   name: 'obligation_due',
   label: 'Obligations Due And Overdue',
-  description: 'Daily: remind an obligation owner seven days out and on the due date, and move an unfinished obligation past its due date into overdue (which moves the contract roll-up with it).',
+  description: 'Daily: remind an obligation owner seven days out and on the due date, and move an unfinished obligation past its due date into overdue (which also updates the contract\'s overdue count).',
   stages: [
     {
       id: 'week',
