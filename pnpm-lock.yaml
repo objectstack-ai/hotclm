@@ -4,36 +4,23 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  better-auth: 1.7.2
-  '@better-auth/core': 1.7.2
-  '@better-auth/kysely-adapter': 1.7.2
-  '@better-auth/memory-adapter': 1.7.2
-  '@better-auth/drizzle-adapter': 1.7.2
-  '@better-auth/mongo-adapter': 1.7.2
-  '@better-auth/prisma-adapter': 1.7.2
-  '@better-auth/oauth-provider': 1.7.2
-  '@better-auth/scim': 1.7.2
-  '@better-auth/sso': 1.7.2
-  '@better-auth/telemetry': 1.7.2
-
 importers:
 
   .:
     dependencies:
       '@objectstack/plugin-hono-server':
-        specifier: ^17.0.0
-        version: 17.4.0
+        specifier: ^17.7.0
+        version: 17.7.0
       '@objectstack/runtime':
-        specifier: ^17.0.0
-        version: 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+        specifier: ^17.7.0
+        version: 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
       '@objectstack/spec':
-        specifier: ^17.0.0
-        version: 17.4.0
+        specifier: ^17.7.0
+        version: 17.7.0
     devDependencies:
       '@objectstack/cli':
-        specifier: ^17.0.0
-        version: 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+        specifier: ^17.7.0
+        version: 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
       typescript:
         specifier: ^6.0.0
         version: 6.0.3
@@ -44,8 +31,8 @@ packages:
     resolution: {integrity: sha512-cTlrKttbrRHEw3W+0/I609A2Matj5JQaRvfLtEIGZvlN0RaPi+3ANsMeqAyCAVlH/lUIW2tmtBlSMni74lcXeg==}
     engines: {node: '>=12'}
 
-  '@better-auth/core@1.7.2':
-    resolution: {integrity: sha512-j0nM4ygsWbF/fcYRoKtDn8gn8uLXkmC+075HqSqsJEAV828cJR9bvYBCUQ1zmxNyRBk6Iz/qXsA0Zm2oksiOTg==}
+  '@better-auth/core@1.7.3':
+    resolution: {integrity: sha512-JdP7lOkyE83jgjn7RilJj1XvZ7n2JjRsErKJuaXchjyuNo6cf1iVd3GtbhAtiUyJJkWdk8yL+LaUBKT80H0zLA==}
     peerDependencies:
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
@@ -61,55 +48,55 @@ packages:
       '@opentelemetry/api':
         optional: true
 
-  '@better-auth/drizzle-adapter@1.7.2':
-    resolution: {integrity: sha512-A5wE10PIv3aS5LGePecEHntQylKy6OOF17B4dqlE0DwJeqU/IOBSd7/LZhMop9cNJ3WFjKMpazVSf91yYM/NFg==}
+  '@better-auth/drizzle-adapter@1.7.3':
+    resolution: {integrity: sha512-S+nQRlxbUhkR43LrSv8c98ZvOvmv3nrtOnHkiZXkdDkr60PWp7maC2cqgzZ2C9exCC1a+4TugJlx2jRL+r+/9A==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
       drizzle-orm: ^0.45.2 || >=1.0.0-rc.1 <2.0.0
     peerDependenciesMeta:
       drizzle-orm:
         optional: true
 
-  '@better-auth/kysely-adapter@1.7.2':
-    resolution: {integrity: sha512-LYdSRLOvZiF+6S0UThu+wE/Qxsq9P2jQs7ZKkY6BIBJqUjYyxVDmi8HFcantBvWWW1/BeQCSsD7YVDG4gICMIQ==}
+  '@better-auth/kysely-adapter@1.7.3':
+    resolution: {integrity: sha512-UIsyJMIrjUnT+yTaS6dkCxYYmtPwxFHxwSJ8+CLty2II5w9BewlDxDA0/QzhoL/InYCPxQ5Y6xIgLHZG1dhwRA==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
       kysely: ^0.28.17 || ^0.29.0
     peerDependenciesMeta:
       kysely:
         optional: true
 
-  '@better-auth/memory-adapter@1.7.2':
-    resolution: {integrity: sha512-0q1SXMzm5esH9L0xVuM6IxCk59E4G+3HySX4My9gvEwqtmUobykn+iuc/si3Y4xwUO7JODqQ5o+/pPcLDDMIrA==}
+  '@better-auth/memory-adapter@1.7.3':
+    resolution: {integrity: sha512-WdLANFY/QWC3G351RCzxU+Y9YlW+BQ1oG9NwBTSOUWQw5rZ87ws+weU8tvAMO7sQ4C9gKIlkOKBKUKXrSt91Tw==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/mongo-adapter@1.7.2':
-    resolution: {integrity: sha512-4879SmUWHUs0OYlvHoCFbycZ7i1bqytkcgAUdt9RLQMvZ5H3LRMTgax2YVlGZEXgwNjY/X7xAoXOecWLhlQWeA==}
+  '@better-auth/mongo-adapter@1.7.3':
+    resolution: {integrity: sha512-YL9m01tNogmFmRvOWJ46M9WwE6HirCXHDell29mtsQB/Qs1TPNLrgj7ybGMMGhQuyj6S218+8Wbls8m9s+i8RQ==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
       mongodb: ^6.0.0 || ^7.0.0
     peerDependenciesMeta:
       mongodb:
         optional: true
 
-  '@better-auth/oauth-provider@1.7.2':
-    resolution: {integrity: sha512-td7FnUz3lLKXFXN+0RbZe3ygaHqxpRqDG+gxbfSZbztbVfG7vuZtR4ba3uccsodAw7anchhIg2xwVP1/zlcxcw==}
+  '@better-auth/oauth-provider@1.7.3':
+    resolution: {integrity: sha512-Eoajj68F1ETmp4NBM98tgj1Uiip4cZiFqFsijAWIvOEQTejr/67PWK1/92N8PiNdLf03ezUWU538W93rd9fyIw==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
-      better-auth: 1.7.2
+      better-auth: ^1.7.3
       better-call: 1.4.0
 
-  '@better-auth/prisma-adapter@1.7.2':
-    resolution: {integrity: sha512-mXTr/83WrNWLrvzIjtgDgdu9iXhOcSG1+qBQOAKlbGSFiOB+z4IMRneQ2wmMOiB8mKY9qGkClVUjKRFXqtHnFQ==}
+  '@better-auth/prisma-adapter@1.7.3':
+    resolution: {integrity: sha512-TJ/DhlU7oLzrC626/1wfYA1Pl+lVsXa/zXBZ8d7Rlc2YO5fGd5fsAYJdRrYMyA51iZEo+rWLXMhZ0cez1BamsQ==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
       '@prisma/client': ^5.0.0 || ^6.0.0 || ^7.0.0
       prisma: ^5.0.0 || ^6.0.0 || ^7.0.0
@@ -119,27 +106,27 @@ packages:
       prisma:
         optional: true
 
-  '@better-auth/scim@1.7.2':
-    resolution: {integrity: sha512-RBwVN189w37xwK0n+mRgARTmJFCriOsMVCbe7Bzeyak6esSg9kTGeCUmGtfgwOKJ3jJWQkeAQdWw7VRJ/HOG6w==}
+  '@better-auth/scim@1.7.3':
+    resolution: {integrity: sha512-1/L7zIEUAb1jxlzWKkqbDAD4Jz7u83yZg15TSaIaKcFe1dpCdNxkzQRrjbPLUfnVtBh/vnk10uLxVFCtbMdrdg==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
-      better-auth: 1.7.2
+      better-auth: ^1.7.3
       better-call: 1.4.0
 
-  '@better-auth/sso@1.7.2':
-    resolution: {integrity: sha512-8tmkAGdcVu8Tr/+LPfSRgs/5a8YE1uU8OeaN5mAzsSdMWR4iwZdwQlJJmU8f9qZyIpNL/B6mIfDc5vaVUy1ECQ==}
+  '@better-auth/sso@1.7.3':
+    resolution: {integrity: sha512-inxETRuOfyy8m0uEJSfi9uhScp4RkQ7ZYI+GRj+Jtz6ml/p5wTzNOjYZsG43TroUTDfrElF6CYQON5/Xk1XdmA==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
-      better-auth: 1.7.2
+      better-auth: ^1.7.3
       better-call: 1.4.0
 
-  '@better-auth/telemetry@1.7.2':
-    resolution: {integrity: sha512-LcWu+O0zrxYDQj8E36vfkJwGPW4k9ZDA/rCo0zST6ihzL+juR7pBowoZIM9E6tK0Vit52mf6412bGT4XM4eTjQ==}
+  '@better-auth/telemetry@1.7.3':
+    resolution: {integrity: sha512-aixgHbJhGvS8PRczX/LR3murYyBnIvOGmJw37ZZBMg6ZtLR/UBJAkufbDi1HYn5THSuTJ3D5DtY85Ahh/ABQtw==}
     peerDependencies:
-      '@better-auth/core': 1.7.2
+      '@better-auth/core': ^1.7.3
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
 
@@ -353,8 +340,8 @@ packages:
     engines: {node: '>=20.19.0'}
     hasBin: true
 
-  '@modelcontextprotocol/sdk@1.30.0':
-    resolution: {integrity: sha512-xKd8OIzlqNzcqcNumGAa6g+PW2kjD5vrpcKOnfldAUPP3j7lnqMPwlTXQm8gF+UwH72z0lqaRbjr9hqGz0eITA==}
+  '@modelcontextprotocol/sdk@1.32.1':
+    resolution: {integrity: sha512-2DdE+SJDtzLEEWzY1ZjY7Q+VcPhcV1KisD3zI4u0XZyktsjHum1mwbMI+JaulUBi2OZk+KJAi2uPXzxichPkdw==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -377,45 +364,45 @@ packages:
   '@nodable/entities@3.0.0':
     resolution: {integrity: sha512-8L9xFeTYKhm49xfIypoe2W5wV1m/3Z58kT+7kR9A8OyFxcPduI4VmxaUMQyKYrRjUoLLSXv6EKKID5Tvj9cUVw==}
 
-  '@objectstack/account@17.4.0':
-    resolution: {integrity: sha512-VrdHnwBzLrcE+nGVFKpQRdaCnE9gcPJrZWEfYFobvAA9i0Rna4qW+b8CNnZGHAwCHguZPjULA9PPQ6gddUakWQ==}
+  '@objectstack/account@17.7.0':
+    resolution: {integrity: sha512-nPeR21ndVZajDaiy/g0RBupG3NGuDXlzN7daag+cxl+iDKS4TzWvfqnp8Pnr8UnRJ+Et93CSaVLjUZRxHhBVow==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/cli@17.4.0':
-    resolution: {integrity: sha512-w1enDeHRS7ai2XzH47x5poYdf6qwDhfDCnNErSiib5vpaG87JDf+JOlT/QoVEyW1i3ruovlftTwpYUBEIqWEnA==}
+  '@objectstack/cli@17.7.0':
+    resolution: {integrity: sha512-WTJ5B/uYSmqlMmqiGy7Acu8M45kHfouothcedRV1XldbKE+1lDGp+Gxg7bNXgqoLU/dmuvYz3JvMs2TPedKNkQ==}
     engines: {node: '>=22.0.0'}
     hasBin: true
     peerDependencies:
-      '@objectstack/driver-turso': ^17.4.0
+      '@objectstack/driver-turso': ^17.7.0
     peerDependenciesMeta:
       '@objectstack/driver-turso':
         optional: true
 
-  '@objectstack/client@17.4.0':
-    resolution: {integrity: sha512-4Zsov0iRcZhaYAGiabX2XJPhDsE6XmRhlfYikxLECZ1cxbHhXjVpsNL3rl56wkTHuNV1jMzZZwzj2rJJUbVYcQ==}
+  '@objectstack/client@17.7.0':
+    resolution: {integrity: sha512-PFnr58tb1usCSMP+jNyuMBn9a6fEcaVFOiGRox9B88VQvttXo99akGzI8utFX8DsEobLQbh9YZBtXR51VI+JQg==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/cloud-connection@17.4.0':
-    resolution: {integrity: sha512-WVIv57eXWoFlpkRWpUZdWQo7XG1Dxwij1HFcTvigACvAIbxwPnVXlt0bqOHCjagfdGHNfUdzutnA1LijfvGfHg==}
+  '@objectstack/cloud-connection@17.7.0':
+    resolution: {integrity: sha512-NGBWESNZVX63NIwiwZOF8tNlsqw6KQARtET6oHd+BaTLzRs9Bk1bCkRifoDgrlom9029rRgWM/v80JiOPWgkGQ==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/console@17.4.0':
-    resolution: {integrity: sha512-TL8Kgw7PsJHyMK0+RGRQu7KWwuEQjhL87rUOg5rwC+G4dDIsyi/oZYQSjvf5+Nw0W51/A1rw7iIciyoLfQycTw==}
+  '@objectstack/console@17.7.0':
+    resolution: {integrity: sha512-4Z8Fy47VHzHtLk82sxf5I6J3SLUhT5NetZLI1YccBvkyMe4stzwx7GKCFAzK+MSKGE3Arv+PGIdqCuvNCd4neA==}
 
-  '@objectstack/core@17.4.0':
-    resolution: {integrity: sha512-e/br10MaIZAJGgD7pb9AnW8zn9I18aJyiUYswMQGdjGheZYpp98ZV3WlAVpZFhnKkfd42VDMltB+X494oB8/1Q==}
+  '@objectstack/core@17.7.0':
+    resolution: {integrity: sha512-2/NqNk41eNo0nPgBsClefme2HwtLhwCdxKZER+XTOD345KAb4L0suyu2vGxHAN82MGkfNu4ticZzrRAHDT7tYQ==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/driver-memory@17.4.0':
-    resolution: {integrity: sha512-BRldy/el8QfusgJYvN1PjnAfAD1fmKqJgvOPKRHRnp68azfBYmUqGLrSV+/p8Ut4IMGVFpsRTg8L1DkYGY5MoA==}
+  '@objectstack/driver-memory@17.7.0':
+    resolution: {integrity: sha512-AkSMFi+CJeNxEvLhSVc2I9H9KUHEZgNC6ESxJE36SWxYjD6EsbFoHEjWUvUoiOVr0ETOJIvgjySIms3Ix2vaLQ==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/driver-mongodb@17.4.0':
-    resolution: {integrity: sha512-92n6r0eqrLbegtH5AO8IDrOCsF8C688fYG2ovqDTeD2UNGkHhsZ7DmBO3lpDEMKYbwKtG3R1ro0V1cQ4KsqP8A==}
+  '@objectstack/driver-mongodb@17.7.0':
+    resolution: {integrity: sha512-6iBxiXol0Bb93P1X7DM60e1Br7omycl65aSVUWr+3g9rr9tw+MYOK0R+SwmKfszW6TrWJxw6NN0OmNbl8/g+3Q==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/driver-sql@17.4.0':
-    resolution: {integrity: sha512-63up0U1AUQQKhnDqADTih9HJVfATkl5BAeAx1MXHYQJuAmP2EQnMxQDDiumwSh819mj7c8IxLpyGiy8/TcbogA==}
+  '@objectstack/driver-sql@17.7.0':
+    resolution: {integrity: sha512-4gYyyvW5UFPzc0im+Q49EVLAK1HS8voAex69Pvlm/TIFXFKzSVmKwGy9xVYgFxISkHBjoCcdji+WRYSab0hIig==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       mysql2: ^3.0.0
@@ -429,23 +416,23 @@ packages:
       tedious:
         optional: true
 
-  '@objectstack/driver-sqlite-wasm@17.4.0':
-    resolution: {integrity: sha512-jI7e3gIy65dfcw3X6PAsCL5yx9bXliso3VDaaEsglQrXW+ixLV+x0vRguk/Xa9BVv53/ntwbMryDGdDF0an02w==}
+  '@objectstack/driver-sqlite-wasm@17.7.0':
+    resolution: {integrity: sha512-47ZZRIjCvLYOVOlSPsqyN+fLmKqnR5EoB0Xq5us+xZb2x+Qp32AjDRB+goz+HbJy69YmLq217hWCqmbLYfFH7w==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/formula@17.4.0':
-    resolution: {integrity: sha512-pWVkvXKXJxjnsx1i7mYIteltc6kjn/qS6swJ6bw5XG5B7bf8GjjBsuvcJR86nuTg+z8B9+snruaD9i9v8uw0LQ==}
+  '@objectstack/formula@17.7.0':
+    resolution: {integrity: sha512-jf7SA/8QawVEKmQhwxjtyGxz+DIX+3V7M/Kt3z79jMhby5tjh5vwTbJI3PdyWCKQ1pS0epO6sSK7MddwLbEJ9Q==}
 
-  '@objectstack/lint@17.4.0':
-    resolution: {integrity: sha512-9Lst+TDusPVh3Fb1gxDPSsXpAFrkEIlusqLzBsCKQ0ebLaHxG2GrfMXQofDTox9vr7jOVSAKCW5jkHUmg5XpoA==}
+  '@objectstack/lint@17.7.0':
+    resolution: {integrity: sha512-ddCHHRJKRSEirb74UNWd8DwdpqvQtMzsKH/bBiUslwXlYucQJPlQMd+ZVYN4V0IJoeD+IpD5el3P6S5H/wqPuQ==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/mcp@17.4.0':
-    resolution: {integrity: sha512-EKvEKF9t2HjjoZPCwe7mqvMVzIKqxiYctWq95wdHqUWp4ERL2kEm4bfQKXj07AgnAZxT7WrRcqGdOdxZStEfPg==}
+  '@objectstack/mcp@17.7.0':
+    resolution: {integrity: sha512-WfAFbOjECCbXPUcEciSHd35P87Eagxzkz9gQm6YwbdIz7dvOJxikaqvQpG/Vq64rDG6K7u9nvL/BSYklbH9BEQ==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/metadata-core@17.4.0':
-    resolution: {integrity: sha512-zhQpw/FUK2UOjKWHY2x5k43h4NXRiVJZ2tnkl3iu1j/akbn6Bik73p8OVzEHO7IvpEmY821lfRp/235yTqZWAw==}
+  '@objectstack/metadata-core@17.7.0':
+    resolution: {integrity: sha512-dMDA0wZ0x6HBy+A9C4CjriK/NnUPKybSY/e/kPa7XUxe7mpoqfJlgwCC7RJs2HuHlKVJHL4VOn4NBcYaYzkwQg==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       vitest: ^4.0.0
@@ -453,101 +440,98 @@ packages:
       vitest:
         optional: true
 
-  '@objectstack/metadata-fs@17.4.0':
-    resolution: {integrity: sha512-lVpVc/XBnrAWukmq5jmihDNDjf44Udopu7olYH7PacInghjdwZA+wMU4tHGNBiGJuRVjrIebcsfIxJ5o4+p4pA==}
+  '@objectstack/metadata-fs@17.7.0':
+    resolution: {integrity: sha512-jTn/xEGy8R9RbTnNalKxymHubjvloglYneRcFa/1I1/JuUllWgJsgogMHK2hG/pHwVOj1dN/WxgvmxTyMi36Lw==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/metadata-protocol@17.4.0':
-    resolution: {integrity: sha512-iYHlxxKhi7t/C/i602fX9x+D/c9f2ElwdtfEUgyzf8DkZIrYel7e7Ayoincahm9xlWSlD4Ijjl3cBElnhrvJrQ==}
+  '@objectstack/metadata-protocol@17.7.0':
+    resolution: {integrity: sha512-fQIviSz1DxMeq8+2Tg83pU6EcSVkoQKagsB9XdepJPmDtPzdiPSgZMidLwTuVSQziVBy8RcOKGAuMEW2g4XF+g==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/metadata@17.4.0':
-    resolution: {integrity: sha512-GQvja5+iClxhBxnX01DQvMc+JMKIFpA7/kYzgAqIdbNZ13l8OuIkP3ADwCmlBrwDid7bkkDNOCD8eYvXr5/E6A==}
+  '@objectstack/metadata@17.7.0':
+    resolution: {integrity: sha512-mkdXagkRy/ZpJiH15JOvYy/07vz1tLHdGIxv6EmWt8aeAYQyqoVsGdoLi1TY8MmI4tkG0w9qAWt2Myv9JPbZWQ==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/objectql@17.4.0':
-    resolution: {integrity: sha512-b7LNj/7BUILbmz1sHgxEVEDk2DJXAPYEuIEp5t/VzQz9vz9iAiENJow3QBvCwCcnWYD7n62dVhHDDFicMtbLsw==}
+  '@objectstack/objectql@17.7.0':
+    resolution: {integrity: sha512-3TZlfQ1PUdC7+vPzipYHHgEAVIZlpHOB/vchkqoJaLDCuJ+nSfh1YwLfA6NN+Z3MxvNZfmZ1RWtMXsClX0nkeg==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/observability@17.4.0':
-    resolution: {integrity: sha512-LkcfJCvrn4Zab2hz3pG9yimUfN8Ly3RhRhK011PtGBh1L4juXc67zg1flh6rfbNmayLzw7dPeg+WQMLuDkLRxw==}
+  '@objectstack/observability@17.7.0':
+    resolution: {integrity: sha512-7B5WhLcrW9iekKDikFwnMYxF4b2A8GKH/VxLTDVxaf1JMzzHXxxoq/9+MothmvDZpNWs1l6RuzhumjScKp82cw==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/platform-objects@17.4.0':
-    resolution: {integrity: sha512-p4MdRDlPNPxvj1VUfuW8ym0eLr99vMDWVdw3mNIkR73v7rao/Xyq9Bgu4Rm9SEK63TvvQS3fVQ7CGQGwkS0MSg==}
+  '@objectstack/platform-objects@17.7.0':
+    resolution: {integrity: sha512-nYn2NRBj0TWhmdPMIRnWHunaoSKVyzJwzj2eRFcuV0+lEWkF6dTzJp6rTCMUelJ1qNqUKrTyN/8oD+JIaBke/g==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/plugin-approvals@17.4.0':
-    resolution: {integrity: sha512-BLcrU9trWoO3gfXpazxdHJxKSAUJfNTJkFGuYDZHw/ICjt3ZdaiEQV95eUhN2Nib0we/r85DZTz3OsDab771Mg==}
+  '@objectstack/plugin-approvals@17.7.0':
+    resolution: {integrity: sha512-je8T0dTSoTjqE1J140evxfzsvMiSpLoP3DEdu4NDFFJEWJDw/A/rBVHyQbVV0tLpW5j1pysze1myvF2Sc+MXlw==}
 
-  '@objectstack/plugin-audit@17.4.0':
-    resolution: {integrity: sha512-RLVxRMZiEjiUkEg2rwJteHkFd868bcxsoFJ/x10hYrQmCHnMoppZzFEdYzRrijNK3qkFVsCfI5FlNE6m/HyfNA==}
+  '@objectstack/plugin-audit@17.7.0':
+    resolution: {integrity: sha512-Z0Wpx4W7oVPUwelmAXUckpABP0m+X9NwborOF/JDEmLOEQdi+2GCaWo2vazMJIx5ItyYLR7RYTvglwHa+ZSLQQ==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/plugin-auth@17.4.0':
-    resolution: {integrity: sha512-GISbJk9f9gbvIEc/+gHiEk/ltRaJ2ic1Dg3hmWJKCtwiyn93t7FRfxS93Qb07mjMXGXW2B2Q540EkI+vvhxgeg==}
+  '@objectstack/plugin-auth@17.7.0':
+    resolution: {integrity: sha512-JUOgGB6Riizw5QEZ5TXutRT1+PpaM/XpXMbtubAjk9dBGiR8NcfVoLoEFNz+Z5O6x82tdD8bcbt7GMDgUZ5wXA==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/plugin-email@17.4.0':
-    resolution: {integrity: sha512-jDaExEd3eSZjy7xiltFTJhgFLjnflPddwmCN2eVbMkVN8OOzI2n6pz7d5Za2kT1Mt92pfmi1z4cQE5YMn9r9NA==}
+  '@objectstack/plugin-email@17.7.0':
+    resolution: {integrity: sha512-58vsGtSv0z6u+W3HqvESIW4OGxbB1/GpR1kY+PdlR0c6JfDc+/YuR0afWm6xrApBoaBPHoMWhtRyoyubgHTJeg==}
 
-  '@objectstack/plugin-hono-server@17.4.0':
-    resolution: {integrity: sha512-LTZ4RI9/ZDaKqXOtnm4uviqfeygbZNEMcEGlGu9PVTxu0uND7mLvjh0nz1wqYwWAl/f5eRN57BN3bgzqV2Bt1A==}
+  '@objectstack/plugin-hono-server@17.7.0':
+    resolution: {integrity: sha512-VunIMCOQjdJE0J9dq4ebXGnUaLcOttvBNdWM74+J+/W8BflmyuHP/o3JkGo6wgP4e8WwwyTQjJ3BxNi4KrjlKA==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/plugin-pinyin-search@17.4.0':
-    resolution: {integrity: sha512-p1uvYETyvfz8622y7xv3caBVeKGq/0KV6mPxkitMxO6Qpm85hT/KWCoJ6uxwRL43use9ji8CpL41mHAma7Vzhw==}
+  '@objectstack/plugin-pinyin-search@17.7.0':
+    resolution: {integrity: sha512-2HYOdHNlUULzVS00ENv0EVrCA2yA4AWo3oHlCCJV1NHIqOJwimoIPzSu/FpBa+Z0y9T7cX4VxA4hYQO+/Giy8w==}
 
-  '@objectstack/plugin-reports@17.4.0':
-    resolution: {integrity: sha512-9ITXRV2w5WQoOuXZRsLmfPI2MG/MBee60kx1beA5K35pqRckVED06FThTMTMlClmBa0xDMZx1ITSMs0PnAmMLA==}
-
-  '@objectstack/plugin-security@17.4.0':
-    resolution: {integrity: sha512-r/wgp7vKhpwrRHKua1wbGyCadyuWllT5BWOQltW/HYy2I8fCfYF+otTdkENNDq018XowB1HIfwdUXMO8p2gpXA==}
+  '@objectstack/plugin-security@17.7.0':
+    resolution: {integrity: sha512-VlUT30iqnD39rAktDCqyAwJbtJTeWkJsFSZ+TFLE9pxcDIJqrCYQJuazn65QcyeQ+xdtkvnkzyPe3JsUz8i4sA==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/plugin-sharing@17.4.0':
-    resolution: {integrity: sha512-5elA8yGI7nCP2tAT4yWl63H/76Qn6JcusaI+xeES28ScNVWuiasCVu9ocf7kxBxFk8OUmnR9ba4DANwPvQyBkQ==}
+  '@objectstack/plugin-sharing@17.7.0':
+    resolution: {integrity: sha512-oAfwXmP2kQ6mBepPxYxsS6PUmi+XY15LX6kVgVJIwOGT/7iwsY6C4uejWNN7ZwFZ6j3970O43Ia/a73iY3gdbA==}
 
-  '@objectstack/plugin-webhooks@17.4.0':
-    resolution: {integrity: sha512-6gcd+v1bME30LSQ2weeXa0q+naa5ITjqfhYDbuh+L3sSGAXOrflDRs/SGJKFvsw7dWsv98Jdw0rkknRq5kwfdA==}
+  '@objectstack/plugin-webhooks@17.7.0':
+    resolution: {integrity: sha512-VxGfFzJldxl5hUn8c8mlE7mrWwNnQJu3M8WPe2F76i5Pp7Hel6Q+yoQU566aechFPQLDkgsJNbVQbwYGAJr/DA==}
 
-  '@objectstack/rest@17.4.0':
-    resolution: {integrity: sha512-q132ZGba7Zez9Ei4a6xvkVpbephDBQ7oi5GsxGQeT8ljL9duoLpOX7GJa7HwqAbOGi7MRmgoN6+BEmrzmBz9fQ==}
+  '@objectstack/rest@17.7.0':
+    resolution: {integrity: sha512-zCRPpyBAgdIAKEsgdfign2JmalkNCcCI98Kk6xlbnRg06E9NMIn4+D3Q1tsG7DsDtIY3Hao2vZlr6/59yhDy+w==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/runtime@17.4.0':
-    resolution: {integrity: sha512-q2bMGlD0/z+DUbsMlg055UwTSkJszgtQyqJWJWcJP8Z+5xkHo2nE3tDGQEhdwfcpJwm5aoafniZ0WLf5Pbo+Dw==}
+  '@objectstack/runtime@17.7.0':
+    resolution: {integrity: sha512-RVyleEk68NXBtdXCFtAarMEbP2JqoG+M9u8GwKERhgyKSfapXSOjfrcBXrAWJDNNXm9r5rrAH6P1Ap1rjUpoeA==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
-      '@objectstack/driver-turso': ^17.4.0
+      '@objectstack/driver-turso': ^17.7.0
     peerDependenciesMeta:
       '@objectstack/driver-turso':
         optional: true
 
-  '@objectstack/sdui-parser@17.4.0':
-    resolution: {integrity: sha512-pKKTqP6siwsLtcO7tDxMufHoCWuUeWjoRBv8NRGlptB+a/uhO0WKXHzZ3+zWVqz9a/Ac9N2Xwp+hBPoGtG4Z1w==}
+  '@objectstack/sdui-parser@17.7.0':
+    resolution: {integrity: sha512-BaEt37YGK2lBgBXrM+w/tVI+kz5Gz6xhbmCDwgdeGCj8qKALNO8l/oQh/3qdsf6pLIBMfIi+IMqryOICgqwUdw==}
 
-  '@objectstack/service-analytics@17.4.0':
-    resolution: {integrity: sha512-meRlePSJ9pUAYXMM+sUk8wZgca5jSV6R53vYhfEoqdYXP1C1xqnpAD9gXZLFDmyK4kz3ihHv3TZ0ozvtXXL4/A==}
+  '@objectstack/service-analytics@17.7.0':
+    resolution: {integrity: sha512-EyVxpQykWckb9vPrxwpSDV9zpWCh5KmqVMPnXflZ0OO9ux4p9dwCFUoFvOzzYW7o3DjVmul7yxKCTY49A9b09w==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-automation@17.4.0':
-    resolution: {integrity: sha512-lT+Lkx6i1Xox017nMBAFUgrtP4Bb7XPV39R4AG5u/caNxINJpnezomd/imEcGY8yBsUlwtXuRc/VFEUjyFucyg==}
+  '@objectstack/service-automation@17.7.0':
+    resolution: {integrity: sha512-AZ1Ob0RrAe+kzjHJcLFUf393EQdgcmrHvW3q1MHU7FcF65CJsDs+9jcI40EE7vPz9kcqw/S/pUNkj+EwrLOfew==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-cache@17.4.0':
-    resolution: {integrity: sha512-hCjjx+jSU5yCasPryGC3eTzmOw2Rc4GfzMthUWlie0uw1HzlTgRFxxq6GDd2JfPg3ysCrdEdt9a96KTYCJf7Yg==}
+  '@objectstack/service-cache@17.7.0':
+    resolution: {integrity: sha512-VP5MJQahN0tdkMuhKL/kfOa/czpZIUJK6n5V5Bmehg4ZEpYzIrzEP3oN0xSUDd8f3KTzHCSz6flKoD2Dtb48rA==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-cluster@17.4.0':
-    resolution: {integrity: sha512-IaeUfak7j86Js31RFHgeRw78yxUFyclPIOpdBv3PQjUV5TagtODAWdUyp8URQr+jUJTrwYCIbFoz81G18t7QUA==}
+  '@objectstack/service-cluster@17.7.0':
+    resolution: {integrity: sha512-btbcHBv9rPX3dB2Y0LqwsCsFCOiyqA8TmdTuv0CtLD/oc92l7JsIfPVP537w5E9i2H3UQ5wm1Epq7k9jCUlf+Q==}
 
-  '@objectstack/service-datasource@17.4.0':
-    resolution: {integrity: sha512-CSOpXKBOiOHFlbbQhR9qThRZO11FZwVYmKBBviDfGr/yJQi9S7b0ZkJ9yIkZ7xsRszEFQD4jxDQ9D1J9zuQVqg==}
+  '@objectstack/service-datasource@17.7.0':
+    resolution: {integrity: sha512-SOGSLaKFjXt7N7BPU2H5VAFkuEZ8bt9vvdbkaNDbj9x04oKkdFcaxn8QNluAwwI00W/5quutvim9symwnaIB7g==}
     peerDependencies:
-      '@objectstack/driver-mongodb': ^17.4.0
-      '@objectstack/driver-sqlite-wasm': ^17.4.0
-      '@objectstack/driver-turso': ^17.4.0
+      '@objectstack/driver-mongodb': ^17.7.0
+      '@objectstack/driver-sqlite-wasm': ^17.7.0
+      '@objectstack/driver-turso': ^17.7.0
     peerDependenciesMeta:
       '@objectstack/driver-mongodb':
         optional: true
@@ -556,39 +540,39 @@ packages:
       '@objectstack/driver-turso':
         optional: true
 
-  '@objectstack/service-i18n@17.4.0':
-    resolution: {integrity: sha512-hPois8KeNT98QfTde1i98cyMj0G2V9NMb1T7mHG2HNIGyqdKWYFZauhEd67glDWA7SlDBLCP1tgyMzCCYQC/jg==}
+  '@objectstack/service-i18n@17.7.0':
+    resolution: {integrity: sha512-A8RAETkXLh7qeni8YROBZbBU4h85i+D6YppUCBAw2MgTUSirTqYCVta/0MC1NTBd3NvZO0HlQk72BpSFzuNQ2g==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-job@17.4.0':
-    resolution: {integrity: sha512-GcCh018YCl5Liv1o1ern2+a90XofyUnKbgr/Vlz1ocBUkC2iyT4CImeq0cit3Ps5wBbmzz60f8mhf7bneOGzEQ==}
+  '@objectstack/service-job@17.7.0':
+    resolution: {integrity: sha512-NcqnTI+5OrgkfOMtSKlNFcvQJqRxW4SLl7ttRn1HDeedwWnEjFQ8LvfMrGGkACgWHOyyLrnwm+t4QazhzPvWOg==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-messaging@17.4.0':
-    resolution: {integrity: sha512-w3AcEucIJQpNLmON9oRBEysVGWWhoXXe10Xm3Ka62/dqyJUJex9MqWKIT5mt5r1Qh+go/o42n5glv+jGqmw86g==}
+  '@objectstack/service-messaging@17.7.0':
+    resolution: {integrity: sha512-p66HSnoBXNeicnTT81dfT4tRsy5fjtSD1jcn+X3pRzEvQf56oFP/wn6eJHjcyjDvZP7zSe6joGIrQKxz6h6tjA==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-package@17.4.0':
-    resolution: {integrity: sha512-mnAdCl2Sq1ucxOj/CIhjt9mabbyez4bxxnnR8iApduX7B1GDole+MbMiWgPttju07rGyQc9Y1dvc1cl++lYEyg==}
+  '@objectstack/service-package@17.7.0':
+    resolution: {integrity: sha512-Jj3hYcs9+fG4bMGvoeKYrixOyY+ZKm92QowV2M9zsT921rUw4kyxgJgq6R+VfFmucEdy0KqTYVdK0jzP5dYiWw==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-queue@17.4.0':
-    resolution: {integrity: sha512-xHH29M+B08ldA2S2JOvBDAgTnjXCPyYErzyvLLGx1uuBHgOrRrpzUp6qaLzatk6+/j/J/TU/9fvFIGWKgyLRFg==}
+  '@objectstack/service-queue@17.7.0':
+    resolution: {integrity: sha512-gqt0OZSTJha3XJMYwgSVS5Rfzb2pSRahSN4hc5UBpywXI0zpiFP9H9fzCpv++7eNmy2jSkjSIgIE+xy6FxlU6A==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-realtime@17.4.0':
-    resolution: {integrity: sha512-HGEv0un6zrf8zYMNBCP06Ssq2Iv87zh7X8dJYq92ptLIXDdr9snvW/Mk+5uY4JjUhN+I2g/8V2E84OUrhldoSQ==}
+  '@objectstack/service-realtime@17.7.0':
+    resolution: {integrity: sha512-r+0UzUKvGGOxpDb9+dLoLh992uiM60d0q+KCiq/6E3pT/i8T3bfzTn3dSpYxZKQ3bxspXhP0FCaF8s30c0+FFQ==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-settings@17.4.0':
-    resolution: {integrity: sha512-wFwwrSTDi7ykDCO8J2wkpwiYwl70edxv8lJwMExqmgYUXcjsBL9RxNNNjisIdU1Doudv5xS1u43lXvcqhjrGWA==}
+  '@objectstack/service-settings@17.7.0':
+    resolution: {integrity: sha512-qv/2OnV8Eq/h/GiUqACvt9UZLuV78zkjdZMPygpZhxTKlsLsA1o30XkdpEQUXTHGzMRW+wJkIkvHYhl/JT0yeA==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/service-sms@17.4.0':
-    resolution: {integrity: sha512-us2vkXJIlUo5+5nX8jqvI72V0aAIyQ8KX136Aw4mK8+3c0Bf6IG3JZBpx3IVlc9Q2un44i+m8zmkMKQLxFWFPA==}
+  '@objectstack/service-sms@17.7.0':
+    resolution: {integrity: sha512-LDNB2iHEdiD0th90hzzkPOwaCKkin4zxo0tB5lrNwYJ9mEtkPFR7e7KqNMpCmCHLj6squcdrjQZDPQi9HIEfGg==}
 
-  '@objectstack/service-storage@17.4.0':
-    resolution: {integrity: sha512-SpOeGAeTP3xf2ObmIsoQWa54UMP7BTB1jL7bSZXUeX2/e/CJR81N6Y/s2gzuJqudy/R7p0unOeQRyAlOSe9bzg==}
+  '@objectstack/service-storage@17.7.0':
+    resolution: {integrity: sha512-G4waSSMDtAq7+ChI0/39xSAUT1AbnN+XkrCZmtLuokcU7MUOA78GOVl1J2nzHiWrY+fOSggqSdVPfOy9oNom+g==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       '@aws-sdk/client-s3': ^3.0.0
@@ -599,12 +583,12 @@ packages:
       '@aws-sdk/s3-request-presigner':
         optional: true
 
-  '@objectstack/setup@17.4.0':
-    resolution: {integrity: sha512-Z0BuKodUTEDOh5yHGwLJMMLBQauYlSb3QueiG+ZJdntBy7nRBXgBZxja5CsUNGe3wo703TAZbtxqeRKqXKycXQ==}
+  '@objectstack/setup@17.7.0':
+    resolution: {integrity: sha512-8JwpJ0QjDHPpK/0en/hLVnqP4G52VWKg8gNauc2yI5NDr4xJjkkrmrn+q2FWnRB3fSHvzxZ138Sbj6lQj9ikWg==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/spec@17.4.0':
-    resolution: {integrity: sha512-bOtSFih0Ed67JZMGuLmlHuIv2zPN62W8NL2qENQCYjZB174NMlIIvHC6Jlz2SIy5EwsTnTGBF5EPF6C2/TmqoA==}
+  '@objectstack/spec@17.7.0':
+    resolution: {integrity: sha512-PmKFK2C+NHiVoCAC+hYifJJWKiiJxZxN/FlpCQKwqPwajPxCcEUk0oVH0Af0yG3AFRQVCXxwIgEHGGeAa8Z4tA==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       ai: ^7.0.0
@@ -612,28 +596,28 @@ packages:
       ai:
         optional: true
 
-  '@objectstack/trigger-api@17.4.0':
-    resolution: {integrity: sha512-dngvTGtV9NiplYHgeaPetPmletyOY8x0laKr7mqKxxvpPSSD3L59DQELYUZQRzcPnBxxUuoUJshAtq35PCvBVg==}
+  '@objectstack/trigger-api@17.7.0':
+    resolution: {integrity: sha512-YiTgJN9ewxfdL0Q1U/bQho1EDfPZpGAEIgzYAFli+keVRaQyKrH7BjKTxW5RKb4rwCplCFwkNO+AsRQHpJ1K3Q==}
 
-  '@objectstack/trigger-record-change@17.4.0':
-    resolution: {integrity: sha512-w+MDiNpzPcnT0OJxPVLK4MFPxQP1A1IOK1bEkxoTt/74VqG8EwbzlQ9zxnLUJ8alOAxmMnMhIDgSDTCZQ94KlA==}
+  '@objectstack/trigger-record-change@17.7.0':
+    resolution: {integrity: sha512-H7zpibqfOpk8PsmBpKPSkVdyAM/JzxUUakYGY5/Wpg1pMFFx0g0cCREFYcHWCyv2s8YGmwN52gkEsc1QaoaCYw==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/trigger-schedule@17.4.0':
-    resolution: {integrity: sha512-XdU0cjtCBUryUhgzyK7qY5IV2KPXORdeRgPmaq8g8nfAIXMlGpKCxwuGYMAYdiCsllCEwlhnh3Wuu4V1lHsz7A==}
+  '@objectstack/trigger-schedule@17.7.0':
+    resolution: {integrity: sha512-eMZgTyXRQk9vrG3p5aY68xW+QN0G+59unsGHwzCzWig7jleOZQlPf48E6WrXAbTEWKYM36bXmC6CU/44bIwG/g==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/types@17.4.0':
-    resolution: {integrity: sha512-z7eCTBlGqAX8ChKifkItGg+woONgAMBbWtu8OmTqI6Fzn8z7JDCm07+K0gg0hivD1uoUUL253s8mshdiqpZnnQ==}
+  '@objectstack/types@17.7.0':
+    resolution: {integrity: sha512-7EIBYXZsZrBMihmmhwfcafI7F8WUvWNRAylJsZ25mBO7okQLhL4J3GX4wYBiyAJUmroIF3R9lCi+noaoWj5E5g==}
     engines: {node: '>=22.0.0'}
 
-  '@objectstack/verify@17.4.0':
-    resolution: {integrity: sha512-C+0K/2p4z3QLhFa6VBbH+kK8rU2Mdlm95XL9TdrLu0KTYEmGPj92aF4jQTB2T9+7zQgwJhJ/4JaT9EZl2lUytw==}
+  '@objectstack/verify@17.7.0':
+    resolution: {integrity: sha512-2CG2DlPHSvS9E0Sr0/h3MGG20drHI9XwUomICyYZJU5cKlC97PWarIlzpDdUvkA3/LGARDxX7eZPaDyxsU81Ew==}
     engines: {node: '>=22.0.0'}
 
-  '@oclif/core@4.14.0':
-    resolution: {integrity: sha512-QCJIZoVJxV7jywgVAUlsQwl3dr3Sa21kfi5z9KrYolbexWJUtFSEtMoNiBWojD05mYycLnB50gp/VxlGdaOCRA==}
-    engines: {node: '>=18.0.0'}
+  '@oclif/core@5.1.6':
+    resolution: {integrity: sha512-uLLRjPykRiTwfxG1HB358F/4QSHX6N1A7hChk9+NiO3hvo/d2nhh/waCmxjSAY+rdc+RV+kDxcOQuuil/tIfQA==}
+    engines: {node: '>=22.0.0'}
 
   '@opentelemetry/semantic-conventions@1.43.0':
     resolution: {integrity: sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg==}
@@ -734,8 +718,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  better-auth@1.7.2:
-    resolution: {integrity: sha512-gKapKBEvYIGcMxi74RjQ7EbFLiqyQt58vdoJmL1qAlWSkY1Bc2Vqshl524/3u1NxauiOU03M/Ebh762Brmac9A==}
+  better-auth@1.7.3:
+    resolution: {integrity: sha512-8xGp68JQ+l36kniDEgP8bP99TLi1GdEv0NTEUBkyqnYnus/cgFUZseUfqUHKzr2BAsg2O6aD88I9f0U68shanQ==}
     peerDependencies:
       '@lynx-js/react': '*'
       '@prisma/client': ^5.0.0 || ^6.0.0 || ^7.0.0
@@ -874,8 +858,8 @@ packages:
   chainsaw@0.1.0:
     resolution: {integrity: sha512-75kWfWt6MEKNC8xYXIdRpDehRYY/tNSgwKaJq+dbbDcxORuVrrQ+SEHoWsniVn9XPYfP4gmdWIeDk/4YNp1rNQ==}
 
-  chalk@6.0.0:
-    resolution: {integrity: sha512-2uNTXIuTTxk7ciZgAU1BQcgnchcG0xXnrs6jzkQfj9SsRa9M2s5zE8WT96hS6KmG4MzWHSrvH43DF1m4XRkrFg==}
+  chalk@6.0.1:
+    resolution: {integrity: sha512-/Ce6KNm3vIbWdMlNna6RVIZ/ICQxnJxCicet5LBKK9ZffBkqzDw0xh9EiKSljdRtiIQ1S1z4YgcscUUGzNCWrA==}
     engines: {node: '>=22'}
 
   chokidar@5.0.0:
@@ -958,8 +942,8 @@ packages:
     resolution: {integrity: sha512-NT7w2JVU7DFroFdYkeq8cywxrgjPHWkdX1wjpRQXPX5Asews3tA+Ght6lddQO5Mkumffp3X7GEqku3epj2toIw==}
     engines: {node: '>= 10'}
 
-  create-objectstack@17.4.0:
-    resolution: {integrity: sha512-y88N8mzKTj/zKRTXbSUVUb5VQ3oKJnjI/c6gV8b1vraAOaPNtX1cmLw3/HP0k53HkDHHrb2va4yklSIWsN0ifA==}
+  create-objectstack@17.7.0:
+    resolution: {integrity: sha512-TLrwK23OcDR7K4JpR6FbBK+U5SfQhPyONNea0cgydfcfpjQaBYULmmuhDARvoTsUZGOSuVrVWxSETnKYg2lKvA==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -1188,6 +1172,10 @@ packages:
   hasown@2.0.4:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
+
+  hono@4.13.13:
+    resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
+    engines: {node: '>=16.9.0'}
 
   hono@4.13.7:
     resolution: {integrity: sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ==}
@@ -1494,9 +1482,9 @@ packages:
   node-rsa@1.1.1:
     resolution: {integrity: sha512-Jd4cvbJMryN21r5HgxQOpMEqv+ooke/korixNNK3mGqfGJmy0M77WDDzo/05969+OkMy3XW1UuZsSmW9KQm7Fw==}
 
-  nodemailer@9.1.1:
-    resolution: {integrity: sha512-izw9mVKFix6YSnC9eLgV6g1opl9DUlRio9ZNcq+Wu9Ujn2UwF+8Nl0B8nz22kEC+CTZCvinkxwJ0DeFbb6NwcQ==}
-    engines: {node: '>=6.0.0'}
+  nodemailer@10.0.16:
+    resolution: {integrity: sha512-VL9xKErxN+el77o8eBOuYKUPMyEx7F9hfnDCuiUKJRp9v3wnWMOudYgP/SWbwSHy8rUL4cylobuXtki1LpQS7A==}
+    engines: {node: '>=20.0.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -1559,8 +1547,8 @@ packages:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
 
-  pinyin-pro@3.29.3:
-    resolution: {integrity: sha512-+UU9bx6vfDw8amOJGHm0TE0rdQl8VPylsDWviQ5OOQ3e+on1xRP4OqDbiDuMT5OISgvfl/Y6ez1BBRaIP80GLQ==}
+  pinyin-pro@3.29.4:
+    resolution: {integrity: sha512-SPXpDT2cHEy+d26V1RXYMlVzXN42hotFAak1fzyWPi4o2dKXb61UqD4pzxDJHwk6gbv8vQ6EfErd+hYX0Qhzug==}
 
   pirates@4.0.7:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
@@ -1800,8 +1788,8 @@ packages:
   ts-morph@28.0.0:
     resolution: {integrity: sha512-Wp3tnZ2bzwxyTZMtgWVzXDfm7lB1Drz+y9DmmYH/L702PQhPyVrp3pkou3yIz4qjS14GY9kcpmLiOOMvl8oG1g==}
 
-  tsx@4.23.13:
-    resolution: {integrity: sha512-BL5MGkRln6aDYhb0xbQlEAGw743BaZYWdbWtdJOBriYJboKgUUYCadFp2/FpBBZquBC/ezNBn7wMMPx7FDZUDw==}
+  tsx@4.23.15:
+    resolution: {integrity: sha512-Yiex1Ovn8z2xPpOWckIiysV1SSyRMY9BkLF++q0yKiDxCqRhosKfMg3janKkiLBwZ5c/YryloKwGZcrEmtwxKw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -1897,8 +1885,8 @@ packages:
     resolution: {integrity: sha512-FxF6+rkr1rNSQrhUNYrAFJpRXNzlDoMxeXN5qI84939ylEv3qqPFKa85Oxr6tDaJKqwW6KKyo2v26TSv3k6LeA==}
     engines: {node: '>=0.6.0'}
 
-  yaml@2.9.0:
-    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
+  yaml@2.9.1:
+    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
     engines: {node: '>= 14.6'}
     hasBin: true
 
@@ -1911,8 +1899,8 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
-  zod@4.5.4:
-    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
 snapshots:
 
@@ -1922,83 +1910,95 @@ snapshots:
       escape-html: 1.0.3
       xpath: 0.0.32
 
-  '@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)':
+  '@better-auth/core@1.7.3(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)':
     dependencies:
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       '@opentelemetry/semantic-conventions': 1.43.0
       '@standard-schema/spec': 1.1.0
-      better-call: 1.4.0(zod@4.5.4)
+      better-call: 1.4.0(zod@4.6.5)
       jose: 6.2.12
       kysely: 0.29.5
       nanostores: 1.5.3
-      zod: 4.5.4
+      zod: 4.6.5
 
-  '@better-auth/drizzle-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)':
+  '@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/utils': 0.5.0
+      '@better-fetch/fetch': 1.3.1
+      '@opentelemetry/semantic-conventions': 1.43.0
+      '@standard-schema/spec': 1.1.0
+      better-call: 1.4.0(zod@4.6.5)
+      jose: 6.2.12
+      kysely: 0.29.5
+      nanostores: 1.5.3
+      zod: 4.6.5
+
+  '@better-auth/drizzle-adapter@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)':
+    dependencies:
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/kysely-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(kysely@0.29.5)':
+  '@better-auth/kysely-adapter@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(kysely@0.29.5)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
       '@better-auth/utils': 0.4.2
     optionalDependencies:
       kysely: 0.29.5
 
-  '@better-auth/memory-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)':
+  '@better-auth/memory-adapter@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/mongo-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(mongodb@7.6.0)':
+  '@better-auth/mongo-adapter@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(mongodb@7.6.0)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
       '@better-auth/utils': 0.4.2
     optionalDependencies:
       mongodb: 7.6.0
 
-  '@better-auth/oauth-provider@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.5.4))':
+  '@better-auth/oauth-provider@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-auth@1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.6.5))':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
-      '@better-auth/utils': 0.4.2
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/utils': 0.5.0
       '@better-fetch/fetch': 1.3.1
-      better-auth: 1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0)
-      better-call: 1.4.0(zod@4.5.4)
+      better-auth: 1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0)
+      better-call: 1.4.0(zod@4.6.5)
       jose: 6.2.12
-      zod: 4.5.4
+      zod: 4.6.5
 
-  '@better-auth/prisma-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)':
+  '@better-auth/prisma-adapter@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/scim@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(better-auth@1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.5.4))':
+  '@better-auth/scim@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.5.0)(better-auth@1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.6.5))':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
-      '@better-auth/utils': 0.4.2
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/utils': 0.5.0
       '@noble/hashes': 2.4.0
-      better-auth: 1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0)
-      better-call: 1.4.0(zod@4.5.4)
-      zod: 4.5.4
+      better-auth: 1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0)
+      better-call: 1.4.0(zod@4.6.5)
+      zod: 4.6.5
 
-  '@better-auth/sso@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.5.4))':
+  '@better-auth/sso@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-auth@1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.6.5))':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
-      '@better-auth/utils': 0.4.2
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/utils': 0.5.0
       '@better-fetch/fetch': 1.3.1
       '@xmldom/xmldom': 0.9.12
-      better-auth: 1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0)
-      better-call: 1.4.0(zod@4.5.4)
+      better-auth: 1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0)
+      better-call: 1.4.0(zod@4.6.5)
       fast-xml-parser: 5.11.1
       jose: 6.2.12
       samlify: 2.13.1
       tldts: 7.4.12
-      zod: 4.5.4
+      zod: 4.6.5
 
-  '@better-auth/telemetry@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)':
+  '@better-auth/telemetry@1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
 
@@ -2109,6 +2109,10 @@ snapshots:
       lodash.isundefined: 3.0.1
       lodash.uniq: 4.5.0
 
+  '@hono/node-server@2.1.1(hono@4.13.13)':
+    dependencies:
+      hono: 4.13.13
+
   '@hono/node-server@2.1.1(hono@4.13.7)':
     dependencies:
       hono: 4.13.7
@@ -2147,7 +2151,7 @@ snapshots:
 
   '@marcbachmann/cel-js@8.0.0': {}
 
-  '@modelcontextprotocol/sdk@1.30.0(zod@4.5.4)':
+  '@modelcontextprotocol/sdk@1.32.1(zod@4.6.5)':
     dependencies:
       '@hono/node-server': 2.1.1(hono@4.13.7)
       ajv: 8.20.0
@@ -2164,8 +2168,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.5.4
-      zod-to-json-schema: 3.25.2(zod@4.5.4)
+      zod: 4.6.5
+      zod-to-json-schema: 3.25.2(zod@4.6.5)
     transitivePeerDependencies:
       - supports-color
 
@@ -2179,76 +2183,75 @@ snapshots:
 
   '@nodable/entities@3.0.0': {}
 
-  '@objectstack/account@17.4.0':
+  '@objectstack/account@17.7.0':
     dependencies:
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/cli@17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
+  '@objectstack/cli@17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
     dependencies:
-      '@objectstack/account': 17.4.0
-      '@objectstack/client': 17.4.0
-      '@objectstack/cloud-connection': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/console': 17.4.0
-      '@objectstack/core': 17.4.0
-      '@objectstack/driver-memory': 17.4.0
-      '@objectstack/driver-mongodb': 17.4.0
-      '@objectstack/driver-sql': 17.4.0
-      '@objectstack/driver-sqlite-wasm': 17.4.0(better-sqlite3@13.0.3)
-      '@objectstack/formula': 17.4.0
-      '@objectstack/lint': 17.4.0
-      '@objectstack/mcp': 17.4.0
-      '@objectstack/metadata': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/metadata-protocol': 17.4.0
-      '@objectstack/objectql': 17.4.0
-      '@objectstack/observability': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/plugin-approvals': 17.4.0
-      '@objectstack/plugin-audit': 17.4.0
-      '@objectstack/plugin-auth': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/plugin-email': 17.4.0
-      '@objectstack/plugin-hono-server': 17.4.0
-      '@objectstack/plugin-pinyin-search': 17.4.0
-      '@objectstack/plugin-reports': 17.4.0
-      '@objectstack/plugin-security': 17.4.0
-      '@objectstack/plugin-sharing': 17.4.0
-      '@objectstack/plugin-webhooks': 17.4.0
-      '@objectstack/rest': 17.4.0
-      '@objectstack/runtime': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/service-analytics': 17.4.0
-      '@objectstack/service-automation': 17.4.0
-      '@objectstack/service-cache': 17.4.0
-      '@objectstack/service-datasource': 17.4.0(@objectstack/driver-mongodb@17.4.0)(@objectstack/driver-sqlite-wasm@17.4.0(better-sqlite3@13.0.3))
-      '@objectstack/service-job': 17.4.0
-      '@objectstack/service-messaging': 17.4.0
-      '@objectstack/service-package': 17.4.0
-      '@objectstack/service-queue': 17.4.0
-      '@objectstack/service-realtime': 17.4.0
-      '@objectstack/service-settings': 17.4.0
-      '@objectstack/service-sms': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/service-storage': 17.4.0
-      '@objectstack/setup': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/trigger-api': 17.4.0
-      '@objectstack/trigger-record-change': 17.4.0
-      '@objectstack/trigger-schedule': 17.4.0
-      '@objectstack/types': 17.4.0
-      '@objectstack/verify': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@objectstack/driver-mongodb@17.4.0)(@objectstack/driver-sqlite-wasm@17.4.0(better-sqlite3@13.0.3))(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@oclif/core': 4.14.0
+      '@objectstack/account': 17.7.0
+      '@objectstack/client': 17.7.0
+      '@objectstack/cloud-connection': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/console': 17.7.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/driver-memory': 17.7.0
+      '@objectstack/driver-mongodb': 17.7.0
+      '@objectstack/driver-sql': 17.7.0
+      '@objectstack/driver-sqlite-wasm': 17.7.0(better-sqlite3@13.0.3)
+      '@objectstack/formula': 17.7.0
+      '@objectstack/lint': 17.7.0
+      '@objectstack/mcp': 17.7.0
+      '@objectstack/metadata': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/metadata-protocol': 17.7.0
+      '@objectstack/objectql': 17.7.0
+      '@objectstack/observability': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/plugin-approvals': 17.7.0
+      '@objectstack/plugin-audit': 17.7.0
+      '@objectstack/plugin-auth': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/plugin-email': 17.7.0
+      '@objectstack/plugin-hono-server': 17.7.0
+      '@objectstack/plugin-pinyin-search': 17.7.0
+      '@objectstack/plugin-security': 17.7.0
+      '@objectstack/plugin-sharing': 17.7.0
+      '@objectstack/plugin-webhooks': 17.7.0
+      '@objectstack/rest': 17.7.0
+      '@objectstack/runtime': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/service-analytics': 17.7.0
+      '@objectstack/service-automation': 17.7.0
+      '@objectstack/service-cache': 17.7.0
+      '@objectstack/service-datasource': 17.7.0(@objectstack/driver-mongodb@17.7.0)(@objectstack/driver-sqlite-wasm@17.7.0(better-sqlite3@13.0.3))
+      '@objectstack/service-job': 17.7.0
+      '@objectstack/service-messaging': 17.7.0
+      '@objectstack/service-package': 17.7.0
+      '@objectstack/service-queue': 17.7.0
+      '@objectstack/service-realtime': 17.7.0
+      '@objectstack/service-settings': 17.7.0
+      '@objectstack/service-sms': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/service-storage': 17.7.0
+      '@objectstack/setup': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/trigger-api': 17.7.0
+      '@objectstack/trigger-record-change': 17.7.0
+      '@objectstack/trigger-schedule': 17.7.0
+      '@objectstack/types': 17.7.0
+      '@objectstack/verify': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(@objectstack/driver-mongodb@17.7.0)(@objectstack/driver-sqlite-wasm@17.7.0(better-sqlite3@13.0.3))(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@oclif/core': 5.1.6
       bundle-require: 5.1.0(esbuild@0.28.2)
-      chalk: 6.0.0
+      chalk: 6.0.1
       chokidar: 5.0.0
-      create-objectstack: 17.4.0
+      create-objectstack: 17.7.0
       dotenv-flow: 4.1.0
       esbuild: 0.28.2
       ts-morph: 28.0.0
-      tsx: 4.23.13
-      yaml: 2.9.0
-      zod: 4.5.4
+      tsx: 4.23.15
+      yaml: 2.9.1
+      zod: 4.6.5
     optionalDependencies:
       better-sqlite3: 13.0.3
     transitivePeerDependencies:
@@ -2296,19 +2299,21 @@ snapshots:
       - vitest
       - vue
 
-  '@objectstack/client@17.4.0':
+  '@objectstack/client@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/cloud-connection@17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
+  '@objectstack/cloud-connection@17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/runtime': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/metadata-protocol': 17.7.0
+      '@objectstack/runtime': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
       - '@better-auth/utils'
@@ -2353,30 +2358,30 @@ snapshots:
       - vitest
       - vue
 
-  '@objectstack/console@17.4.0': {}
+  '@objectstack/console@17.7.0': {}
 
-  '@objectstack/core@17.4.0':
+  '@objectstack/core@17.7.0':
     dependencies:
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
-      zod: 4.5.4
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
+      zod: 4.6.5
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/driver-memory@17.4.0':
+  '@objectstack/driver-memory@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       mingo: 7.2.4
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/driver-mongodb@17.4.0':
+  '@objectstack/driver-mongodb@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       mongodb: 7.6.0
       nanoid: 6.0.1
     transitivePeerDependencies:
@@ -2389,12 +2394,12 @@ snapshots:
       - snappy
       - socks
 
-  '@objectstack/driver-sql@17.4.0':
+  '@objectstack/driver-sql@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/observability': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/observability': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       knex: 3.3.0(better-sqlite3@13.0.3)
       nanoid: 6.0.1
     optionalDependencies:
@@ -2408,11 +2413,11 @@ snapshots:
       - sqlite3
       - supports-color
 
-  '@objectstack/driver-sqlite-wasm@17.4.0(better-sqlite3@13.0.3)':
+  '@objectstack/driver-sqlite-wasm@17.7.0(better-sqlite3@13.0.3)':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/driver-sql': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/driver-sql': 17.7.0
+      '@objectstack/spec': 17.7.0
       knex: 3.3.0(better-sqlite3@13.0.3)
       nanoid: 6.0.1
       sql.js: 1.14.2
@@ -2429,18 +2434,18 @@ snapshots:
       - supports-color
       - tedious
 
-  '@objectstack/formula@17.4.0':
+  '@objectstack/formula@17.7.0':
     dependencies:
       '@marcbachmann/cel-js': 8.0.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/lint@17.4.0':
+  '@objectstack/lint@17.7.0':
     dependencies:
-      '@objectstack/formula': 17.4.0
-      '@objectstack/sdui-parser': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/sdui-parser': 17.7.0
+      '@objectstack/spec': 17.7.0
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       sucrase: 3.35.1
@@ -2448,131 +2453,132 @@ snapshots:
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/mcp@17.4.0':
+  '@objectstack/mcp@17.7.0':
     dependencies:
-      '@modelcontextprotocol/sdk': 1.30.0(zod@4.5.4)
-      '@objectstack/core': 17.4.0
-      '@objectstack/formula': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
-      zod: 4.5.4
+      '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
+      '@objectstack/core': 17.7.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
+      zod: 4.6.5
     transitivePeerDependencies:
       - '@cfworker/json-schema'
       - ai
       - supports-color
 
-  '@objectstack/metadata-core@17.4.0':
+  '@objectstack/metadata-core@17.7.0':
     dependencies:
-      '@objectstack/spec': 17.4.0
-      zod: 4.5.4
+      '@objectstack/spec': 17.7.0
+      zod: 4.6.5
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/metadata-fs@17.4.0':
+  '@objectstack/metadata-fs@17.7.0':
     dependencies:
-      '@objectstack/metadata-core': 17.4.0
+      '@objectstack/metadata-core': 17.7.0
       chokidar: 5.0.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/metadata-protocol@17.4.0':
+  '@objectstack/metadata-protocol@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/formula': 17.4.0
-      '@objectstack/lint': 17.4.0
-      '@objectstack/metadata': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
-      zod: 4.5.4
+      '@objectstack/core': 17.7.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/lint': 17.7.0
+      '@objectstack/metadata': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/sdui-parser': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
+      zod: 4.6.5
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/metadata@17.4.0':
+  '@objectstack/metadata@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/metadata-fs': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/metadata-fs': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       chokidar: 5.0.0
       glob: 13.0.6
       js-yaml: 5.4.1
-      zod: 4.5.4
+      zod: 4.6.5
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/objectql@17.4.0':
+  '@objectstack/objectql@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/formula': 17.4.0
-      '@objectstack/metadata': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/metadata-protocol': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/metadata': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/metadata-protocol': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
-      zod: 4.5.4
+      zod: 4.6.5
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/observability@17.4.0':
+  '@objectstack/observability@17.7.0':
     dependencies:
-      '@objectstack/spec': 17.4.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/platform-objects@17.4.0':
+  '@objectstack/platform-objects@17.7.0':
     dependencies:
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/spec': 17.4.0
-    transitivePeerDependencies:
-      - ai
-      - vitest
-
-  '@objectstack/plugin-approvals@17.4.0':
-    dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/formula': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/plugin-audit@17.4.0':
+  '@objectstack/plugin-approvals@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/objectql': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/plugin-auth@17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
+  '@objectstack/plugin-audit@17.7.0':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
-      '@better-auth/oauth-provider': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.5.4))
-      '@better-auth/scim': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(better-auth@1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.5.4))
-      '@better-auth/sso': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.5.4))
+      '@objectstack/core': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/objectql': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
+    transitivePeerDependencies:
+      - ai
+      - vitest
+
+  '@objectstack/plugin-auth@17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
+    dependencies:
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/oauth-provider': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-auth@1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.6.5))
+      '@better-auth/scim': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.5.0)(better-auth@1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.6.5))
+      '@better-auth/sso': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-auth@1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0))(better-call@1.4.0(zod@4.6.5))
       '@noble/hashes': 2.4.0
-      '@objectstack/core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/rest': 17.4.0
-      '@objectstack/service-messaging': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
-      better-auth: 1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0)
+      '@objectstack/core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/rest': 17.7.0
+      '@objectstack/service-messaging': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
+      better-auth: 1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0)
       jose: 6.2.12
     transitivePeerDependencies:
       - '@better-auth/utils'
@@ -2603,122 +2609,113 @@ snapshots:
       - vitest
       - vue
 
-  '@objectstack/plugin-email@17.4.0':
+  '@objectstack/plugin-email@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/formula': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      nodemailer: 9.1.1
+      '@objectstack/core': 17.7.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      nodemailer: 10.0.16
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/plugin-hono-server@17.4.0':
+  '@objectstack/plugin-hono-server@17.7.0':
     dependencies:
-      '@hono/node-server': 2.1.1(hono@4.13.7)
-      '@objectstack/core': 17.4.0
-      '@objectstack/observability': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
-      hono: 4.13.7
+      '@hono/node-server': 2.1.1(hono@4.13.13)
+      '@objectstack/core': 17.7.0
+      '@objectstack/observability': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
+      hono: 4.13.13
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/plugin-pinyin-search@17.4.0':
+  '@objectstack/plugin-pinyin-search@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/objectql': 17.4.0
-      '@objectstack/types': 17.4.0
-      pinyin-pro: 3.29.3
-    transitivePeerDependencies:
-      - ai
-      - vitest
-
-  '@objectstack/plugin-reports@17.4.0':
-    dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      croner: 10.0.1
+      '@objectstack/core': 17.7.0
+      '@objectstack/objectql': 17.7.0
+      '@objectstack/types': 17.7.0
+      pinyin-pro: 3.29.4
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/plugin-security@17.4.0':
+  '@objectstack/plugin-security@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/formula': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/plugin-sharing@17.4.0':
+  '@objectstack/plugin-sharing@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/formula': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/objectql': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@noble/hashes': 2.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/objectql': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/plugin-webhooks@17.4.0':
+  '@objectstack/plugin-webhooks@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/service-messaging': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/service-messaging': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/rest@17.4.0':
+  '@objectstack/rest@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/observability': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/service-package': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/observability': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/service-package': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       exceljs: 4.4.0
-      zod: 4.5.4
+      zod: 4.6.5
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/runtime@17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
+  '@objectstack/runtime@17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/driver-memory': 17.4.0
-      '@objectstack/driver-sql': 17.4.0
-      '@objectstack/driver-sqlite-wasm': 17.4.0(better-sqlite3@13.0.3)
-      '@objectstack/formula': 17.4.0
-      '@objectstack/metadata': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/metadata-protocol': 17.4.0
-      '@objectstack/objectql': 17.4.0
-      '@objectstack/observability': 17.4.0
-      '@objectstack/plugin-auth': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/plugin-security': 17.4.0
-      '@objectstack/rest': 17.4.0
-      '@objectstack/service-cluster': 17.4.0
-      '@objectstack/service-datasource': 17.4.0(@objectstack/driver-mongodb@17.4.0)(@objectstack/driver-sqlite-wasm@17.4.0(better-sqlite3@13.0.3))
-      '@objectstack/service-i18n': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/driver-memory': 17.7.0
+      '@objectstack/driver-sql': 17.7.0
+      '@objectstack/driver-sqlite-wasm': 17.7.0(better-sqlite3@13.0.3)
+      '@objectstack/formula': 17.7.0
+      '@objectstack/metadata': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/metadata-protocol': 17.7.0
+      '@objectstack/objectql': 17.7.0
+      '@objectstack/observability': 17.7.0
+      '@objectstack/plugin-auth': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/plugin-security': 17.7.0
+      '@objectstack/rest': 17.7.0
+      '@objectstack/service-cluster': 17.7.0
+      '@objectstack/service-datasource': 17.7.0(@objectstack/driver-mongodb@17.7.0)(@objectstack/driver-sqlite-wasm@17.7.0(better-sqlite3@13.0.3))
+      '@objectstack/service-i18n': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       quickjs-emscripten: 0.32.0
-      zod: 4.5.4
+      zod: 4.6.5
     optionalDependencies:
-      '@objectstack/driver-mongodb': 17.4.0
+      '@objectstack/driver-mongodb': 17.7.0
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
       - '@better-auth/utils'
@@ -2762,53 +2759,56 @@ snapshots:
       - vitest
       - vue
 
-  '@objectstack/sdui-parser@17.4.0': {}
+  '@objectstack/sdui-parser@17.7.0': {}
 
-  '@objectstack/service-analytics@17.4.0':
+  '@objectstack/service-analytics@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/service-automation@17.4.0':
+  '@objectstack/service-automation@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/formula': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/formula': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/metadata-protocol': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/service-cache@17.4.0':
+  '@objectstack/service-cache@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/observability': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/observability': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/service-cluster@17.4.0':
+  '@objectstack/service-cluster@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/service-datasource@17.4.0(@objectstack/driver-mongodb@17.4.0)(@objectstack/driver-sqlite-wasm@17.4.0(better-sqlite3@13.0.3))':
+  '@objectstack/service-datasource@17.7.0(@objectstack/driver-mongodb@17.7.0)(@objectstack/driver-sqlite-wasm@17.7.0(better-sqlite3@13.0.3))':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/driver-memory': 17.4.0
-      '@objectstack/driver-sql': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/driver-memory': 17.7.0
+      '@objectstack/driver-sql': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       pg-connection-string: 2.14.0
     optionalDependencies:
-      '@objectstack/driver-mongodb': 17.4.0
-      '@objectstack/driver-sqlite-wasm': 17.4.0(better-sqlite3@13.0.3)
+      '@objectstack/driver-mongodb': 17.7.0
+      '@objectstack/driver-sqlite-wasm': 17.7.0(better-sqlite3@13.0.3)
     transitivePeerDependencies:
       - ai
       - mariadb
@@ -2820,78 +2820,79 @@ snapshots:
       - sqlite3
       - supports-color
       - tedious
+      - vitest
 
-  '@objectstack/service-i18n@17.4.0':
+  '@objectstack/service-i18n@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/service-job@17.4.0':
+  '@objectstack/service-job@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
       croner: 10.0.1
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/service-messaging@17.4.0':
+  '@objectstack/service-messaging@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/service-package@17.4.0':
+  '@objectstack/service-package@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/metadata-core': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/service-queue@17.4.0':
+  '@objectstack/service-queue@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/service-realtime@17.4.0':
+  '@objectstack/service-realtime@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/service-settings@17.4.0':
+  '@objectstack/service-settings@17.7.0':
     dependencies:
       '@noble/ciphers': 2.4.0
-      '@objectstack/core': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/service-sms@17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
+  '@objectstack/service-sms@17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/plugin-auth': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/plugin-auth': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - '@better-auth/utils'
       - '@better-fetch/fetch'
@@ -2921,75 +2922,78 @@ snapshots:
       - vitest
       - vue
 
-  '@objectstack/service-storage@17.4.0':
+  '@objectstack/service-storage@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/observability': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/observability': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/setup@17.4.0':
+  '@objectstack/setup@17.7.0':
     dependencies:
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
       - vitest
 
-  '@objectstack/spec@17.4.0':
+  '@objectstack/spec@17.7.0':
     dependencies:
       pg-connection-string: 2.14.0
-      zod: 4.5.4
+      zod: 4.6.5
 
-  '@objectstack/trigger-api@17.4.0':
+  '@objectstack/trigger-api@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/trigger-record-change@17.4.0':
+  '@objectstack/trigger-record-change@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/trigger-schedule@17.4.0':
+  '@objectstack/trigger-schedule@17.7.0':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/spec': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/metadata-core': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
       croner: 10.0.1
     transitivePeerDependencies:
       - ai
+      - vitest
 
-  '@objectstack/types@17.4.0':
+  '@objectstack/types@17.7.0':
     dependencies:
-      '@objectstack/spec': 17.4.0
+      '@objectstack/spec': 17.7.0
     transitivePeerDependencies:
       - ai
 
-  '@objectstack/verify@17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@objectstack/driver-mongodb@17.4.0)(@objectstack/driver-sqlite-wasm@17.4.0(better-sqlite3@13.0.3))(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
+  '@objectstack/verify@17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(@objectstack/driver-mongodb@17.7.0)(@objectstack/driver-sqlite-wasm@17.7.0(better-sqlite3@13.0.3))(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)':
     dependencies:
-      '@objectstack/core': 17.4.0
-      '@objectstack/objectql': 17.4.0
-      '@objectstack/platform-objects': 17.4.0
-      '@objectstack/plugin-auth': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/plugin-hono-server': 17.4.0
-      '@objectstack/plugin-security': 17.4.0
-      '@objectstack/plugin-sharing': 17.4.0
-      '@objectstack/rest': 17.4.0
-      '@objectstack/runtime': 17.4.0(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
-      '@objectstack/service-analytics': 17.4.0
-      '@objectstack/service-automation': 17.4.0
-      '@objectstack/service-datasource': 17.4.0(@objectstack/driver-mongodb@17.4.0)(@objectstack/driver-sqlite-wasm@17.4.0(better-sqlite3@13.0.3))
-      '@objectstack/service-settings': 17.4.0
-      '@objectstack/spec': 17.4.0
-      '@objectstack/types': 17.4.0
+      '@objectstack/core': 17.7.0
+      '@objectstack/objectql': 17.7.0
+      '@objectstack/platform-objects': 17.7.0
+      '@objectstack/plugin-auth': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/plugin-hono-server': 17.7.0
+      '@objectstack/plugin-security': 17.7.0
+      '@objectstack/plugin-sharing': 17.7.0
+      '@objectstack/rest': 17.7.0
+      '@objectstack/runtime': 17.7.0(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(better-sqlite3@13.0.3)(kysely@0.29.5)(mongodb@7.6.0)(nanostores@1.5.3)
+      '@objectstack/service-analytics': 17.7.0
+      '@objectstack/service-automation': 17.7.0
+      '@objectstack/service-datasource': 17.7.0(@objectstack/driver-mongodb@17.7.0)(@objectstack/driver-sqlite-wasm@17.7.0(better-sqlite3@13.0.3))
+      '@objectstack/service-settings': 17.7.0
+      '@objectstack/spec': 17.7.0
+      '@objectstack/types': 17.7.0
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
       - '@better-auth/utils'
@@ -3036,7 +3040,7 @@ snapshots:
       - vitest
       - vue
 
-  '@oclif/core@4.14.0':
+  '@oclif/core@5.1.6':
     dependencies:
       ansi-escapes: 4.3.2
       ansis: 3.17.0
@@ -3163,25 +3167,25 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  better-auth@1.7.2(better-sqlite3@13.0.3)(mongodb@7.6.0):
+  better-auth@1.7.3(better-sqlite3@13.0.3)(mongodb@7.6.0):
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
-      '@better-auth/drizzle-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)
-      '@better-auth/kysely-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(kysely@0.29.5)
-      '@better-auth/memory-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)
-      '@better-auth/mongo-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(mongodb@7.6.0)
-      '@better-auth/prisma-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)
-      '@better-auth/telemetry': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)
+      '@better-auth/core': 1.7.3(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3)
+      '@better-auth/drizzle-adapter': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)
+      '@better-auth/kysely-adapter': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(kysely@0.29.5)
+      '@better-auth/memory-adapter': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)
+      '@better-auth/mongo-adapter': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(mongodb@7.6.0)
+      '@better-auth/prisma-adapter': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)
+      '@better-auth/telemetry': 1.7.3(@better-auth/core@1.7.3(@better-auth/utils@0.5.0)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       '@noble/ciphers': 2.4.0
       '@noble/hashes': 2.4.0
-      better-call: 1.4.0(zod@4.5.4)
+      better-call: 1.4.0(zod@4.6.5)
       defu: 6.1.7
       jose: 6.2.12
       kysely: 0.29.5
       nanostores: 1.5.3
-      zod: 4.5.4
+      zod: 4.6.5
     optionalDependencies:
       better-sqlite3: 13.0.3
       mongodb: 7.6.0
@@ -3189,14 +3193,14 @@ snapshots:
       - '@cloudflare/workers-types'
       - '@opentelemetry/api'
 
-  better-call@1.4.0(zod@4.5.4):
+  better-call@1.4.0(zod@4.6.5):
     dependencies:
       '@better-auth/utils': 0.5.0
       '@better-fetch/fetch': 1.3.1
       rou3: 0.9.2
       set-cookie-parser: 3.1.2
     optionalDependencies:
-      zod: 4.5.4
+      zod: 4.6.5
 
   better-sqlite3@13.0.3:
     dependencies:
@@ -3279,7 +3283,7 @@ snapshots:
     dependencies:
       traverse: 0.3.9
 
-  chalk@6.0.0: {}
+  chalk@6.0.1: {}
 
   chokidar@5.0.0:
     dependencies:
@@ -3340,9 +3344,9 @@ snapshots:
       crc-32: 1.2.2
       readable-stream: 3.6.2
 
-  create-objectstack@17.4.0:
+  create-objectstack@17.7.0:
     dependencies:
-      chalk: 6.0.0
+      chalk: 6.0.1
       commander: 15.0.0
 
   croner@10.0.1: {}
@@ -3610,6 +3614,8 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  hono@4.13.13: {}
+
   hono@4.13.7: {}
 
   http-errors@2.0.1:
@@ -3825,7 +3831,7 @@ snapshots:
     dependencies:
       asn1: 0.2.6
 
-  nodemailer@9.1.1: {}
+  nodemailer@10.0.16: {}
 
   normalize-path@3.0.0: {}
 
@@ -3868,7 +3874,7 @@ snapshots:
 
   picomatch@4.0.7: {}
 
-  pinyin-pro@3.29.3: {}
+  pinyin-pro@3.29.4: {}
 
   pirates@4.0.7: {}
 
@@ -4145,7 +4151,7 @@ snapshots:
       '@ts-morph/common': 0.29.0
       code-block-writer: 13.0.3
 
-  tsx@4.23.13:
+  tsx@4.23.15:
     dependencies:
       esbuild: 0.28.2
     optionalDependencies:
@@ -4232,7 +4238,7 @@ snapshots:
 
   xpath@0.0.34: {}
 
-  yaml@2.9.0: {}
+  yaml@2.9.1: {}
 
   zip-stream@4.1.1:
     dependencies:
@@ -4240,8 +4246,8 @@ snapshots:
       compress-commons: 4.1.2
       readable-stream: 3.6.2
 
-  zod-to-json-schema@3.25.2(zod@4.5.4):
+  zod-to-json-schema@3.25.2(zod@4.6.5):
     dependencies:
-      zod: 4.5.4
+      zod: 4.6.5
 
-  zod@4.5.4: {}
+  zod@4.6.5: {}

@@ -30,6 +30,12 @@ import type { Dashboard } from '@objectstack/spec/ui';
  * board read `Category: 全部` / `Requesting Department: 全部` over six Chinese
  * widget titles.
  *
+ * ⚠️ Superseded from 17.5, measured on 17.7.0 (#82): the group above now also
+ * has `globalFilters.<filter>.{label,options.<value>}` (spec 4bbf766, #16772),
+ * and 17.7.0 retired `widgets.<id>.subCaption`. The inline copy below still
+ * renders; it is now a workaround that release made obsolete, and moving it
+ * into the bundle is a card of its own.
+ *
  * Both keys are `I18nLabelSchema` (`GlobalFilterSchema.label`,
  * `.options[].label`), so the inline locale map is the authorized second form,
  * not a workaround.

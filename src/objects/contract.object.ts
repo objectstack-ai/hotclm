@@ -226,7 +226,6 @@ export const Contract = ObjectSchema.create({
     amount: Field.currency({
       label: 'Contract Amount',
       group: 'commercial',
-      scale: 2,
       min: 0,
       description: 'Total contract value in currency_code. The approval matrix bands on it (clm_approval_rule).',
     }),
@@ -263,7 +262,6 @@ export const Contract = ObjectSchema.create({
     liability_cap: Field.currency({
       label: 'Liability Cap',
       group: 'commercial',
-      scale: 2,
       min: 0,
       description: 'Maximum aggregate liability in currency_code. Empty means uncapped or not negotiated.',
     }),

@@ -3,6 +3,7 @@
 import type { TranslationData } from '@objectstack/spec/system';
 
 import { appSurface } from './en/app.js';
+import { flowSurface } from './en/flows.js';
 import { catalog } from './en/objects.catalog.js';
 import { contract } from './en/objects.contract.js';
 import { lifecycle } from './en/objects.lifecycle.js';
@@ -34,4 +35,5 @@ export const en: TranslationData = {
     ...lifecycle,
   },
   ...appSurface,
+  ...flowSurface,
 };

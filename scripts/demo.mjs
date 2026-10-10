@@ -77,8 +77,9 @@ const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
  * accounts of DESIGN.md §10's persona mix — three business requesters and two
  * legal counsel — which no seed may create and this script does not mint. They
  * can afford to be missing: all four are optional, so a name with no account
- * lands NULL and the row survives, and re-running `pnpm demo` once the operator
- * has created them hands the rows over. See `src/data/keys.ts`.
+ * lands NULL and the row survives (`owner_id` is then claimed for the dev
+ * admin — see `src/data/contract.seed.ts`), and re-running `pnpm demo` once the
+ * operator has created them hands the rows over. See `src/data/keys.ts`.
  *
  * ⚠️ This MIRRORS `DEMO_USER` in `src/data/keys.ts`. They have to agree, and
  * they cannot be one constant: this file is plain `.mjs` that runs before
@@ -411,17 +412,19 @@ const OPERATOR_SETUP_NOTE = [
   '  1. The seeded rows have no people on them yet. Contracts are launched by',
   '     business requesters, reviewed by legal counsel and their obligations',
   '     performed by both — the persona mix DESIGN.md §10 asks you to create —',
-  '     and no seed may create a user (§10). Until those accounts exist every',
-  '     column naming one is NULL, so 我的合同 and 法务工作台 stay empty. Add',
+  '     and no seed may create a user (§10). Until those accounts exist no',
+  '     column naming one reaches them — `owner_id` is parked on the dev',
+  '     admin, the rest are NULL — so 我的合同 and 法务工作台 stay empty. Add',
   '     them in Setup → Users and run this again; the README names them and',
   '     says who gets what.',
   '',
   '  2. The `ERROR [SeedLoader]` lines are that same missing owner: one per',
   '     contract whose requester account does not exist yet, expected on a',
   '     first boot, and nothing is lost to them. The loader defers `owner_id`,',
-  '     finds no such account on its last pass, writes the row anyway and',
-  '     leaves that one column NULL — every seeded row is in the database and',
-  '     only its owner is missing. Step 1 is what fills it in.',
+  '     finds no such account on its last pass and writes the row anyway with',
+  '     that one column NULL, which the platform then hands to the dev admin',
+  '     (it claims every ownerless row) — every seeded row is in the database',
+  '     and only its real owner is missing. Step 1 is what hands it over.',
   '',
   '     The loader then signs off with a summary that counts those rows as',
   '     dropped while they sit in the database: its own accounting, not the',
@@ -492,9 +495,9 @@ console.log('');
 // The demo boot owns the terminal from here to the ready banner. The one thing
 // about this fixture an evaluator cannot see from the app — that every contract
 // names a business-requester account no seed may create (DESIGN.md §10), so
-// every `owner_id` lands NULL in silence — is said AFTER that banner, by
-// `announceOperatorSetup`, because said here it is 160 lines from the bottom of
-// the screen (issue #49).
+// every `owner_id` lands on the dev admin in silence — is said AFTER that
+// banner, by `announceOperatorSetup`, because said here it is 160 lines from
+// the bottom of the screen (issue #49).
 const port = expectedPort(process.argv.slice(2));
 const portWasBusy = await accepting(port);
 const demo = startDemo();

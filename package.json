@@ -21,12 +21,12 @@
     "verify": "pnpm validate && pnpm lint && pnpm typecheck && pnpm lint:i18n-gate"
   },
   "dependencies": {
-    "@objectstack/spec": "^17.0.0",
-    "@objectstack/runtime": "^17.0.0",
-    "@objectstack/plugin-hono-server": "^17.0.0"
+    "@objectstack/spec": "^17.7.0",
+    "@objectstack/runtime": "^17.7.0",
+    "@objectstack/plugin-hono-server": "^17.7.0"
   },
   "devDependencies": {
-    "@objectstack/cli": "^17.0.0",
+    "@objectstack/cli": "^17.7.0",
     "typescript": "^6.0.0"
   }
 }
