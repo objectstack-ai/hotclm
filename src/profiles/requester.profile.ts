@@ -78,6 +78,35 @@ export const RequesterSet = definePermissionSet({
     clm_contract_type:    { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     clm_clause:           { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     clm_approval_rule:    { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
+    // The contract page's Discussion tab (DESIGN.md §05, 讨论 — the platform
+    // discussion panel) reads these three platform objects and posts to
+    // `sys_comment`. The platform baseline every member resolves
+    // (`member_default`) names none of them — it has been explicit-allow since
+    // the wildcard retired, "everything else is the application's to declare"
+    // — so without these lines every audience got `403 PERMISSION_DENIED` on
+    // all three and the tab read "You don't have permission…" (issue #86).
+    // They sit in this set because every audience holds it (see the header).
+    //
+    // An object-level read here does NOT open rows beyond §04, because the
+    // platform scopes each of these reads by the record the row is about, with
+    // the caller's own read of that record: a comment by the record its
+    // `thread_id` names, an activity row by `object_name` + `record_id`, an
+    // attachment by `parent_object` + `parent_id`. Posting a comment likewise
+    // requires reading the record it is posted on. MEASURED on 17.7.0 with two
+    // requesters, each owning a contract the other cannot open: each listed
+    // only their own contract's comment and attachment, the other's comment
+    // answered `404` by id, posting on the other's contract answered `403`,
+    // and all 640 activity rows served to one of them were about records that
+    // requester can read.
+    //
+    // Deliberately absent: `sys_approval_request` (the Approvals tab). Its data
+    // door has no such parent scoping — a read granted here serves every
+    // approval request in the organization, payload snapshot included, to
+    // every holder — so whether and how requesters see approval history is a
+    // maintainer decision (#86), not a line in this set.
+    sys_comment:          { allowCreate: true,  allowRead: true, allowEdit: false, allowDelete: false },
+    sys_activity:         { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
+    sys_attachment:       { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
   },
   fields: {
     ...readOnly(Contract, CONTRACT_STAMPED_FIELDS),
