@@ -616,7 +616,154 @@ const handBackInReview = (contracts: readonly ContractPlan[]): ContractPlan[] =>
     indexes.has(contract.index) ? { ...contract, hasLegalOwner: false } : contract);
 };
 
-export const CONTRACT_PLAN: readonly ContractPlan[] = handBackInReview(buildContracts());
+// ─────────────────────────────────────── the renewal and expiry windows ──
+
+/**
+ * Has F12 (`renewal_notice`) already flagged this contract `is_expiring`?
+ *
+ * The fixture is the book as the daily jobs leave it at the START of boot day:
+ * every earlier day's run has happened, today's has not. F12 flags a contract
+ * on the first run on or after its notice deadline (`end_date -
+ * renewal_notice_days`), so a deadline on an EARLIER day was flagged by that
+ * day's run, and a deadline of today is still waiting for today's. `< 0`, not
+ * `<= 0`, is that distinction — and it is what the seeded `is_expiring` says,
+ * so the column holds the value F12 itself left there (`_shared.ts`, rule 2).
+ *
+ * The flag is also F12's once-per-contract key (`is_expiring: { $ne: true }`
+ * in its filter): a flagged row is one whose owner the job has already told.
+ */
+export const renewalFlagged = (contract: ContractPlan): boolean =>
+  contract.status === 'active' &&
+  contract.timeline.endDate !== null &&
+  contract.renewalNoticeDays !== null &&
+  contract.timeline.endDate - contract.renewalNoticeDays < 0;
+
+/**
+ * How many active contracts reach their renewal-notice deadline ON boot day —
+ * the rows F12 finds unflagged inside their window on its first run.
+ *
+ * ## Why the corpus needs them — measured, #97
+ *
+ * `main` @ `46e65f0`, 17.7.0, fresh `pnpm demo`, one manual trigger of each
+ * job: `renewal_notice` selected 25 and acted on 0; `expiration_sweep`
+ * selected 0 and 0. Both zeroes are structural, not a bad day. Every active
+ * contract inside its window (11) is seeded already flagged, which is the key
+ * that takes it out of F12's query; the 25 the query does read are all outside
+ * their windows, the nearest by six days. And no active contract's term has
+ * ended (the nearest ends in four days), so F13 has nothing to read at all.
+ * The jobs work — PR #42 measured both write paths on probe rows — and a
+ * fresh demo still never sends a renewal or an expiry reminder, which is half
+ * of what M3's acceptance asks to see in the inbox (DESIGN.md §11:
+ * 「到期、逾期提醒在收件箱可见」).
+ *
+ * ## Where the row goes, and why that is honest
+ *
+ * Under {@link renewalFlagged}'s reading, the ONE unflagged place inside a
+ * window is a deadline of today. So the row is moved there: its `end_date`
+ * becomes exactly `renewal_notice_days` from boot, and its seeded
+ * `is_expiring` is the `false` F12 computed yesterday.
+ *
+ * It is drawn from the backfilled corpus, as §10's ten expiring contracts are,
+ * and it must carry a legal owner, because F12 tells the business owner AND
+ * legal. The band keeps every dated count where it was: a notice period over
+ * 30 days keeps it out of §10's "10 within 30 days", and an end date already
+ * inside 90 keeps the 管理层 board's 90-day expiry tile (`expiring_90_days`)
+ * unchanged. Nearest to its window first — the smallest move.
+ *
+ * One row is what coverage costs, as for {@link UNASSIGNED_IN_REVIEW}.
+ */
+export const RENEWAL_DEADLINE_TODAY = 1;
+
+/**
+ * How many active contracts per branch of F13 (`expiration_sweep`) ended their
+ * term YESTERDAY — one that does not auto-renew (F13 expires it) and one that
+ * does (F13 drafts its renewal). Both branches notify, and neither is reachable
+ * on the corpus without this (measured above).
+ *
+ * Yesterday for the same reason as {@link RENEWAL_DEADLINE_TODAY}'s today: F13
+ * selects `end_date < today`, so yesterday's run did not select a term that
+ * ended yesterday, and today's run will. Drawn from the backfilled corpus with
+ * a legal owner and an end date beyond 90 days, so neither §10's 30-day count
+ * nor the 90-day tile moves; soonest-ending first.
+ *
+ * ⚠️ The non-renewing row is one more contract in #41's set: once F13 has
+ * expired it, re-running `pnpm demo` re-asserts `active` on a terminal
+ * contract. #41 is the open decision on exactly that, and it already covers
+ * every contract the jobs move; this row only makes it reachable on boot day.
+ */
+export const TERM_ENDED_YESTERDAY_PER_BRANCH = 1;
+
+/** §10's "10 contracts ending within 30 days", as a date band. */
+const EXPIRING_BAND_DAYS = 30;
+/** The 管理层 board's `expiring_90_days` tile, as a date band. */
+const EXPIRY_TILE_DAYS = 90;
+
+/** Move a contract's whole timeline so its term ends on `endDate`, every stage keeping its distance. */
+const endingOn = (contract: ContractPlan, endDate: number): ContractPlan => {
+  const delta = endDate - (contract.timeline.endDate as number);
+  const shift = (day: number | null) => (day === null ? null : day + delta);
+  const t = contract.timeline;
+  return {
+    ...contract,
+    timeline: {
+      submittedAt: shift(t.submittedAt), reviewStartedAt: shift(t.reviewStartedAt),
+      approvedAt: shift(t.approvedAt), signedAt: shift(t.signedAt), executedAt: shift(t.executedAt),
+      activatedAt: shift(t.activatedAt), closedAt: shift(t.closedAt), startDate: shift(t.startDate),
+      endDate: shift(t.endDate),
+    },
+  };
+};
+
+const activeEndingIn = (contracts: readonly ContractPlan[], low: number, high: number) =>
+  contracts.filter((c) => c.status === 'active' && c.timeline.endDate !== null &&
+    c.timeline.endDate >= low && c.timeline.endDate <= high).length;
+
+/**
+ * Place {@link RENEWAL_DEADLINE_TODAY} and {@link TERM_ENDED_YESTERDAY_PER_BRANCH}
+ * — and prove afterwards that F12 and F13 will select exactly those rows and
+ * that no dated count of §10 or the boards moved.
+ */
+const placeInSweepWindows = (contracts: readonly ContractPlan[]): ContractPlan[] => {
+  const eligible = (c: ContractPlan): boolean =>
+    c.status === 'active' && c.backfilled && !c.expiringSoon && c.hasLegalOwner && c.timeline.endDate !== null;
+  const end = (c: ContractPlan) => c.timeline.endDate as number;
+
+  const renewal = contracts
+    .filter((c) => eligible(c) && c.renewalNoticeDays !== null && c.renewalNoticeDays > EXPIRING_BAND_DAYS &&
+      end(c) > c.renewalNoticeDays && end(c) <= EXPIRY_TILE_DAYS)
+    .sort((a, b) => (end(a) - (a.renewalNoticeDays as number)) - (end(b) - (b.renewalNoticeDays as number)))
+    .slice(0, RENEWAL_DEADLINE_TODAY);
+  const ended = [false, true].flatMap((autoRenew) => contracts
+    .filter((c) => eligible(c) && c.autoRenew === autoRenew && end(c) > EXPIRY_TILE_DAYS)
+    .sort((a, b) => end(a) - end(b))
+    .slice(0, TERM_ENDED_YESTERDAY_PER_BRANCH));
+  if (renewal.length < RENEWAL_DEADLINE_TODAY || ended.length < 2 * TERM_ENDED_YESTERDAY_PER_BRANCH) {
+    throw new Error(`demo fixture: found ${renewal.length} contract(s) to bring to a renewal deadline of today and ${ended.length} to end yesterday — F12 and F13 would have nothing to act on (#97).`);
+  }
+
+  const moveTo = new Map<number, number>([
+    ...renewal.map((c) => [c.index, c.renewalNoticeDays as number] as const),
+    ...ended.map((c) => [c.index, -1] as const),
+  ]);
+  const placed = contracts.map((c) => (moveTo.has(c.index) ? endingOn(c, moveTo.get(c.index)!) : c));
+
+  // Re-proved on the result, not assumed from the construction.
+  const active = placed.filter((c) => c.status === 'active');
+  const deadlineToday = active.filter((c) =>
+    c.renewalNoticeDays !== null && c.timeline.endDate !== null && c.timeline.endDate - c.renewalNoticeDays === 0);
+  assertCount('clm_contract (renewal deadline today, unflagged)', deadlineToday.filter((c) => !renewalFlagged(c)).length, RENEWAL_DEADLINE_TODAY);
+  const termEnded = active.filter((c) => c.timeline.endDate !== null && c.timeline.endDate < 0);
+  assertCount('clm_contract (active, term ended, not auto-renewing)', termEnded.filter((c) => !c.autoRenew).length, TERM_ENDED_YESTERDAY_PER_BRANCH);
+  assertCount('clm_contract (active, term ended, auto-renewing)', termEnded.filter((c) => c.autoRenew).length, TERM_ENDED_YESTERDAY_PER_BRANCH);
+  assertCount('clm_contract (active, ending within 30 days)', activeEndingIn(placed, 0, EXPIRING_BAND_DAYS), 10);
+  assertCount('clm_contract (active, ending within 90 days)', activeEndingIn(placed, 0, EXPIRY_TILE_DAYS), activeEndingIn(contracts, 0, EXPIRY_TILE_DAYS));
+  if (placed.some((c) => moveTo.has(c.index) && (c.timeline.activatedAt ?? 0) > 0)) {
+    throw new Error('demo fixture: a contract moved into a sweep window would start in the future while seeded active.');
+  }
+  return placed;
+};
+
+export const CONTRACT_PLAN: readonly ContractPlan[] = placeInSweepWindows(handBackInReview(buildContracts()));
 
 /** The counterparty a contract is with. */
 export const partyOf = (contract: ContractPlan) => PARTY_PLAN[contract.partyIndex]!;

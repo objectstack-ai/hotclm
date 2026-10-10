@@ -7,7 +7,7 @@ import { Contract } from '../objects/contract.object.js';
 import { dayOffset } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
 import { contractTitle, legalOwnerOf, ownerOf, titleOfIndex } from './keys.js';
-import { CONTRACT_PLAN, lawOf, typeOf, type ContractPlan } from './plan-contracts.js';
+import { CONTRACT_PLAN, lawOf, renewalFlagged, typeOf, type ContractPlan } from './plan-contracts.js';
 
 /**
  * The 120 contracts of DESIGN.md §10, in the status spread its table pins.
@@ -34,21 +34,16 @@ import { CONTRACT_PLAN, lawOf, typeOf, type ContractPlan } from './plan-contract
  *
  *  - `route_*` comes from {@link routeFlagsFor}, which re-implements F2's
  *    matching rules against the same six rules this demo installs;
- *  - `is_expiring` is F12's own predicate — `active`, and `end_date` inside
- *    the renewal notice window — evaluated against the seeded dates;
+ *  - `is_expiring` is the flag F12 itself left on its last run — `active`,
+ *    and a notice deadline on a day BEFORE boot day — evaluated against the
+ *    seeded dates by {@link renewalFlagged}, which says why a deadline of
+ *    today is still unflagged;
  *  - `approval_status` mirrors the contract's own status, so every surface
  *    inside the app agrees. The surface that does not is the platform's:
  *    NO `sys_approval_request` exists behind any of these rows, because F5
  *    cannot run at seed time. See `plan-contracts.ts` for why, and the PR body
  *    for what card 10's dashboards will therefore show.
  */
-
-/** F12's predicate, evaluated against the seeded dates rather than guessed. */
-const isExpiring = (contract: ContractPlan): boolean =>
-  contract.status === 'active' &&
-  contract.timeline.endDate !== null &&
-  contract.renewalNoticeDays !== null &&
-  contract.timeline.endDate - contract.renewalNoticeDays <= 0;
 
 /**
  * Six of the fourteen contracts in a terminal state have been through the
@@ -121,7 +116,7 @@ export const contractSeed = defineSeed(Contract, {
       auto_renew: contract.autoRenew,
       renewal_notice_days: contract.renewalNoticeDays,
       parent_contract: contract.parentIndex === null ? null : titleOfIndex(contract.parentIndex),
-      is_expiring: isExpiring(contract),
+      is_expiring: renewalFlagged(contract),
 
       // Governing law is on the intake form of six of the nine types, and the
       // submission guard refuses a contract whose type asks for an intake
