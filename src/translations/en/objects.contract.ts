@@ -19,14 +19,14 @@ export const contract: Record<string, ObjectTranslationData> = {
     fields: {
       contract_number: {
         label: 'Contract Number',
-        help: 'Generated on insert by contract.hook.ts as <type code>-<year>-<4-digit sequence>, one sequence per type per year (DESIGN.md §13 Q5). Regenerated only if the type changes while the contract is still a draft.',
+        help: 'Generated when the contract is created: the type code, the year and a four-digit sequence (e.g. NDA-2026-0001), one sequence per type per year. Regenerated only if the type changes while the contract is still a draft.',
       },
       title: {
         label: 'Title',
       },
       contract_type: {
         label: 'Contract Type',
-        help: 'The workflow this contract runs: intake fields, review, execution method and formalities (DESIGN.md §02).',
+        help: 'The workflow this contract runs: intake fields, review, execution method and formalities.',
       },
       category: {
         label: 'Category',
@@ -55,7 +55,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       status: {
         label: 'Status',
-        help: 'Lifecycle state. Transitions and their guards are enforced by contract.hook.ts (DESIGN.md §03 状态机); expired, terminated and cancelled are terminal.',
+        help: 'Where the contract is in its lifecycle. Status changes follow fixed rules; Expired, Terminated and Cancelled are final.',
         options: {
           draft: 'Draft',
           submitted: 'Submitted',
@@ -81,25 +81,25 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       is_backfilled: {
         label: 'Backfilled',
-        help: 'An already-executed contract entered after the fact through the F16 executed_upload action (DESIGN.md §13 Q8) — the only writer. Such a contract starts active and skipped review and approval.',
+        help: 'An already-signed contract recorded after the fact with Backfill Executed Contract. It starts active, without review or approval.',
       },
       archive_no: {
         label: 'Archive Number',
-        help: 'Physical or records-management archive reference, assigned at archive time (F14).',
+        help: 'Physical or records-management archive reference, assigned at archive time.',
       },
       party: {
         label: 'Counterparty',
       },
       our_entity: {
         label: 'Our Signing Entity',
-        help: 'Which of our legal entities signs. The shipped list is a single placeholder — a group with several legal entities replaces it with its own (DESIGN.md §01: signing entities are configuration, not schema).',
+        help: 'Which of our legal entities signs. The shipped list is a single placeholder — a group with several legal entities replaces it with its own.',
         options: {
           head_office: 'Head office',
         },
       },
       department: {
         label: 'Requesting Department',
-        help: 'The business unit that launched the contract. A redundant scalar on the contract because RLS cannot cross objects (DESIGN.md §04); department-level sharing is a customer overlay (§13 Q2).',
+        help: 'The business unit that launched the contract. Sharing contracts by department is a customer-specific extension, not part of the standard product.',
         options: {
           sales: 'Sales',
           procurement: 'Procurement',
@@ -133,11 +133,11 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       amount: {
         label: 'Contract Amount',
-        help: 'Total contract value in currency_code. The approval matrix bands on it (clm_approval_rule).',
+        help: 'Total contract value, in the contract currency. The approval matrix bands on it.',
       },
       currency_code: {
         label: 'Currency',
-        help: 'ISO 4217 code. The organization-level default is a setting, not schema; the factory default is USD (DESIGN.md §01).',
+        help: 'ISO 4217 code. The organization\'s default currency is a setting; out of the box it is USD.',
         options: {
           usd: 'USD — US Dollar',
           eur: 'EUR — Euro',
@@ -152,7 +152,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       payment_terms: {
         label: 'Payment Terms',
-        help: 'Same value set as HotCRM crm_contract.payment_terms so the F15 hand-off maps 1:1.',
+        help: 'The same values HotCRM uses for payment terms, so the two match one to one when a contract is handed over.',
         options: {
           net_15: 'Net 15',
           net_30: 'Net 30',
@@ -163,14 +163,14 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       liability_cap: {
         label: 'Liability Cap',
-        help: 'Maximum aggregate liability in currency_code. Empty means uncapped or not negotiated.',
+        help: 'Maximum aggregate liability, in the contract currency. Empty means uncapped or not negotiated.',
       },
       start_date: {
         label: 'Start Date',
       },
       end_date: {
         label: 'End Date',
-        help: 'The expiry job (F13) flags is_expiring renewal_notice_days before this date.',
+        help: 'The contract is flagged Expiring Soon once this date is within its renewal notice period.',
       },
       term_months: {
         label: 'Term (months)',
@@ -180,11 +180,11 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       renewal_notice_days: {
         label: 'Renewal Notice (days)',
-        help: 'Days before end_date by which a non-renewal notice must be given.',
+        help: 'Days before the end date by which a non-renewal notice must be given.',
       },
       renewed_from: {
         label: 'Renewed From',
-        help: 'Set by the "start renewal" action on the new draft; renewal is a new contract, not a transition (DESIGN.md §03).',
+        help: 'Set by Start Renewal on the new draft. A renewal is a new contract, not a status change.',
       },
       parent_contract: {
         label: 'Parent Contract',
@@ -192,7 +192,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       is_expiring: {
         label: 'Expiring Soon',
-        help: 'Stamped daily by the expiry job (F13) when end_date is within the renewal notice window.',
+        help: 'Set by the daily check once the end date is within the renewal notice period.',
       },
       governing_law: {
         label: 'Governing Law',
@@ -220,7 +220,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       execution_formalities: {
         label: 'Execution Formalities',
-        help: 'Stamped from the contract type. Activation waits for a completed signature whose formalities_done covers every value here.',
+        help: 'Stamped from the contract type. Activation waits for a completed signing round whose Formalities Done covers every value here.',
         options: {
           countersigned_copy: 'Countersigned copy returned',
           company_seal: 'Company seal',
@@ -230,7 +230,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       summary: {
         label: 'Summary',
-        help: 'Human-written summary of the deal. The AI summary lives in ai_summary and is adopted separately.',
+        help: 'Human-written summary of the deal. The AI summary is kept in its own field and adopted separately.',
       },
       route_legal_head: {
         label: 'Routes: Head of Legal',
@@ -246,7 +246,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       approval_status: {
         label: 'Approval Status',
-        help: 'Mirror of the approval ladder (F5) decision node; written by the flow, never by hand.',
+        help: 'The outcome of the approval process. Set by the approval flow; do not edit it by hand.',
         options: {
           not_required: 'Not Required',
           pending: 'Pending',
@@ -279,18 +279,18 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       termination_reason: {
         label: 'Termination Reason',
-        help: 'Why the contract was ended before its term ran out. Required to terminate (DESIGN.md §03 active → terminated); asked once, by the Terminate action, and never on the intake form.',
+        help: 'Why the contract was ended before its term ran out. Required to terminate; asked once, by the Terminate action, and never on the intake form.',
       },
       archived_at: {
         label: 'Archived At',
       },
       ai_summary: {
         label: 'AI Summary',
-        help: 'Adopted from an S2/S6 suggestion (DESIGN.md §07). Empty when nothing has been adopted, or when the ai capability is off.',
+        help: 'Adopted from an AI suggestion. Empty when nothing has been adopted, or when AI is turned off.',
       },
       ai_risk_score: {
         label: 'AI Risk Score',
-        help: '0 (no concern) to 100 (do not sign). Adopted from the S6 approver memo after legal review; never written directly by the model.',
+        help: '0 (no concern) to 100 (do not sign). Adopted from the AI approver memo after legal review; never written directly by the AI.',
       },
       ai_risk_rationale: {
         label: 'AI Risk Rationale',
@@ -300,23 +300,23 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       version_count: {
         label: 'Versions',
-        help: 'Count of clm_contract_version rows on this contract.',
+        help: 'How many document versions this contract has.',
       },
       open_deviation_count: {
         label: 'Open Deviations',
-        help: 'Count of clm_deviation rows still open. The in_review → in_approval guard reads the children directly (a guard must not trust a cached aggregate); this is the number people list and sort on.',
+        help: 'How many clause deviations are still open. Used for listing and sorting; sending for approval checks the deviations themselves, not this number.',
       },
       overdue_obligation_count: {
         label: 'Overdue Obligations',
-        help: 'Count of clm_obligation rows in arrears. Moves only when the daily job (card 09) flips a child to overdue — the roll-up is recomputed by that write like any other.',
+        help: 'How many obligations are overdue. Only the daily check marks an obligation overdue.',
       },
       planned_amount: {
         label: 'Planned Amount',
-        help: 'Sum of clm_payment_plan.planned_amount, in the contract currency. Compare with `amount`: that is the negotiated total, this is what the schedule actually adds up to.',
+        help: 'Total planned amount of the payment schedule, in the contract currency. Compare it with Contract Amount: that is the negotiated total, this is what the schedule actually adds up to.',
       },
       actual_amount: {
         label: 'Actual Amount',
-        help: 'Sum of clm_payment_plan.actual_amount, in the contract currency — what has actually arrived against the schedule.',
+        help: 'Total actual amount of the payment schedule, in the contract currency — what has actually arrived against the schedule.',
       },
     },
     _actions: {
@@ -548,7 +548,7 @@ export const contract: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Version',
-        help: 'Stored mirror "v<version_no> · <kind>", stamped by mirror.hook.ts.',
+        help: 'Filled in automatically from the version number and kind, e.g. "v2 · Clean".',
       },
       contract: {
         label: 'Contract',
@@ -576,7 +576,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       is_current: {
         label: 'Current',
-        help: 'The version negotiation is currently on. The clean-version guard before signing reads this flag.',
+        help: 'The version negotiation is currently on. A contract can go to signing only once its current version is a clean copy.',
       },
       file: {
         label: 'File',

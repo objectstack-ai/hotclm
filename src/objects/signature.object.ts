@@ -39,7 +39,7 @@ export const Signature = ObjectSchema.create({
       readonly: true,
       searchable: true,
       maxLength: 80,
-      description: 'Stored mirror "<method> · <status>", stamped by mirror.hook.ts.',
+      description: 'Filled in automatically as "method · status".',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',
@@ -63,7 +63,8 @@ export const Signature = ObjectSchema.create({
     provider: Field.select({
       label: 'Provider',
       group: 'round',
-      description: 'E-signature provider the envelope was sent through. Regional packs append their own (DESIGN.md §13 Q7).',
+      // Regional packs append their own options (DESIGN.md §13 Q7).
+      description: 'E-signature provider the envelope was sent through. Regional add-ons can add their own providers.',
       options: [
         { label: 'DocuSign',           value: 'docusign' },
         { label: 'Adobe Acrobat Sign', value: 'adobe_sign' },
@@ -75,7 +76,8 @@ export const Signature = ObjectSchema.create({
       group: 'round',
       searchable: true,
       maxLength: 120,
-      description: 'The provider\'s envelope or agreement id, for status polling and audit (F8).',
+      // Written and read by the e-signature dispatch and callback (DESIGN.md §06 F8).
+      description: 'The provider\'s envelope or agreement id, for status checks and audit.',
     }),
     signers: Field.json({
       label: 'Signers',
@@ -100,7 +102,8 @@ export const Signature = ObjectSchema.create({
       label: 'Formalities Done',
       group: 'execution',
       multiple: true,
-      description: 'Same value set as clm_contract_type.execution_formalities. Activation waits until every formality the type requires is ticked here on a completed round.',
+      // Same value set as clm_contract_type.execution_formalities.
+      description: 'Same values as the contract type\'s execution formalities. Activation waits until every formality the type requires is ticked here on a completed round.',
       options: [
         { label: 'Countersigned copy returned', value: 'countersigned_copy' },
         { label: 'Company seal',                value: 'company_seal' },

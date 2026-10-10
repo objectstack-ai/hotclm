@@ -253,7 +253,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       status: {
         label: '状态',
-        help: '待办可转为进行中、已完成或已豁免；进行中可转为已完成或已豁免；逾期可转为已完成或已豁免。逾期只由每日检查写入。',
+        help: '待办可转为进行中、已完成、已豁免或已逾期；进行中可转为已完成、已豁免或已逾期；已逾期可转为已完成或已豁免。已完成和已豁免是终态。已逾期只由每日检查标记。',
         options: {
           pending: '待办',
           in_progress: '进行中',
@@ -323,7 +323,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       status: {
         label: '状态',
-        help: '计划中可转为待收付；待收付可转为部分收付、已结清或逾期；逾期可转为部分收付或已结清。逾期只由每日检查写入。',
+        help: '计划中可转为待收付；待收付可转为部分收付、已结清或已逾期；部分收付可转为已结清或已逾期；已逾期可转为部分收付或已结清。已结清是终态。已逾期只由每日检查标记。',
         options: {
           planned: '计划中',
           due: '待收付',

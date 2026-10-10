@@ -55,7 +55,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       status: {
         label: '状态',
-        help: '合同所处的生命周期环节。状态之间怎么流转由写入层强制，界面隐藏不算数；已到期、已终止、已作废是终态。',
+        help: '合同所处的生命周期环节。状态只能按规定的路径流转；已到期、已终止、已作废是终态。',
         options: {
           draft: '草稿',
           submitted: '已提交',
@@ -137,7 +137,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       currency_code: {
         label: '币种',
-        help: 'ISO 4217 代码。组织级默认币种是一项设置，不写死在模型里；出厂默认为美元。',
+        help: 'ISO 4217 代码。组织级默认币种是一项设置；出厂默认为美元。',
         options: {
           usd: 'USD — 美元',
           eur: 'EUR — 欧元',
@@ -246,7 +246,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       approval_status: {
         label: '审批状态',
-        help: '审批流的结果镜像，由流程写入，不要手工修改。',
+        help: '审批的结果，由审批流程写入，不要手工修改。',
         options: {
           not_required: '无需审批',
           pending: '审批中',
@@ -279,7 +279,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       termination_reason: {
         label: '终止原因',
-        help: '为什么在期限届满前结束这份合同。终止时必填（设计方案第 3 章「生效 → 已终止」守卫）；只在按下「终止」时问一次，发起表单上不出现。',
+        help: '为什么在期限届满前结束这份合同。终止时必填；只在按下「终止」时问一次，发起表单上不出现。',
       },
       archived_at: {
         label: '归档时间',
@@ -304,11 +304,11 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       open_deviation_count: {
         label: '未决偏离数',
-        help: '仍未处理的条款偏离条数。用于列表展示和排序；送审时的拦截会直接查子记录，不依赖这个汇总值。',
+        help: '仍未处理的条款偏离条数，用于列表展示和排序；送审时检查的是偏离本身，而不是这个数字。',
       },
       overdue_obligation_count: {
         label: '逾期义务数',
-        help: '已经逾期的履约义务条数。只有每日检查把某条义务改为逾期时，这个数字才会变化。',
+        help: '已经逾期的履约义务条数。只有每日检查会把义务标记为逾期。',
       },
       planned_amount: {
         label: '计划金额',
@@ -576,7 +576,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       is_current: {
         label: '当前版本',
-        help: '谈判当前所在的版本。签署前的清稿检查读的就是这个标记。',
+        help: '谈判当前所在的版本。只有当前版本是清稿时，合同才能进入签署。',
       },
       file: {
         label: '文件',

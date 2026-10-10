@@ -110,7 +110,8 @@ export const Party = ObjectSchema.create({
         { label: 'Watch',   value: 'watch',   color: '#F59E0B' },
         { label: 'Blocked', value: 'blocked', color: '#EF4444' },
       ],
-      description: 'Blocked parties cannot be chosen on a new contract (intake guard, F1).',
+      // Enforced by the intake guard (F1) and the contract state machine.
+      description: 'Blocked parties cannot be chosen on a new contract.',
     }),
     risk_note: Field.textarea({
       label: 'Risk Note',
@@ -121,7 +122,8 @@ export const Party = ObjectSchema.create({
       group: 'risk',
       required: true,
       storage: { notNull: true },
-      description: 'Result of the last sanctions / registry screening. Written by the screening connector when one is configured (DESIGN.md §08), otherwise by legal.',
+      // The screening connector is DESIGN.md §08.
+      description: 'Result of the last sanctions / registry screening. Written by the screening connector when one is configured, otherwise by legal.',
       options: [
         { label: 'Not screened', value: 'not_screened', color: '#94A3B8', default: true },
         { label: 'Clear',        value: 'clear',        color: '#2F7D5B' },
