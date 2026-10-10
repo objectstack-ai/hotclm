@@ -177,7 +177,7 @@ export const LegalDashboard: Dashboard = {
        */
       id: 'review_ageing',
       title: 'In Review Over 30 Days',
-      description: 'Older than every seeded type SLA (longest is 10 days) — a fixed threshold, not the per-type breach',
+      description: 'Contracts in legal review for more than 30 days. A fixed threshold, not each contract type\'s own review SLA.',
       type: 'metric',
       dataset: 'contract_metrics',
       values: ['contract_count'],
@@ -188,7 +188,7 @@ export const LegalDashboard: Dashboard = {
     {
       id: 'negotiation_stalled',
       title: 'Waiting on Counterparty',
-      description: 'The ball is in their court — the queue F4 chases',
+      description: 'The ball is in their court — the queue to chase',
       type: 'metric',
       dataset: 'contract_metrics',
       values: ['contract_count'],
@@ -230,7 +230,7 @@ export const LegalDashboard: Dashboard = {
        */
       id: 'approval_throughput',
       title: 'Approved This Month',
-      description: 'Contracts reaching approved this month, against the previous period. Not an average duration — see the PR.',
+      description: 'Contracts approved this month, compared with last month. A count, not an average turnaround time.',
       type: 'metric',
       dataset: 'contract_metrics',
       values: ['contract_count'],

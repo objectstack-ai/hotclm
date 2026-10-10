@@ -110,7 +110,7 @@ export const FinanceDashboard: Dashboard = {
     {
       id: 'overdue_amount',
       title: 'Overdue Amount',
-      description: 'Scheduled value of instalments the daily job has stamped overdue',
+      description: 'Scheduled value of instalments the daily check has marked overdue',
       type: 'metric',
       dataset: 'payment_metrics',
       values: ['overdue_amount'],

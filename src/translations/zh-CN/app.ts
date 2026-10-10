@@ -188,7 +188,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         review_ageing: {
           title: '审查超过 30 天',
-          description: '超过所有种子类型的审查时限（最长 10 天）—— 这是一条固定阈值，不是按类型判定的超时',
+          description: '在法务审查中超过 30 天的合同。这是一条固定阈值，不是各合同类型自己的审查时限。',
         },
         negotiation_stalled: {
           title: '等待对方',
@@ -196,7 +196,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         approval_throughput: {
           title: '本月已批准',
-          description: '本月进入已批准的合同数，与上一周期对比。这不是平均时长，原因见 PR 说明。',
+          description: '本月进入已批准的合同数，与上个月对比。这是数量，不是平均周转时长。',
         },
         stage_funnel: {
           title: '各阶段合同数',
