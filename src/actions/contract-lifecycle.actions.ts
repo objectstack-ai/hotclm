@@ -11,16 +11,28 @@ import { P } from '@objectstack/spec';
  * `TRANSITIONS`, refuses every edge that is not in it, and stamps the lifecycle
  * timestamps on the ones that are (DESIGN.md §03 状态机 — "State transitions are
  * enforced in hooks, never only hidden in the UI"). These actions are the
- * BUTTON, nothing more: each writes one field to the current record on the data
- * plane AS THE CALLER, so the object permission, the row-level write window and
- * the hook all fire exactly as they do for a hand edit of the status field.
+ * BUTTON, nothing more: each writes one field to the current record, and the
+ * hooks fire exactly as they do for a hand edit of the status field.
+ *
+ * ⚠️ The write is NOT made as the caller. A script action's body is TRUSTED:
+ * the platform hands it a system-elevated `ctx.api` (`{ ...caller, isSystem:
+ * true }`), and the security layer skips an `isSystem` write entirely — no
+ * row-level window, no CHECK, no field-level security. Measured on 17.7.0
+ * (issue #90): the server logs `[action-audit] REST action
+ * 'clm_contract/submit_contract' — body executes TRUSTED (system-elevated
+ * context, RLS/FLS-bypassing)` on every press. What still binds the caller
+ * is (1) the route's caller-scoped load of the subject record — a record the
+ * caller cannot READ answers 404 before the body runs — and (2)
+ * `requiredPermissions`, which ADR-0066 D4 enforces with a 403 on the action
+ * route as well as hiding the button. An earlier version of this comment said
+ * the write went through "AS THE CALLER", which is why the header Submit kept
+ * working while every caller-scoped submission (the intake wizard's "Submit
+ * now", a `PATCH` of `status`) was refused by the requester's edit window.
  *
  * That is why `visible` here is a convenience and not a control. A requester
  * who reaches `POST /api/v1/actions/clm_contract/activate_contract` on a draft
  * gets the hook's refusal ("Contract status cannot go from draft to active"),
- * not a silent write — the CEL predicate only spares them the click. The half
- * that IS a control is `requiredPermissions`, which ADR-0066 D4 enforces with a
- * 403 on the action route as well as hiding the button.
+ * not a silent write — the CEL predicate only spares them the click.
  *
  * ## The one §05 action here that is NOT a status write
  *
@@ -96,9 +108,13 @@ const transition = (
   ...(requiredPermissions ? { requiredPermissions: [...requiredPermissions] } : {}),
 });
 
-/** 提交 — the requester hands the draft over. No capability gate: the row-level
- *  write window (`clm_requester`'s `contract_requester_edit_window`) is what
- *  says whose draft this is, and every set that edits contracts carries its own. */
+/** 提交 — the requester hands the draft over. No capability gate. What limits
+ *  whose draft can be submitted here is the route's caller-scoped READ of the
+ *  record (see the header) — NOT `clm_requester`'s
+ *  `contract_requester_edit_window`, which the trusted body skips. The
+ *  caller-scoped doors (the intake wizard, a `PATCH`) are judged by that
+ *  window, and land inside it since F2's onward hop became a system write
+ *  (`contract_route_onward`). */
 export const SubmitContractAction: Action = transition(
   'submit_contract', 'Submit', 'send',
   'draft', 'submitted',
