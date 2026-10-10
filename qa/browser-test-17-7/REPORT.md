@@ -269,9 +269,53 @@ These were measured, not assumed:
       - **finance and records:** legal widgets 0; USD 9,407,000; 30 overdue = 3,413,450.
     - Analytics is scoped per audience, matching each audience's own data reads.
 
+## Confirmation of #88 on the new `main` (tree `46e65f0`, 17.7.0)
+
+- **Setup:** PR #88 merged at `46e65f0`. I booted a detached worktree of `origin/main` @ `46e65f0` with `pnpm dev`, on a copy of this run's database. The boot was clean: 41 plugins, no degraded capabilities.
+- **Requester (`149`):** Business Requester 1's Discussion tab now loads the thread and its activity:
+  - `GET sys_comment`, `GET sys_activity` and `GET sys_attachment` → 200, where `c31c7e2` answered 403.
+  - Posting a comment → `POST /api/v1/data/sys_comment → 201`.
+- **Lawyer (`150`):** Legal Counsel 1, same readings.
+- **Still 403 on the same page:** `GET sys_approval_request?…record_id=…` (the Approvals tab). That is already filed as objectstack#22559.
+- **New, minor:** the activity feed attributes every change to "System", including the requester's own create and legal's updates (`149`). It is listed below.
+
+## Platform issues to file
+
+All on 17.7.0. Owner: **objectui** = Console UI; **objectstack** = server, spec, runtime.
+
+Already filed, so not repeated here:
+
+- objectui#12079: empty navigation → Studio home (was #89)
+- objectui#12080: 448px single-column screen-flow dialog with Submit below the fold
+- objectui#12047: Upload shown to callers who cannot attach
+- objectstack#22559: `sys_approval_request` data door
+- objectstack#22558: `manager:undefined` in `pending_approvers`
+- objectstack#22507: flow-screen options and description untranslatable
+
+| # | Symptom | Minimal repro | Evidence | Owner | Dedupe words |
+|---|---|---|---|---|---|
+| P1 | An action's parameter dialog taller than the viewport cannot be scrolled; the first required fields sit above the top edge (measured `height 2198px, top -649px, overflow-y: visible`). This may share a root with objectui#12080, but it is the **action params** dialog, not a flow screen. | An action with ~20 `params`, opened from a list toolbar on a 900px-high viewport. | `111`, `112` | objectui | action params dialog overflow scroll viewport clipped top required field unreachable |
+| P2 | A create form leaves a required select empty although one option declares `default: true`; Create is refused with "Status is required". | `Field.select({ required: true, options: [{ value: 'open', default: true }, …] })` → open New from a related list. | `050` | objectui | select option default true ignored create form prefill required |
+| P3 | A hook's refusal reaches the user with the internal prefix `hook '<name>' threw: Error: …`. | A `beforeUpdate` hook that throws `new Error('msg')` with `status 422`, reached through `POST /api/v1/actions/<obj>/<action>`; read the toast. | `053`, `077` | objectstack | hook threw prefix error message toast action 422 internal |
+| P4 | The calendar view fetches `top=100` with no date-window filter, so with more than 100 rows some events are never plotted. | A calendar view over an object with 122 rows: `GET /api/v1/data/<obj>?top=100&select=…,<startDateField>` and no filter. | `041` plus the network reading | objectui | calendar view top 100 cap date range window missing events |
+| P5 | `GET /api/v1/data/<obj>?top=0` answers `{"total":0}` while `?top=1` answers `{"total":122}`. The console sends this `top=0` probe on every list page. | `GET /api/v1/data/clm_contract?top=0`. | network readings | objectstack | top=0 total zero count probe |
+| P6 | The grid footer "Sum" totals only the visible page but sits beside the full row count ("Sum: 3,685,900.00 · 300 records"; all 300 rows sum to 40,607,000). | A list view with a currency column and more than one page. | `096` | objectui | grid footer aggregate sum current page only total records misleading |
+| P7 | No Edit button on a record page for a user whose `PATCH` succeeds (`/security/explain` update → `allowed:true`, `PATCH → 200`); only the platform admin gets Edit. | Sign in as a `clm_finance_controller` and open any `clm_payment_plan` record. | `098` | objectui | record header edit button hidden explain allowed patch 200 master-detail |
+| P8 | Setup → Create User posts `generatePassword:true, mustChangePassword:true` by default and ignores the typed password; the account gets a one-time password and a forced change. | Setup → Users → Create User, type a password, Confirm. | `006`, `007` | objectui | create user dialog password ignored generatePassword default mustChangePassword |
+| P9 | `/security/explain` answers `allowed:true` for an update the write door then refuses (`PATCH → 403 "You do not have access to this record"`), and for a record that read answers `RECORD_NOT_FOUND`. | `POST /api/v1/security/explain {"object":"clm_contract","operation":"update","recordIds":[id]}` as a user with no update RLS policy, then `PATCH` the same id. | readings in finding 4 | objectstack | security explain allowed true contradicts write rls fail-closed record not found |
+| P10 | The approval request sheet shows raw option values (`nda`, `other`, `in_approval`) instead of labels. | Open any pending request in the Approvals Inbox. | `065` | objectui | approval inbox sheet payload raw select values labels |
+| P11 | A lookup picker offers "Create new" to a user without create permission on the target object. | As a user without create on the target, open a lookup field's picker (here the intake wizard's Contract type). | `014` | objectui | lookup picker create new shown without create permission |
+| P12 | A list toolbar shows New and Import to a user whose object permission has `allowCreate: false`. | Sign in as `clm_records_manager` and open a `clm_contract` list. | button reading | objectui | list toolbar new import shown allowCreate false |
+| P13 | A file field renders "no file" for a user who can read the record but not `sys_file` (log: `sys_file lookup failed; file fields keep their raw ids`). | As `clm_requester`, open a `clm_contract_version` the user just uploaded. | `036` plus the log line | objectstack | sys_file read denied file field hydration no file attachment |
+| P14 | The record activity feed attributes every change to "System", including user-made creates and updates. | On `46e65f0`, open the Discussion tab of a contract created and edited by named users. | `149` | objectstack | activity feed actor System attribution audit user |
+| P15 | A flow run's summary reports `acted: 0` while the run sent notifications. | `POST /api/v1/automation/legal_review_sla/trigger` → `summary.acted 0`, then read the assignees' `sys_inbox_message`. | readings in suspect 2 | objectstack | flow run summary acted zero notifications sent trigger |
+| P16 | The header activity-feed widget calls the global `sys_activity` list and gets 403 for every non-admin on every page; the server also logs `[audit] activity read visibility: candidate pre-scan hit the 2000-row cap … fail-closed and may omit visible rows`. | Sign in as any non-admin and load any page. | readings in finding 9 | objectui (call) and objectstack (cap) | header activity feed sys_activity 403 global unscoped 2000-row cap |
+
+Per the maintainer's rule 「平台的问题就等平台」, the app proposes no workaround for any of these.
+
 ## Product files unchanged
 
-`git diff --stat origin/main -- . ':!qa/browser-test-17-7'` (origin/main = `c31c7e2`):
+`git diff --stat c31c7e2 -- . ':!qa/browser-test-17-7'`. This branch is based on `c31c7e2`; `origin/main` has since moved to `46e65f0` with #88, so the diff is taken against the base the run measured:
 
 ```
 (empty)
@@ -336,3 +380,5 @@ These were measured, not assumed:
 | 140 | zh-CN: contract detail page |
 | 141–144 | zh-CN: all three dashboards; Pipeline by Stage chart labels in Chinese |
 | 145–148 | Suspect 7: Clause Library list, clause record with its wording, counterparty record |
+| 149-46e65f0-req1-discussion-tab | **Tree `46e65f0`**: requester's Discussion tab loads after #88; comment posted (201) |
+| 150-46e65f0-legal1-discussion-tab | **Tree `46e65f0`**: legal counsel's Discussion tab loads; comment posted (201) |
