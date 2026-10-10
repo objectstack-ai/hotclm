@@ -38,7 +38,7 @@ export const ContractVersion = ObjectSchema.create({
       readonly: true,
       searchable: true,
       maxLength: 80,
-      description: 'Stored mirror "v<version_no> · <kind>", stamped by mirror.hook.ts.',
+      description: 'Filled in automatically from the version number and kind, e.g. "v2 · Clean".',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',
@@ -84,7 +84,8 @@ export const ContractVersion = ObjectSchema.create({
       label: 'Current',
       group: 'version',
       defaultValue: false,
-      description: 'The version negotiation is currently on. The clean-version guard before signing reads this flag.',
+      // The approved → signing guard in contract.hook.ts reads this flag.
+      description: 'The version negotiation is currently on. A contract can go to signing only once its current version is a clean copy.',
     }),
 
     file: Field.file({

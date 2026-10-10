@@ -17,7 +17,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Review',
-        help: 'Stored mirror "<stage> · <reviewer>", stamped by mirror.hook.ts.',
+        help: 'Filled in automatically as "stage · reviewer".',
       },
       contract: {
         label: 'Contract',
@@ -83,7 +83,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Deviation',
-        help: 'Stored mirror "<clause title> · <status>", stamped by mirror.hook.ts.',
+        help: 'Filled in automatically as "clause title · status".',
       },
       contract: {
         label: 'Contract',
@@ -110,7 +110,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       status: {
         label: 'Status',
-        help: 'open → accepted / rejected / withdrawn; the decided states are terminal (contract.hook.ts).',
+        help: 'Moves from Open to Accepted, Rejected or Withdrawn; those three are final.',
         options: {
           open: 'Open',
           accepted: 'Accepted',
@@ -144,7 +144,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Signature',
-        help: 'Stored mirror "<method> · <status>", stamped by mirror.hook.ts.',
+        help: 'Filled in automatically as "method · status".',
       },
       contract: {
         label: 'Contract',
@@ -158,7 +158,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       provider: {
         label: 'Provider',
-        help: 'E-signature provider the envelope was sent through. Regional packs append their own (DESIGN.md §13 Q7).',
+        help: 'E-signature provider the envelope was sent through. Regional add-ons can add their own providers.',
         options: {
           docusign: 'DocuSign',
           adobe_sign: 'Adobe Acrobat Sign',
@@ -167,7 +167,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       envelope_id: {
         label: 'Envelope ID',
-        help: 'The provider\'s envelope or agreement id, for status polling and audit (F8).',
+        help: 'The provider\'s envelope or agreement id, for status checks and audit.',
       },
       signers: {
         label: 'Signers',
@@ -185,7 +185,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       formalities_done: {
         label: 'Formalities Done',
-        help: 'Same value set as clm_contract_type.execution_formalities. Activation waits until every formality the type requires is ticked here on a completed round.',
+        help: 'Same values as the contract type\'s execution formalities. Activation waits until every formality the type requires is ticked here on a completed round.',
         options: {
           countersigned_copy: 'Countersigned copy returned',
           company_seal: 'Company seal',
@@ -222,7 +222,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Obligation',
-        help: 'Stored mirror of title, stamped by mirror.hook.ts.',
+        help: 'Filled in automatically from the title.',
       },
       contract: {
         label: 'Contract',
@@ -233,7 +233,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       kind: {
         label: 'Kind',
-        help: 'What class of commitment this is; the reminder job and the dashboards band on it.',
+        help: 'What class of commitment this is; reminders and dashboards group by it.',
         options: {
           deliverable: 'Deliverable',
           payment: 'Payment',
@@ -245,7 +245,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       due_date: {
         label: 'Due Date',
-        help: 'The date the daily job (card 09) measures arrears against.',
+        help: 'The date the daily check measures arrears against.',
       },
       owner: {
         label: 'Owner',
@@ -253,7 +253,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       status: {
         label: 'Status',
-        help: 'pending → in_progress / done / waived / overdue; in_progress → done / waived; overdue → done / waived. Enforced by contract.hook.ts; overdue is written only by the daily job (card 09).',
+        help: 'Pending moves to In Progress, Done, Waived or Overdue; In Progress to Done, Waived or Overdue; Overdue to Done or Waived. Done and Waived are final. Only the daily check sets Overdue.',
         options: {
           pending: 'Pending',
           in_progress: 'In Progress',
@@ -300,22 +300,22 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Instalment',
-        help: 'Stored mirror "#<seq> · <planned_date>", stamped by mirror.hook.ts. ASCII by design; the localized form belongs to the zh-CN bundle.',
+        help: 'Filled in automatically as "#instalment number · planned date".',
       },
       contract: {
         label: 'Contract',
       },
       seq: {
         label: 'Instalment No.',
-        help: 'Position in the schedule, 1-based. Unique within the contract.',
+        help: 'Position in the schedule, starting at 1. Unique within the contract.',
       },
       planned_date: {
         label: 'Planned Date',
-        help: 'The date the daily job (card 09) measures arrears against.',
+        help: 'The date the daily check measures arrears against.',
       },
       planned_amount: {
         label: 'Planned Amount',
-        help: 'In the contract currency (clm_contract.currency_code); the instalment amounts are not separately denominated.',
+        help: 'In the contract currency; the instalment amounts are not separately denominated.',
       },
       condition: {
         label: 'Condition',
@@ -323,7 +323,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       status: {
         label: 'Status',
-        help: 'planned → due; due → partial / paid / overdue; overdue → partial / paid. Enforced by contract.hook.ts; overdue is written only by the daily job (card 09).',
+        help: 'Planned moves to Due; Due to Partial, Paid or Overdue; Partial to Paid or Overdue; Overdue to Partial or Paid. Paid is final. Only the daily check sets Overdue.',
         options: {
           planned: 'Planned',
           due: 'Due',
@@ -338,7 +338,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       actual_amount: {
         label: 'Actual Amount',
-        help: 'What actually arrived, in the contract currency. Below planned_amount on a partial instalment.',
+        help: 'What actually arrived, in the contract currency. Below the planned amount on a partial instalment.',
       },
       invoice_no: {
         label: 'Invoice Number',

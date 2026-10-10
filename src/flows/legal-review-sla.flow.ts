@@ -52,7 +52,10 @@ import { holdersPrelude, rowBody, sweepFlow } from './_daily-sweep.js';
 export const LegalReviewSlaFlow: Flow = sweepFlow({
   name: 'legal_review_sla',
   label: 'Legal Review Running Long',
-  description: 'Daily: remind the legal owner of a contract that has been in review over 30 days, and copy the head of legal once it passes 60. A fixed threshold, stated in the message — decision #31 ruled 2B, the per-type SLA needs platform date support (objectstack#16737).',
+  // A fixed threshold, stated in the message — decision #31 ruled 2B: the
+  // per-type SLA needs platform date support (objectstack#16737). See the
+  // header above.
+  description: 'Daily: remind the legal owner of a contract that has been in review over 30 days, and copy the head of legal once it passes 60. A fixed threshold, not each contract type\'s own review SLA.',
   prelude: holdersPrelude('clm_legal_head', 'legalHeads'),
   stages: [
     {
