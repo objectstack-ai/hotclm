@@ -621,8 +621,10 @@ const handBackInReview = (contracts: readonly ContractPlan[]): ContractPlan[] =>
 /**
  * Has F12 (`renewal_notice`) already flagged this contract `is_expiring`?
  *
- * The fixture is the book as the daily jobs leave it at the START of boot day:
- * every earlier day's run has happened, today's has not. F12 flags a contract
+ * For F12 and F13 this fixture is the book as a daily run leaves it at the
+ * START of boot day: every earlier day's run has happened, today's has not
+ * (claimed for these two jobs only — F11's seeded `partial` instalments past
+ * their planned date are not read this way). F12 flags a contract
  * on the first run on or after its notice deadline (`end_date -
  * renewal_notice_days`), so a deadline on an EARLIER day was flagged by that
  * day's run, and a deadline of today is still waiting for today's. `< 0`, not
@@ -688,8 +690,10 @@ export const RENEWAL_DEADLINE_TODAY = 1;
  *
  * ⚠️ The non-renewing row is one more contract in #41's set: once F13 has
  * expired it, re-running `pnpm demo` re-asserts `active` on a terminal
- * contract. #41 is the open decision on exactly that, and it already covers
- * every contract the jobs move; this row only makes it reachable on boot day.
+ * contract — measured on this fixture: `819 ok / 1 error`, that row refused
+ * by `contract_state_machine`, loudly. #41 is the open decision on exactly
+ * that and covers every contract the jobs move; this row makes it reachable
+ * on boot day instead of five days after it.
  */
 export const TERM_ENDED_YESTERDAY_PER_BRANCH = 1;
 
