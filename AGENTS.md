@@ -132,7 +132,7 @@ docs/backlog/           work cards                     docs/requirements/       
 | Governed surface (maintainer merges) | `DESIGN.md` §01–§04 · `AGENTS.md` · `CLAUDE.md` · `LICENSE` · `CHANGELOG.md` · `docs/design/**`. A PR touching any of these is ACCEPTed and left open with a `## 维护者速读` comment. |
 | Decisions stay with the maintainer | The merge authorization covers **merging**, not deciding. Product semantics, `DESIGN.md` §01–§04 wording, and anything on the escalation ladder still becomes a `needs-user-decision` card. |
 | Capability expansion | **Tight.** No new runtime dependency, plugin, `requires:` capability or external service unless the card says so. Propose via `needs_decision`. |
-| Platform gaps | **Report, never patch.** A platform limitation goes to objectstack-ai/objectstack as an issue (symptom, minimal repro, expected capability, platform version) and is appended to its `docs/PLATFORM_GAPS_FROM_TEMPLATES.md`. The app may carry an env-gated temporary fixture that names the platform issue. |
+| Platform gaps | **Report, then wait — never patch, never work around.** A platform limitation goes to objectstack-ai/objectstack as an issue (symptom, minimal repro, expected capability, platform version) and is appended to its `docs/PLATFORM_GAPS_FROM_TEMPLATES.md`. The app does not reshape its own metadata to dodge a platform defect (splitting a screen, moving a gate, duplicating a page or a check), and carries no temporary fixture for one: the card that needs the fix carries `Blocked-by:` the platform issue and waits for it. Maintainer, 2026-10-10, verbatim: 「平台的问题就等平台」. |
 | Scope | Deliver the card, whole. Out-of-scope findings become new unassigned issues, not riders. |
 
 ### PM dispatch
