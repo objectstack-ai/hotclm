@@ -537,6 +537,9 @@ export const contract: Record<string, ObjectTranslationData> = {
       contract_entity_is_active_company: {
         message: 'Our Signing Entity must be one of our active legal entities: a business unit of kind Company that is still active. A department, an office or a retired company cannot sign. Choose an entity from the list, or ask an administrator to add or reactivate it in Setup → Business Units.',
       },
+      contract_department_is_department: {
+        message: 'Requesting Department must be a department: a business unit of kind Department. A company, a division, an office or a cost centre cannot be the requesting department. Choose a department from the list, leave the field empty, or ask an administrator to add the department in Setup → Business Units.',
+      },
     },
   },
 

@@ -210,11 +210,13 @@ export const Contract = ObjectSchema.create({
       group: 'parties',
       description: 'The department that launched the contract. The choices are the department-kind business units in Setup → Business Units. Sharing contracts by department is a customer-specific extension, not part of the standard product.',
       // The picker offers active departments only, never a company, division,
-      // office or cost centre. The picker is the only check on kind: a write
-      // that bypasses it may name a unit of another kind (measured on 18.1.0,
-      // 200), while an id that names no unit is refused by the engine
-      // (`reference_not_found`). No write-side rule like `our_entity`'s
-      // `contract_entity_is_active_company` exists for it (#109 reports why).
+      // office or cost centre. The picker is convenience; the rule on kind is
+      // `contract_department_is_department` below, which refuses a unit of
+      // another kind on every write path that sets or changes the department
+      // (#129). An id that names no unit is refused by the engine
+      // (`reference_not_found`). Unlike `our_entity`'s rule it does not judge
+      // `active`: a department retired since must not block the renewal that
+      // copies it, so only the picker hides retired units.
       lookupFilters: [
         { field: 'kind', operator: 'eq', value: 'department' },
         { field: 'active', operator: 'eq', value: true },
@@ -658,6 +660,40 @@ export const Contract = ObjectSchema.create({
         condition: P`record.our_entity.kind != "company" || record.our_entity.active != true`,
         fields: ['our_entity'],
         message: 'Our Signing Entity must be one of our active legal entities: a business unit of kind Company that is still active. A department, an office or a retired company cannot sign. Choose an entity from the list, or ask an administrator to add or reactivate it in Setup → Business Units.',
+      },
+    },
+    // `department`'s lookupFilters likewise shape the picker only: a REST
+    // PATCH, an import or a headless `launch_contract` stored a company or an
+    // office as the requesting department (#129). The same rule shape as
+    // `contract_entity_set` above, for the same reasons, with two differences:
+    //
+    //  - `department` is optional, so `when` also requires a value. An empty
+    //    department is a valid answer, and a hop through an empty reference
+    //    has no row to read: the engine refuses that write as unevaluable
+    //    rather than passing it, so the guard must sit in `when`, outside the
+    //    hop. Empty means `null` or `""`: the engine stores a REST write of
+    //    `""` as given (measured on 18.1.0), and without the second half that
+    //    write was refused "could not be evaluated".
+    //  - it judges `kind` only, never `active`. The department is a reporting
+    //    field, and F12 / F13 renewals insert a new contract that copies it;
+    //    judging `active` would refuse the renewal of every contract whose
+    //    department has been retired since. The picker already hides retired
+    //    units for a person choosing one.
+    {
+      type: 'conditional' as const,
+      name: 'contract_department_set',
+      label: 'Requesting department set or changed',
+      description: 'Judges department only on a write that sets or changes it to a unit; an empty or unchanged department is never judged.',
+      when: P`record.department != null && record.department != "" && (previous == null || previous.department != record.department)`,
+      message: 'Requesting Department must be a department.',
+      then: {
+        type: 'cross_field' as const,
+        name: 'contract_department_is_department',
+        label: 'Requesting department is a department',
+        description: 'A write that sets department must name a department-kind business unit.',
+        condition: P`record.department.kind != "department"`,
+        fields: ['department'],
+        message: 'Requesting Department must be a department: a business unit of kind Department. A company, a division, an office or a cost centre cannot be the requesting department. Choose a department from the list, leave the field empty, or ask an administrator to add the department in Setup → Business Units.',
       },
     },
   ],

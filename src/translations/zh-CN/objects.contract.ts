@@ -537,6 +537,9 @@ export const contract: Record<string, ObjectTranslationData> = {
       contract_entity_is_active_company: {
         message: '我方签约主体必须是仍在启用的我方法律主体，即类型为公司且处于启用状态的业务单元。部门、办事处或已停用的公司不能作为签约方。请从列表中选择签约主体，或请管理员在「设置 → 业务单元」中新增或重新启用它。',
       },
+      contract_department_is_department: {
+        message: '发起部门必须是部门，即类型为部门的业务单元。公司、事业部、办事处或成本中心不能作为发起部门。请从列表中选择部门、将此字段留空，或请管理员在「设置 → 业务单元」中新增该部门。',
+      },
     },
   },
 
