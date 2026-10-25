@@ -201,9 +201,6 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
         label: '完成时间',
         help: '本轮完成时自动写入，除非显式指定；湿签需要登记实际签署日期。',
       },
-      notes: {
-        label: '备注',
-      },
     },
     _sections: {
       round: {

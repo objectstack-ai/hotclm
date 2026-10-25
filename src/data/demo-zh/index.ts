@@ -12,7 +12,6 @@ import {
   REVIEW_COMMENTS,
   REVIEW_INTERNAL_NOTES,
   RISK_NOTES,
-  SIGNATURE_NOTES,
   SIGNING_ENTITIES,
   TERMINATION_REASONS,
   TITLE_QUALIFIERS,
@@ -40,7 +39,6 @@ export const ZH_CN: DemoStrings = {
   reviewInternalNotes: REVIEW_INTERNAL_NOTES,
   deviationTexts: DEVIATION_TEXTS,
   deviationJustifications: DEVIATION_JUSTIFICATIONS,
-  signatureNotes: SIGNATURE_NOTES,
   terminationReasons: TERMINATION_REASONS,
   jurisdictions: JURISDICTIONS,
 };

@@ -201,9 +201,6 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
         label: 'Completed At',
         help: 'Stamped when the round completes, unless set explicitly (a wet-ink round records the actual signing date).',
       },
-      notes: {
-        label: 'Notes',
-      },
     },
     _sections: {
       round: {

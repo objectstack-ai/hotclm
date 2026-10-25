@@ -130,10 +130,6 @@ export const Signature = ObjectSchema.create({
       group: 'execution',
       description: 'Stamped when the round completes, unless set explicitly (a wet-ink round records the actual signing date).',
     }),
-    notes: Field.textarea({
-      label: 'Notes',
-      group: 'execution',
-    }),
   },
 
   enable: {

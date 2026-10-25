@@ -128,13 +128,6 @@ export const DEVIATION_JUSTIFICATIONS: readonly string[] & { length: 6 } = [
   'Requested by the business without a supporting rationale; legal recommends refusal.',
 ] as const;
 
-export const SIGNATURE_NOTES: readonly string[] & { length: 4 } = [
-  'Envelope sent to both signatories; awaiting the counterparty’s signature.',
-  'Signed electronically by both parties. Countersigned copy filed.',
-  'Wet-ink round: originals exchanged by courier and the company seal applied.',
-  'Notarisation booked; the witnessed copy is still outstanding.',
-] as const;
-
 /**
  * Why the four terminated contracts were ended early — the answer legal and
  * audit ask for first, which is why `termination_reason` is required to
