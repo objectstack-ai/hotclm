@@ -60,6 +60,10 @@ Two rules about what that evidence may claim:
   degraded capabilities`, `no such table`, or a plugin that failed to load each mean the app is
   running as something other than the product; a card that ships on top of that state has not been
   verified. This is not hypothetical — see the fixture in `pnpm-workspace.yaml`.
+  One by-design exception: with scheduled work off (the platform default, kept for `pnpm dev`),
+  boot lists the daily sweeps as `NOT bound — disabled by deployment policy`; that notice is not a
+  failing boot. `pnpm demo` sets `OS_AUTOMATION_SCHEDULED_WORK_ENABLED=true` and binds them (#82,
+  ruling C).
 - **Report what the browser did, not what you expect it to do.** "The list should render" is not
   evidence. `GET /api/v1/data/clm_contract → 200 {"total":0}` is.
 
