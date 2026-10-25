@@ -117,7 +117,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       legal_owner: {
         label: 'Legal Owner',
-        help: 'The lawyer who accepted the review. Required before a submitted contract enters review.',
+        help: 'The lawyer in legal who owns this contract\'s file. Usually assigned when the contract enters legal review; a backfilled contract skips review, so legal names its lawyer here directly.',
       },
       current_turn: {
         label: 'Ball In Court',
