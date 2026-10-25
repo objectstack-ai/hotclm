@@ -1,6 +1,7 @@
 import type { Flow } from '@objectstack/spec/automation';
 import { HAS_RECIPIENT, NO_RECIPIENT, rowBody, sweepFlow } from './_daily-sweep.js';
 import { RENEWAL_DRAFT_FIELDS } from './renewal-notice.flow.js';
+import { must, ref } from './_values.js';
 
 /**
  * F13 `expiration_sweep` — the day a contract's term runs out (DESIGN.md §06
@@ -71,19 +72,19 @@ export const ExpirationSweepFlow: Flow = sweepFlow({
             label: 'Mark Expired',
             config: {
               objectName: 'clm_contract',
-              filter: { id: '{expired.id}' },
+              filter: { id: must('expired.id') },
               fields: { status: 'expired' },
             },
           },
         ],
-        recipients: { primary: '{expired.owner_id}', also: '{expired.legal_owner}' },
+        recipients: { primary: ref('expired.owner_id'), also: ref('expired.legal_owner') },
         notice: {
           topic: 'clm_contract_expired',
           severity: 'warning',
           sourceObject: 'clm_contract',
-          sourceId: '{expired.id}',
-          title: 'Expired: {expired.title}',
-          message: 'Contract {expired.contract_number} ended on {expired.end_date} and is now expired. It does not auto-renew. Start a renewal if the relationship continues, and hand it to the records desk for archiving.',
+          sourceId: ref('expired.id'),
+          title: 'Expired: {{ expired.title }}',
+          message: 'Contract {{ expired.contract_number }} ended on {{ expired.end_date }} and is now expired. It does not auto-renew. Start a renewal if the relationship continues, and hand it to the records desk for archiving.',
         },
       }),
     },
@@ -106,7 +107,7 @@ export const ExpirationSweepFlow: Flow = sweepFlow({
             label: 'Renewal Already Drafted?',
             config: {
               objectName: 'clm_contract',
-              filter: { renewed_from: '{expired.id}' },
+              filter: { renewed_from: must('expired.id') },
               fields: ['id', 'contract_number', 'status'],
               outputVariable: 'existingRenewal',
             },
@@ -118,7 +119,7 @@ export const ExpirationSweepFlow: Flow = sweepFlow({
             label: 'Compute The Draft',
             config: {
               function: 'clm_renewal_draft',
-              inputs: { title: '{expired.title}', endDate: '{expired.end_date}', termMonths: '{expired.term_months}' },
+              inputs: { title: ref('expired.title'), endDate: ref('expired.end_date'), termMonths: ref('expired.term_months') },
               outputVariable: 'draft',
             },
           },
@@ -138,7 +139,7 @@ export const ExpirationSweepFlow: Flow = sweepFlow({
             label: 'Who To Tell',
             config: {
               function: 'clm_notify_recipients',
-              inputs: { primary: '{expired.owner_id}', also: '{expired.legal_owner}' },
+              inputs: { primary: ref('expired.owner_id'), also: ref('expired.legal_owner') },
               outputVariable: 'recipients',
             },
           },
@@ -148,14 +149,14 @@ export const ExpirationSweepFlow: Flow = sweepFlow({
             type: 'notify',
             label: 'Notify',
             config: {
-              recipients: '{recipients.userIds}',
+              recipients: ref('recipients.userIds'),
               channels: ['inbox', 'email'],
               severity: 'warning',
               topic: 'clm_contract_auto_renewed',
               sourceObject: 'clm_contract',
-              sourceId: '{renewal.id}',
-              title: 'Renewal drafted: {expired.title}',
-              message: 'Contract {expired.contract_number} auto-renews and its term ended on {expired.end_date}, so a renewal draft has been created and linked back to it. Review the terms and submit it.',
+              sourceId: ref('renewal.id'),
+              title: 'Renewal drafted: {{ expired.title }}',
+              message: 'Contract {{ expired.contract_number }} auto-renews and its term ended on {{ expired.end_date }}, so a renewal draft has been created and linked back to it. Review the terms and submit it.',
             },
           },
           { id: 'auto_done', type: 'assignment', label: 'Row Done' },

@@ -1,7 +1,8 @@
-import { P } from '@objectstack/spec';
+import { P, expression } from '@objectstack/spec';
 import type { Flow } from '@objectstack/spec/automation';
 import { Contract } from '../objects/contract.object.js';
 import { Party } from '../objects/party.object.js';
+import { must, ref } from './_values.js';
 
 /**
  * F1 `contract_intake` — the launch form (DESIGN.md §06 F1, §02 Launch Form,
@@ -191,7 +192,7 @@ export const ContractIntakeFlow: Flow = {
     },
     {
       id: 'get_type', type: 'get_record', label: 'Load Contract Type',
-      config: { objectName: 'clm_contract_type', filter: { id: '{contract_type}' }, outputVariable: 'typeRecord' },
+      config: { objectName: 'clm_contract_type', filter: { id: must('contract_type') }, outputVariable: 'typeRecord' },
     },
     { id: 'decision_type_ok', type: 'decision', label: 'Type Active?' },
     {
@@ -215,7 +216,7 @@ export const ContractIntakeFlow: Flow = {
     { id: 'decision_intake_fields', type: 'decision', label: 'Type Lists Intake Fields?' },
     {
       id: 'intake_from_type', type: 'assignment', label: 'Intake Fields From Type',
-      config: { assignments: { intakeFields: '{typeRecord.intake_fields}' } },
+      config: { assignments: { intakeFields: ref('typeRecord.intake_fields') } },
     },
     {
       id: 'intake_none', type: 'assignment', label: 'No Intake Fields',
@@ -242,13 +243,13 @@ export const ContractIntakeFlow: Flow = {
         fields: [
           // Carrier: the type's intake_fields, interpolated server-side to the
           // raw list, hidden by its own predicate, read by the predicates below.
-          { name: 'intakeFields', label: 'Intake fields', type: 'text', defaultValue: '{intakeFields}', visibleWhen: 'intakeFields == null' },
+          { name: 'intakeFields', label: 'Intake fields', type: 'text', defaultValue: ref('intakeFields'), visibleWhen: 'intakeFields == null' },
           { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'e.g. Mutual NDA with Acme' },
-          { name: 'our_entity', label: 'Our signing entity', type: 'select', options: optionsOf(Contract, 'our_entity'), defaultValue: '{our_entity}' },
+          { name: 'our_entity', label: 'Our signing entity', type: 'select', options: optionsOf(Contract, 'our_entity'), defaultValue: ref('our_entity') },
           { name: 'department', label: 'Requesting department', type: 'select', options: optionsOf(Contract, 'department') },
           { name: 'amount', label: 'Contract amount', type: 'currency' },
-          { name: 'currency_code', label: 'Currency', type: 'select', options: optionsOf(Contract, 'currency_code'), defaultValue: '{currency_code}' },
-          { name: 'is_amount_estimated', label: 'Amount is an estimate', type: 'boolean', defaultValue: '{is_amount_estimated}' },
+          { name: 'currency_code', label: 'Currency', type: 'select', options: optionsOf(Contract, 'currency_code'), defaultValue: ref('currency_code') },
+          { name: 'is_amount_estimated', label: 'Amount is an estimate', type: 'boolean', defaultValue: ref('is_amount_estimated') },
           { name: 'start_date', label: 'Start date', type: 'date' },
           { name: 'end_date', label: 'End date', type: 'date' },
           { name: 'term_months', label: 'Term (months)', type: 'number', placeholder: 'Instead of an end date' },
@@ -257,7 +258,7 @@ export const ContractIntakeFlow: Flow = {
           { name: 'governing_law', label: 'Governing law', type: 'text', required: true, placeholder: 'e.g. US-NY, England and Wales', visibleWhen: askedFor('governing_law') },
           { name: 'payment_terms', label: 'Payment terms', type: 'select', required: true, options: optionsOf(Contract, 'payment_terms'), visibleWhen: askedFor('payment_terms') },
           { name: 'confidentiality_term_months', label: 'Confidentiality term (months)', type: 'number', required: true, visibleWhen: askedFor('confidentiality_term_months') },
-          { name: 'auto_renew', label: 'Auto-renews', type: 'boolean', defaultValue: '{auto_renew}', visibleWhen: askedFor('auto_renew') },
+          { name: 'auto_renew', label: 'Auto-renews', type: 'boolean', defaultValue: ref('auto_renew'), visibleWhen: askedFor('auto_renew') },
           // A flat screen has no record picker (see the header): the parent
           // contract is collected as its record id.
           { name: 'parent_contract', label: 'Parent contract (record id)', type: 'text', required: true, placeholder: 'The framework or main contract this one sits under', visibleWhen: askedFor('parent_contract') },
@@ -274,7 +275,7 @@ export const ContractIntakeFlow: Flow = {
         description: 'No counterparty was picked. Create one here — legal keeps its risk flag and screening up to date afterwards.',
         fields: [
           { name: 'new_party_name', label: 'Name', type: 'text', required: true },
-          { name: 'new_party_kind', label: 'Kind', type: 'select', options: optionsOf(Party, 'party_kind'), defaultValue: '{new_party_kind}' },
+          { name: 'new_party_kind', label: 'Kind', type: 'select', options: optionsOf(Party, 'party_kind'), defaultValue: ref('new_party_kind') },
           { name: 'new_party_registration_no', label: 'Registration / tax ID', type: 'text' },
           { name: 'new_party_contact_name', label: 'Contact name', type: 'text' },
           { name: 'new_party_contact_email', label: 'Contact email', type: 'email' },
@@ -286,19 +287,19 @@ export const ContractIntakeFlow: Flow = {
       config: {
         objectName: 'clm_party',
         fields: {
-          name: '{new_party_name}',
-          party_kind: '{new_party_kind}',
-          registration_no: '{new_party_registration_no}',
-          contact_name: '{new_party_contact_name}',
-          contact_email: '{new_party_contact_email}',
+          name: ref('new_party_name'),
+          party_kind: ref('new_party_kind'),
+          registration_no: ref('new_party_registration_no'),
+          contact_name: ref('new_party_contact_name'),
+          contact_email: ref('new_party_contact_email'),
         },
         outputVariable: 'createdParty',
       },
     },
-    { id: 'use_new_party', type: 'assignment', label: 'Use New Counterparty', config: { assignments: { partyId: '{createdParty.id}' } } },
+    { id: 'use_new_party', type: 'assignment', label: 'Use New Counterparty', config: { assignments: { partyId: ref('createdParty.id') } } },
     {
       id: 'get_party', type: 'get_record', label: 'Load Counterparty',
-      config: { objectName: 'clm_party', filter: { id: '{party}' }, outputVariable: 'partyRecord' },
+      config: { objectName: 'clm_party', filter: { id: must('party') }, outputVariable: 'partyRecord' },
     },
     // The blocked-party refusal, and its two neighbours: a party that does not
     // resolve is refused too, and a clean one is used. The three edge
@@ -306,13 +307,13 @@ export const ContractIntakeFlow: Flow = {
     { id: 'decision_party_state', type: 'decision', label: 'Counterparty Blocked?' },
     {
       id: 'refuse_party_missing', type: 'script', label: 'Refuse: Counterparty Missing',
-      config: { function: 'clm_intake_refuse', inputs: { kind: 'party_missing', name: '{party}' } },
+      config: { function: 'clm_intake_refuse', inputs: { kind: 'party_missing', name: ref('party') } },
     },
     {
       id: 'refuse_blocked', type: 'script', label: 'Refuse: Counterparty Blocked',
-      config: { function: 'clm_intake_refuse', inputs: { kind: 'party_blocked', name: '{partyRecord.name}', note: '{partyRecord.risk_note}' } },
+      config: { function: 'clm_intake_refuse', inputs: { kind: 'party_blocked', name: ref('partyRecord.name'), note: ref('partyRecord.risk_note') } },
     },
-    { id: 'use_picked_party', type: 'assignment', label: 'Use Picked Counterparty', config: { assignments: { partyId: '{partyRecord.id}' } } },
+    { id: 'use_picked_party', type: 'assignment', label: 'Use Picked Counterparty', config: { assignments: { partyId: ref('partyRecord.id') } } },
 
     // ── Step 4: the first version ─────────────────────────────────────────
     { id: 'decision_document_screen', type: 'decision', label: 'Ask About The Document?' },
@@ -320,9 +321,9 @@ export const ContractIntakeFlow: Flow = {
       id: 'screen_document', type: 'screen', label: 'First Version',
       config: {
         title: 'First version',
-        description: '{templateNote}',
+        description: '{{ templateNote }}',
         fields: [
-          { name: 'draft_from_template', label: 'Draft from template', type: 'boolean', defaultValue: '{draft_from_template}' },
+          { name: 'draft_from_template', label: 'Draft from template', type: 'boolean', defaultValue: ref('draft_from_template') },
         ],
       },
     },
@@ -331,21 +332,21 @@ export const ContractIntakeFlow: Flow = {
       config: {
         objectName: 'clm_contract',
         fields: {
-          title: '{title}',
-          contract_type: '{contract_type}',
-          party: '{partyId}',
-          our_entity: '{our_entity}',
-          department: '{department}',
-          amount: '{amount}',
-          currency_code: '{currency_code}',
-          is_amount_estimated: '{is_amount_estimated}',
-          start_date: '{start_date}',
-          end_date: '{end_date}',
-          term_months: '{term_months}',
-          summary: '{summary}',
-          governing_law: '{governing_law}',
-          payment_terms: '{payment_terms}',
-          confidentiality_term_months: '{confidentiality_term_months}',
+          title: ref('title'),
+          contract_type: ref('contract_type'),
+          party: ref('partyId'),
+          our_entity: ref('our_entity'),
+          department: ref('department'),
+          amount: ref('amount'),
+          currency_code: ref('currency_code'),
+          is_amount_estimated: ref('is_amount_estimated'),
+          start_date: ref('start_date'),
+          end_date: ref('end_date'),
+          term_months: ref('term_months'),
+          summary: ref('summary'),
+          governing_law: ref('governing_law'),
+          payment_terms: ref('payment_terms'),
+          confidentiality_term_months: ref('confidentiality_term_months'),
           // `liability_cap` is deliberately absent, and the flow does not ask
           // for it: DESIGN.md §04 makes it read-only for `clm_requester` ("由法
           // 务评定"), and the launch form is the requester's. Measured on
@@ -354,10 +355,10 @@ export const ContractIntakeFlow: Flow = {
           // to edit [liability_cap]" — on CREATE and on UPDATE alike, so
           // moving the write to a later node does not rescue it. Legal sets
           // the cap during review, where §04 puts it.
-          auto_renew: '{auto_renew}',
-          parent_contract: '{parent_contract}',
+          auto_renew: ref('auto_renew'),
+          parent_contract: ref('parent_contract'),
           status: 'draft',
-          owner_id: '{$User.Id}',
+          owner_id: expression('current_user.id'),
         },
         outputVariable: 'contractRecord',
       },
@@ -368,7 +369,7 @@ export const ContractIntakeFlow: Flow = {
       config: {
         objectName: 'clm_contract_version',
         fields: {
-          contract: '{contractRecord.id}',
+          contract: ref('contractRecord.id'),
           version_no: 1,
           kind: 'draft',
           turn: 'internal',
@@ -376,8 +377,8 @@ export const ContractIntakeFlow: Flow = {
           // A file field READS as `{ id, name, size, mimeType, url }` and is
           // WRITTEN as the id (measured: the object form of the value is
           // refused with "expected string, received object").
-          file: '{typeRecord.template_file.id}',
-          submitted_by: '{$User.Id}',
+          file: ref('typeRecord.template_file.id'),
+          submitted_by: expression('current_user.id'),
           notes: 'Drafted from the contract type template.',
         },
         outputVariable: 'versionRecord',
@@ -388,13 +389,13 @@ export const ContractIntakeFlow: Flow = {
       config: {
         objectName: 'clm_contract_version',
         fields: {
-          contract: '{contractRecord.id}',
+          contract: ref('contractRecord.id'),
           version_no: 1,
           kind: 'draft',
           turn: 'internal',
           is_current: true,
-          file: '{first_version_file}',
-          submitted_by: '{$User.Id}',
+          file: ref('first_version_file'),
+          submitted_by: expression('current_user.id'),
         },
         outputVariable: 'versionRecord',
       },
@@ -407,7 +408,7 @@ export const ContractIntakeFlow: Flow = {
         description: 'The document this contract starts from. It becomes version 1.',
         objectName: 'clm_contract_version',
         mode: 'create',
-        defaults: { contract: '{contractRecord.id}', version_no: 1, kind: 'draft', turn: 'internal', is_current: true },
+        defaults: { contract: ref('contractRecord.id'), version_no: 1, kind: 'draft', turn: 'internal', is_current: true },
         idVariable: 'versionId',
       },
     },
@@ -420,7 +421,7 @@ export const ContractIntakeFlow: Flow = {
         title: 'Submit the contract',
         description: 'Choose whether to submit now. Submitting routes the contract to legal review or to approval, as its type decides.',
         fields: [
-          { name: 'submit_now', label: 'Submit now', type: 'boolean', defaultValue: '{submit_now}' },
+          { name: 'submit_now', label: 'Submit now', type: 'boolean', defaultValue: ref('submit_now') },
         ],
       },
     },
@@ -433,7 +434,7 @@ export const ContractIntakeFlow: Flow = {
       // taken by `contract_route_onward` as a system write (`contract.hook.ts`
       // says why it is a second write; issue #90 is what the single write cost).
       id: 'submit_contract', type: 'update_record', label: 'Submit Contract',
-      config: { objectName: 'clm_contract', filter: { id: '{contractRecord.id}' }, fields: { status: 'submitted' } },
+      config: { objectName: 'clm_contract', filter: { id: must('contractRecord.id') }, fields: { status: 'submitted' } },
     },
     { id: 'end', type: 'end', label: 'End' },
   ],

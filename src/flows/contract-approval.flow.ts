@@ -1,6 +1,7 @@
 import { P, expression } from '@objectstack/spec';
 import type { Flow } from '@objectstack/spec/automation';
 import { CLM_POSITION } from '../sharing/positions.js';
+import { must, ref } from './_values.js';
 
 /**
  * F5 `contract_approval` — the approval ladder (DESIGN.md §06 F5, §03 状态机,
@@ -247,7 +248,7 @@ export const ContractApprovalFlow: Flow = {
       id: 'get_contract',
       type: 'get_record',
       label: 'Get Contract',
-      config: { objectName: 'clm_contract', filter: { id: '{record.id}' }, outputVariable: 'contractRecord' },
+      config: { objectName: 'clm_contract', filter: { id: must('record.id') }, outputVariable: 'contractRecord' },
     },
     {
       id: 'normalize_routing',
@@ -256,10 +257,10 @@ export const ContractApprovalFlow: Flow = {
       config: {
         function: 'clm_route_flags',
         inputs: {
-          legal: '{contractRecord.route_legal_head}',
-          finance: '{contractRecord.route_finance}',
-          executive: '{contractRecord.route_executive}',
-          gm: '{contractRecord.route_gm}',
+          legal: ref('contractRecord.route_legal_head'),
+          finance: ref('contractRecord.route_finance'),
+          executive: ref('contractRecord.route_executive'),
+          gm: ref('contractRecord.route_gm'),
         },
         outputVariable: 'route',
       },
@@ -361,7 +362,7 @@ export const ContractApprovalFlow: Flow = {
       label: 'Mark Approved',
       config: {
         objectName: 'clm_contract',
-        filter: { id: '{record.id}' },
+        filter: { id: must('record.id') },
         // `status` only. `approved_at` is stamped by the state machine on this
         // very edge (`contract.hook.ts`: `from === 'in_approval' && to ===
         // 'approved'` ⇒ `input.approved_at = now`), so writing it here would
@@ -379,13 +380,13 @@ export const ContractApprovalFlow: Flow = {
         // `owner_id` is the platform ownership anchor and the security
         // middleware stamps the acting user on any insert that leaves it
         // empty, so the business owner is always someone.
-        recipients: '{contractRecord.owner_id}',
+        recipients: ref('contractRecord.owner_id'),
         channels: ['inbox', 'email'],
         topic: 'clm_contract_approved',
-        title: 'Contract approved: {contractRecord.title}',
-        message: 'Your contract {contractRecord.title} has cleared every approval rung. It can now go out for signature.',
+        title: 'Contract approved: {{ contractRecord.title }}',
+        message: 'Your contract {{ contractRecord.title }} has cleared every approval rung. It can now go out for signature.',
         sourceObject: 'clm_contract',
-        sourceId: '{record.id}',
+        sourceId: ref('record.id'),
       },
     },
 
@@ -396,7 +397,7 @@ export const ContractApprovalFlow: Flow = {
       label: 'Mark Rejected',
       config: {
         objectName: 'clm_contract',
-        filter: { id: '{record.id}' },
+        filter: { id: must('record.id') },
         fields: { status: 'rejected' },
       },
     },
@@ -405,11 +406,11 @@ export const ContractApprovalFlow: Flow = {
       type: 'notify',
       label: 'Notify Owner — Rejected',
       config: {
-        recipients: '{contractRecord.owner_id}',
+        recipients: ref('contractRecord.owner_id'),
         channels: ['inbox', 'email'],
         severity: 'warning',
         topic: 'clm_contract_rejected',
-        title: 'Contract rejected: {contractRecord.title}',
+        title: 'Contract rejected: {{ contractRecord.title }}',
         // §03's way forward is `rejected → draft` 修改重提 — but the copy does
         // NOT tell the owner to do it themselves, because measured against
         // card 04's row window they cannot: §04 lets a requester edit their
@@ -418,9 +419,9 @@ export const ContractApprovalFlow: Flow = {
         // contract. Naming the person who can act is the honest instruction;
         // whether §03 and §04 should agree here is a maintainer decision this
         // card files rather than settles.
-        message: 'Your contract {contractRecord.title} was rejected in approval. The approver\'s comment is on the approval record. Ask legal to return the contract to draft if you want to rework and resubmit it.',
+        message: 'Your contract {{ contractRecord.title }} was rejected in approval. The approver\'s comment is on the approval record. Ask legal to return the contract to draft if you want to rework and resubmit it.',
         sourceObject: 'clm_contract',
-        sourceId: '{record.id}',
+        sourceId: ref('record.id'),
       },
     },
 

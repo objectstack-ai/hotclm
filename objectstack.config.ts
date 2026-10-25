@@ -5,7 +5,6 @@ import * as actions from './src/actions/index.js';
 import { allFlows, flowFunctions } from './src/flows/index.js';
 import * as profiles from './src/profiles/index.js';
 import { ClmPositions, ClmSharingRules } from './src/sharing/index.js';
-import { registerClmPositionBindings, type BindHostContext } from './src/security/index.js';
 import { clmSeeds } from './src/data/index.js';
 import * as apps from './src/apps/index.js';
 import * as datasets from './src/datasets/index.js';
@@ -32,7 +31,7 @@ export default defineStack({
     // Protocol major this app is authored against. The runtime checks the
     // range at load time and refuses a major-incompatible runtime with a
     // structured diagnostic instead of failing deep in a schema parse.
-    engines: { protocol: '^17' },
+    engines: { protocol: '^18' },
   },
 
   // `ui` serves the Console; `auth` mounts the login surface and the platform
@@ -193,8 +192,8 @@ export default defineStack({
   functions: flowFunctions,
 
   // Security (DESIGN.md §04, card 04): seven positions, five permission sets,
-  // the sharing rules. Positions and sets are containers — the join rows that
-  // make a position grant anything are written by `onEnable` below.
+  // the sharing rules. Each position names the sets it distributes in its own
+  // `permissionSets` (src/sharing/positions.ts).
   positions: ClmPositions,
   permissions: Object.values(profiles),
   sharingRules: ClmSharingRules,
@@ -206,16 +205,3 @@ export default defineStack({
   // `OS_SEED_LOCALE` chooses which language the fixture is written in.
   data: clmSeeds,
 });
-
-/**
- * Declaring a position and a permission set grants nobody anything until a
- * `sys_position_permission_set` row joins them, and that row cannot be a seed
- * (the seed loader runs before the security bootstrap creates the rows it
- * would reference). Bind them on `kernel:bootstrapped` instead — the shape
- * ATS ships. A module-level named export, which the CLI preserves beside the
- * default `defineStack()` export on the config-load path and grafts back onto
- * the app bundle on the artifact-boot path.
- */
-export const onEnable = async (ctx: unknown): Promise<void> => {
-  registerClmPositionBindings(ctx as BindHostContext);
-};

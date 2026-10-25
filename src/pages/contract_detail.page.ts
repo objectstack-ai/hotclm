@@ -93,7 +93,6 @@ export const ContractDetailPage: Page = {
   type: 'record',
   object: 'clm_contract',
   kind: 'slotted',
-  template: 'full-width',
 
   // The object's default record page for every audience. No
   // `assignedProfiles`: §05 gives the five audiences ONE detail page and varies

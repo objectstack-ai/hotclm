@@ -1,5 +1,6 @@
 import type { Flow, FlowNode } from '@objectstack/spec/automation';
 import { holdersPrelude, rowBody, sweepFlow } from './_daily-sweep.js';
+import { must, ref } from './_values.js';
 
 /**
  * F11 `payment_overdue` — instalments that have come due and instalments that
@@ -47,7 +48,7 @@ const markDue: FlowNode = {
   label: 'Mark Due',
   config: {
     objectName: 'clm_payment_plan',
-    filter: { id: '{instalment.id}' },
+    filter: { id: must('instalment.id') },
     fields: { status: 'due' },
   },
 };
@@ -59,7 +60,7 @@ const markOverdue: FlowNode = {
   label: 'Mark Overdue',
   config: {
     objectName: 'clm_payment_plan',
-    filter: { id: '{instalment.id}' },
+    filter: { id: must('instalment.id') },
     fields: { status: 'overdue' },
   },
 };
@@ -71,7 +72,7 @@ const loadContract: FlowNode = {
   label: 'Load Contract',
   config: {
     objectName: 'clm_contract',
-    filter: { id: '{instalment.contract}' },
+    filter: { id: must('instalment.contract') },
     fields: ['id', 'title', 'contract_number', 'owner_id', 'currency_code'],
     outputVariable: 'parentContract',
   },
@@ -112,14 +113,14 @@ export const PaymentOverdueFlow: Flow = sweepFlow({
       body: rowBody({
         id: 'arrears',
         lead: [markOverdue, loadContract],
-        recipients: { primary: '{parentContract.owner_id}', also: '{financeControllers.userIds}' },
+        recipients: { primary: ref('parentContract.owner_id'), also: ref('financeControllers.userIds') },
         notice: {
           topic: 'clm_payment_overdue',
           severity: 'critical',
           sourceObject: 'clm_payment_plan',
-          sourceId: '{instalment.id}',
-          title: 'Instalment {instalment.seq} overdue: {parentContract.title}',
-          message: 'Instalment {instalment.seq} of contract {parentContract.contract_number} was due on {instalment.planned_date} and is not settled. Planned {instalment.planned_amount}; received so far {instalment.actual_amount}.',
+          sourceId: ref('instalment.id'),
+          title: 'Instalment {{ instalment.seq }} overdue: {{ parentContract.title }}',
+          message: 'Instalment {{ instalment.seq }} of contract {{ parentContract.contract_number }} was due on {{ instalment.planned_date }} and is not settled. Planned {{ instalment.planned_amount }}; received so far {{ instalment.actual_amount }}.',
         },
       }),
     },

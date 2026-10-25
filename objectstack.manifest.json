@@ -2,9 +2,9 @@
   "$schema": "https://schemas.objectstack.dev/template-manifest.json",
   "name": "hotclm",
   "namespace": "clm",
-  "specVersion": "^17.0.0",
+  "specVersion": "^18.0.0",
   "engines": {
-    "protocol": "^17"
+    "protocol": "^18"
   },
   "manifestId": "app.objectstack.hotclm",
   "displayName": "HotCLM",

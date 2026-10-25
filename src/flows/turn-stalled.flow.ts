@@ -1,5 +1,6 @@
 import type { Flow } from '@objectstack/spec/automation';
 import { rowBody, sweepFlow } from './_daily-sweep.js';
+import { ref } from './_values.js';
 
 /**
  * F4 `turn_stalled` — the counterparty has had the ball for over a week
@@ -52,14 +53,14 @@ export const TurnStalledFlow: Flow = sweepFlow({
       item: 'stalled',
       body: rowBody({
         id: 'stalled',
-        recipients: { primary: '{stalled.owner_id}' },
+        recipients: { primary: ref('stalled.owner_id') },
         notice: {
           topic: 'clm_turn_stalled',
           severity: 'warning',
           sourceObject: 'clm_contract',
-          sourceId: '{stalled.id}',
-          title: 'Waiting on the counterparty since {stalled.turn_since}: {stalled.title}',
-          message: 'The turn on contract {stalled.contract_number} has been with the counterparty for more than 7 days. Chase them, or take the turn back and record where the negotiation stands.',
+          sourceId: ref('stalled.id'),
+          title: 'Waiting on the counterparty since {{ stalled.turn_since }}: {{ stalled.title }}',
+          message: 'The turn on contract {{ stalled.contract_number }} has been with the counterparty for more than 7 days. Chase them, or take the turn back and record where the negotiation stands.',
         },
       }),
     },
