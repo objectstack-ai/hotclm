@@ -63,6 +63,10 @@ import { connect, createServer } from 'node:net';
 
 const DEMO_SEED_ENV_VAR = 'CLM_DEMO_SEED';
 const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
+// The platform's switch for package-authored scheduled work (off by default
+// since 17.5). The demo boot turns it on so the daily sweeps arm and M3's
+// reminders reach the inbox; `pnpm dev` keeps the default (issue #82, ruling C).
+const SCHEDULED_WORK_ENV_VAR = 'OS_AUTOMATION_SCHEDULED_WORK_ENABLED';
 
 /**
  * The account name the fixture's `clm_review.reviewer` resolves against.
@@ -653,6 +657,10 @@ const startDemo = () => {
     env: {
       ...process.env,
       [DEMO_SEED_ENV_VAR]: '1',
+      // Only when unset: an exported value, `false` included, is the operator's
+      // and wins. A value kept only in a `.env*` file does not — `os dev` never
+      // overrides a variable already in its environment.
+      [SCHEDULED_WORK_ENV_VAR]: process.env[SCHEDULED_WORK_ENV_VAR] ?? 'true',
       ...(process.env[SEED_LOCALE_ENV_VAR] === undefined
         ? {}
         : { [SEED_LOCALE_ENV_VAR]: process.env[SEED_LOCALE_ENV_VAR] }),
