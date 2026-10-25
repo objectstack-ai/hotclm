@@ -99,7 +99,22 @@ const transition = (
   type: 'script',
   body: {
     language: 'js',
-    source: `const id = ctx.recordId; await ctx.api.object('clm_contract').update({ id, status: '${to}' }, { where: { id } });`,
+    // `ownerOnly` also puts its two display tests INTO the body, because for
+    // such an action they are the only thing that limits it: the body is
+    // trusted (it skips the caller's row-level edit window), the action has no
+    // `requiredPermissions`, and the hook allows `${to}` from more than one
+    // status. Without the guard, anyone who can READ a contract could post
+    // this action at it in any status the hook lets reach `${to}` — measured:
+    // the owner's press on their own `in_approval` contract answered 200 and
+    // wrote `cancelled`. `ctx.record` is the route's caller-scoped load and
+    // `ctx.user` the caller. The other actions keep the bare write; their
+    // targets are reachable from one status only, or a capability gates them.
+    source: options?.ownerOnly
+      ? `const id = ctx.recordId; const rec = ctx.record || {}; const me = ctx.user && ctx.user.id;`
+        + ` if (rec.status !== '${from}') throw new Error('Only a ${from} contract can be changed this way; this one is ' + rec.status + '.');`
+        + ` if (!me || rec.owner_id !== me) throw new Error('Only the owner of this contract can do this.');`
+        + ` await ctx.api.object('clm_contract').update({ id, status: '${to}' }, { where: { id } });`
+      : `const id = ctx.recordId; await ctx.api.object('clm_contract').update({ id, status: '${to}' }, { where: { id } });`,
     capabilities: ['api.write'],
   },
   locations: ['record_header'],
@@ -156,14 +171,17 @@ export const SubmitContractAction: Action = transition(
  * and the requester can neither delete it (§04 grants RCU) nor, before this,
  * end it from the page.
  *
- * Shown only to the owner, only on a draft. Who it REFUSES is decided where
- * every button in this file is decided (see the header): a caller who cannot
- * read the contract — another requester — is answered 404 by the route's
- * caller-scoped load before the body runs. A caller who can read a draft
- * without owning it (legal, the CLM administrator) is not offered the button
- * but already holds an edit grant that writes `cancelled` on it: that is the
- * 「法务作废」 half, and it is untouched here. `cancelled` is terminal, so the
- * press is confirmed first.
+ * Shown only to the owner, only on a draft, and refused to everyone else.
+ * A caller who cannot read the contract — another requester — is answered
+ * 404 by the route's caller-scoped load before the body runs (see the
+ * header). Everything else is refused by the body itself (`ownerOnly`): the
+ * hook allows `cancelled` from six statuses and this action carries no
+ * capability, so the status and owner tests the button shows under are
+ * re-checked server-side. A reader who is not the owner (legal, the CLM
+ * administrator) is neither offered nor served it; legal's own way to
+ * `cancelled` is its edit grant on the status field — the 「法务作废」 half —
+ * and it is untouched here. `cancelled` is terminal, so the press is
+ * confirmed first.
  */
 export const WithdrawContractAction: Action = transition(
   'withdraw_contract', 'Withdraw', 'undo-2',
