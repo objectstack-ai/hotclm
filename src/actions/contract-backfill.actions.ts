@@ -45,7 +45,8 @@ export const ExecutedUploadAction: Action = {
   type: 'flow',
   target: 'executed_upload',
   locations: ['list_toolbar'],
-  description: 'Record a contract that was signed before this system, or outside it: it is created directly in active with is_backfilled set, skipping review and approval, and the executed copy is filed as its final signed version.',
+  // The flow inserts the row straight into `active` with `is_backfilled: true`.
+  description: 'Record a contract that was signed before this system, or outside it. It is created directly as active and marked as backfilled, skipping review and approval, and the executed copy is filed as its final signed version.',
   requiredPermissions: ['execute_contract'],
   params: [
     // Field-backed where a picker is wanted: the param inherits the field's
@@ -56,8 +57,10 @@ export const ExecutedUploadAction: Action = {
     { field: 'contract_type', required: true, helpText: 'The workflow this contract would have run. It still stamps the number, the category and the execution formalities.' },
     { field: 'party', required: true, helpText: 'The counterparty on the executed document.' },
     { field: 'title', required: true },
-    { name: 'signed_date', type: 'date', label: 'Signed On', required: true, helpText: 'The date on the executed document. It becomes both signed_at and executed_at.' },
-    { name: 'executed_file', type: 'file', label: 'Executed Copy', required: true, helpText: 'The signed PDF or scan. It is filed as version 1, kind final_signed.' },
+    // `signed_date` becomes both `signed_at` and `executed_at`; `executed_file`
+    // is filed as version 1 with `kind: 'final_signed'` (executed-upload.flow.ts).
+    { name: 'signed_date', type: 'date', label: 'Signed On', required: true, helpText: 'The date on the executed document. It is recorded as both the signed date and the execution date.' },
+    { name: 'executed_file', type: 'file', label: 'Executed Copy', required: true, helpText: 'The signed PDF or scan. It is filed as version 1, the final signed version.' },
     // Required on the contract, and a business-unit row: no default to fall back to.
     { field: 'our_entity', required: true },
     { field: 'department' },

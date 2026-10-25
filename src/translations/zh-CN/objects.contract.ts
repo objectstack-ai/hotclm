@@ -4,10 +4,10 @@
  * `clm_contract` and its document versions — 234 + 25 of this bundle's keys,
  * a third of the whole thing, so they get their own file on size alone.
  *
- * The contract carries the only `_actions` group in the bundle: the six header
- * actions of the record page plus the launch action, each with its label, its
- * description and — for the launch action — every parameter label the intake
- * dialog draws.
+ * The contract carries the only `_actions` group in the bundle: the eight header
+ * actions of the record page plus the two list-toolbar actions (launch and
+ * backfill), each with its label, its description and — for the actions that
+ * open a dialog — the parameter labels and help that dialog draws.
  */
 import type { ObjectTranslationData } from '@objectstack/spec/system';
 
@@ -313,7 +313,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       activate_contract: {
         label: '生效',
-        description: '让已签署的合同正式生效。系统会写入生效时间，并建好续约提醒义务。',
+        description: '让已签署的合同正式生效。系统会写入生效时间，并在有到期日时设好续约提醒。',
       },
       executed_upload: {
         label: '补录已签合同',
@@ -434,7 +434,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       submit_contract: {
         label: '提交',
-        description: '把草稿交给法务。系统会盖上审批标记，并指派审查人或直接送审。',
+        description: '把草稿交出去。系统会定好它的审批路线，并指派一位法务审查；不需要法务审查的类型则直接送审。',
       },
       start_renewal: {
         label: '发起续签',
