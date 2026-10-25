@@ -3,7 +3,8 @@ import { Contract } from '../objects/contract.object.js';
 import { Party } from '../objects/party.object.js';
 import { Review } from '../objects/review.object.js';
 import { Signature } from '../objects/signature.object.js';
-import { CONTRACT_STAMPED_FIELDS, openAllExcept, open, readOnly } from './_grants.js';
+import { CONTRACT_STATUSES, OBLIGATION_STATUSES } from '../sharing/_lifecycle.js';
+import { CONTRACT_STAMPED_FIELDS, inList, openAllExcept, open, readOnly } from './_grants.js';
 
 /**
  * `clm_admin` — the CLM administrator (DESIGN.md §04): RCUD on every object,
@@ -14,9 +15,24 @@ import { CONTRACT_STAMPED_FIELDS, openAllExcept, open, readOnly } from './_grant
  * children: an administrator reaches every row without a sharing rule, and
  * `modifyAllRecords` is what lets them reassign a contract's business owner
  * (`allowTransfer` is authored beside it so the capability is readable here
- * rather than implied). The super-user bits also bypass business row-level
- * security, which is why this set carries none of the write-window policies
- * the other four do — one here would be inert metadata.
+ * rather than implied).
+ *
+ * ## Why this set carries "allow everything" row policies
+ *
+ * The super-user bits skip ownership and sharing. They do NOT skip business
+ * row-level security on these objects: the platform drops RLS for a Modify
+ * All Data holder only on an object whose exposure posture is
+ * `access.default: 'private'` (ADR-0066 D2), and the CLM objects declare an
+ * OWD (`sharingModel`), not that posture. So the policies of every set an
+ * administrator holds still apply and OR-combine — and the administrator
+ * also holds `clm_requester` (§04 "所有员工默认"), whose
+ * `contract_requester_edit_window` and `obligation_requester_own` would be the
+ * only update policies on those two objects. Without a permissive companion
+ * here, an administrator could not edit a contract past `submitted` (nor any
+ * child of one: a child write needs its master editable), nor an obligation
+ * someone else owns — measured as 403 on 17.4, 17.7 and 18.1 (issue #11).
+ * Same pattern, same reason as the companions in `legal.profile.ts`. Each
+ * policy is the whole vocabulary of the field it names, read from the object.
  *
  * The super-user bits do NOT bypass field-level security, and field masks
  * merge most permissively only among the sets that declare a field
@@ -65,4 +81,22 @@ export const AdminSet = definePermissionSet({
     ...open(Review, ['internal_note']),
     ...open(Party, ['bank_account', 'contact_phone']),
   },
+  rowLevelSecurity: [
+    {
+      name: 'contract_admin_edit_any_status',
+      label: 'The administrator edits a contract in any status',
+      description: 'The permissive companion of contract_requester_edit_window (policies OR-merge across the sets a person holds; Modify All Data does not skip them on this object).',
+      object: 'clm_contract',
+      operation: 'update',
+      using: inList('status', CONTRACT_STATUSES),
+    },
+    {
+      name: 'obligation_admin_update_any',
+      label: 'The administrator updates any obligation',
+      description: 'The permissive companion of obligation_requester_own.',
+      object: 'clm_obligation',
+      operation: 'update',
+      using: inList('status', OBLIGATION_STATUSES),
+    },
+  ],
 });
