@@ -183,7 +183,9 @@ export const Contract = ObjectSchema.create({
       storage: { notNull: true },
       description: 'Which of our legal entities signs. The choices are the company-kind business units in Setup → Business Units.',
       // The picker offers legal entities only, never a division, department,
-      // office or cost centre, and only those still active.
+      // office or cost centre, and only those still active. The picker is
+      // convenience; the rule is `contract_entity_is_active_company` below,
+      // which refuses the same choice on every write path.
       lookupFilters: [
         { field: 'kind', operator: 'eq', value: 'company' },
         { field: 'active', operator: 'eq', value: true },
@@ -594,6 +596,59 @@ export const Contract = ObjectSchema.create({
       },
     }),
   },
+
+  validations: [
+    // `our_entity`'s lookupFilters shape the picker and nothing else: a REST
+    // PATCH, an import or a flow's create_record wrote a department, or a
+    // retired company, as the signing entity without complaint (#119). This
+    // rule is the write-side half, the same split `party` has with its
+    // blocked-counterparty guard.
+    //
+    // A rule rather than a hook, for two measured reasons on 18.1.0:
+    //  - a rule's condition reads ONE hop through a reference field
+    //    (`record.our_entity.kind`); the engine batch-reads the named columns
+    //    of `sys_business_unit` for the write, on insert, single-row update
+    //    and multi-row update alike, and an unreadable or missing unit refuses
+    //    the write rather than passing it;
+    //  - a rule's message is translated per locale
+    //    (`_validations.contract_entity_is_active_company.message` in both
+    //    bundles). A message thrown from a hook reaches the caller in English
+    //    only.
+    //
+    // A TRANSITION check, not an invariant, which is why it is a
+    // `conditional`: `when` admits only writes that SET the entity (an insert,
+    // where `previous` is null, or an update naming a different unit), and the
+    // hop is read only inside `then`. A contract that already names a company
+    // retired since stays editable on every other field; re-sending the same
+    // entity with a form save is not a change; and a row whose unit can no
+    // longer be read at all (a pre-#118 database still holding the old
+    // `head_office` string) is not frozen by an unchanged entity either, which
+    // a single rule reading the hop on every write would do. The two halves
+    // are separate expressions for a second reason: a rule may not read a
+    // reference both through the hop and as a bare value.
+    //
+    // The refusal is `then`'s, so `then`'s message is the one a caller sees
+    // and the one both bundles translate. The outer rule's `message` is
+    // required by the schema and never surfaced: the engine returns the
+    // branch's violation, not the conditional's.
+    {
+      type: 'conditional' as const,
+      name: 'contract_entity_set',
+      label: 'Signing entity set or changed',
+      description: 'Judges our_entity only on a write that sets or changes it; an unchanged entity is never re-judged.',
+      when: P`previous == null || previous.our_entity != record.our_entity`,
+      message: 'Our Signing Entity must be one of our active legal entities.',
+      then: {
+        type: 'cross_field' as const,
+        name: 'contract_entity_is_active_company',
+        label: 'Signing entity is an active company',
+        description: 'A write that sets our_entity must name an active company-kind business unit.',
+        condition: P`record.our_entity.kind != "company" || record.our_entity.active != true`,
+        fields: ['our_entity'],
+        message: 'Our Signing Entity must be one of our active legal entities: a business unit of kind Company that is still active. A department, an office or a retired company cannot sign. Choose an entity from the list, or ask an administrator to add or reactivate it in Setup → Business Units.',
+      },
+    },
+  ],
 
   indexes: [
     { fields: ['contract_number'], unique: 'organization' },
