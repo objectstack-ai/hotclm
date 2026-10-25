@@ -50,7 +50,8 @@ export const ExecutedUploadAction: Action = {
   params: [
     // Field-backed where a picker is wanted: the param inherits the field's
     // type, its label and its `lookupFilters`, so inactive types, blocked
-    // counterparties and non-company business units are already out of the
+    // counterparties, and business units of the wrong kind (a non-company as
+    // the entity, a non-department as the department) are already out of the
     // pickers.
     { field: 'contract_type', required: true, helpText: 'The workflow this contract would have run. It still stamps the number, the category and the execution formalities.' },
     { field: 'party', required: true, helpText: 'The counterparty on the executed document.' },

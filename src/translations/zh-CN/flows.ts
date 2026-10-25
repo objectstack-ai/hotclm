@@ -28,7 +28,6 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
           fields: {
             intakeFields: { label: '发起时填写的字段' },
             title: { label: '标题', placeholder: '例如：与 Acme 的双向保密协议' },
-            department: { label: '发起部门', options: contractOptions('department') },
             amount: { label: '合同金额' },
             currency_code: { label: '币种', options: contractOptions('currency_code') },
             is_amount_estimated: { label: '金额为估算值' },

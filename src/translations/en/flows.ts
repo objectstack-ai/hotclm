@@ -28,7 +28,6 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
           fields: {
             intakeFields: { label: 'Intake fields' },
             title: { label: 'Title', placeholder: 'e.g. Mutual NDA with Acme' },
-            department: { label: 'Requesting department', options: contractOptions('department') },
             amount: { label: 'Contract amount' },
             currency_code: { label: 'Currency', options: contractOptions('currency_code') },
             is_amount_estimated: { label: 'Amount is an estimate' },

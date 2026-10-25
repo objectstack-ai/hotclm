@@ -31,15 +31,24 @@ export const ContractDataset = defineDataset({
   object: 'clm_contract',
 
   // Joins are COMPILED from these names; no ON clause is ever written
-  // (ADR-0021). Both are to-one lookups on `clm_contract`, so both are legal
-  // one-hop paths.
-  include: ['contract_type', 'party'],
+  // (ADR-0021). All three are to-one lookups on `clm_contract`, so all three
+  // are legal one-hop paths. `department` joined in #109, when the field
+  // became a lookup to `sys_business_unit`.
+  include: ['contract_type', 'party', 'department'],
 
   dimensions: [
     { name: 'status', label: 'Status', field: 'status', type: 'string' },
     { name: 'category', label: 'Category', field: 'category', type: 'string' },
     { name: 'direction', label: 'Direction', field: 'direction', type: 'string' },
-    { name: 'department', label: 'Requesting Department', field: 'department', type: 'string' },
+    // The department's NAME, one hop through the lookup (#109): the column
+    // holds the business unit's id, and a group-by on it would put ids on the
+    // axis. Named `department_name`, like `contract_type_name`, and NOT
+    // `department`, on purpose: a widget's runtime filter is resolved through
+    // a dimension of the same name first (measured on 18.1.0), so a dimension
+    // called `department` would turn the legal workbench's filter, which
+    // applies the unit's id, into `department.name = <id>` and match nothing.
+    // Without it, `department` reaches the column, which holds the id.
+    { name: 'department_name', label: 'Requesting Department', field: 'department.name', type: 'string' },
     { name: 'currency_code', label: 'Currency', field: 'currency_code', type: 'string' },
     { name: 'governing_law', label: 'Governing Law', field: 'governing_law', type: 'string' },
     { name: 'risk_level', label: 'Risk Level', field: 'risk_level', type: 'string' },

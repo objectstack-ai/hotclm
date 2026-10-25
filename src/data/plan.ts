@@ -75,6 +75,45 @@ export const SIGNING_ENTITY_PLAN: readonly SigningEntityPlan[] & { length: 3 } =
 ] as const;
 assertCount('sys_business_unit (signing entities)', SIGNING_ENTITY_PLAN.length, 3);
 
+/**
+ * The departments that launch contracts, as `sys_business_unit` rows of kind
+ * `department` (#109, the same ruling as the signing entities: organisation
+ * structure is data, and the data is the platform's organisation tree).
+ * `clm_contract.department` is a lookup to them.
+ *
+ * Every department sits under the US parent, `ARC-US`. A requesting
+ * department is a group function, and it is a separate axis from the entity
+ * that signs. Contracts are spread across entities by governing law
+ * ({@link JURISDICTION_BY_COUNTRY}) and across departments by contract type
+ * ({@link CONTRACT_TYPE_PLAN}). If Operations hung under the EU subsidiary, a
+ * New York lease would be requested by a European department. Under the group
+ * parent, the org chart in Setup shows the three entities and the seven
+ * departments as one tree, and no contract tells two stories.
+ *
+ * `code` is the natural key the seed upserts on and the value every contract's
+ * `department` names, locale-blind for the same reason as the entities' codes.
+ * The index of each entry is the index into the locale bundle's `departments`
+ * tuple. The old option list's `other` has no row: "other" is not a unit of
+ * the organisation, and a contract with no department leaves the field empty.
+ */
+export type DepartmentCode = 'ARC-SALES' | 'ARC-PROC' | 'ARC-LEGAL' | 'ARC-FIN' | 'ARC-OPS' | 'ARC-PEOPLE' | 'ARC-IT';
+
+export interface DepartmentPlan {
+  readonly code: DepartmentCode;
+  /** The `code` of the company the department sits under. */
+  readonly parentCode: string;
+}
+
+export const DEPARTMENT_PLAN: readonly DepartmentPlan[] & { length: 7 } = [
+  { code: 'ARC-SALES', parentCode: 'ARC-US' },
+  { code: 'ARC-PROC', parentCode: 'ARC-US' },
+  { code: 'ARC-LEGAL', parentCode: 'ARC-US' },
+  { code: 'ARC-FIN', parentCode: 'ARC-US' },
+  { code: 'ARC-OPS', parentCode: 'ARC-US' },
+  { code: 'ARC-PEOPLE', parentCode: 'ARC-US' },
+  { code: 'ARC-IT', parentCode: 'ARC-US' },
+] as const;
+
 export interface Jurisdiction {
   readonly governingLaw: string;
   /** Index into the locale bundle's `jurisdictions` tuple. */
@@ -123,19 +162,20 @@ export interface ContractTypePlan {
   readonly amountBand: readonly [number, number] | null;
   /** Whether contracts of this type carry an instalment schedule. */
   readonly hasPaymentSchedule: boolean;
-  readonly department: 'sales' | 'procurement' | 'legal' | 'finance' | 'operations' | 'people' | 'it' | 'other';
+  /** The requesting department: a {@link DEPARTMENT_PLAN} code. */
+  readonly department: DepartmentCode;
 }
 
 export const CONTRACT_TYPE_PLAN: readonly ContractTypePlan[] = [
-  { code: 'NDA', category: 'nda',       direction: 'other',    requiresLegalReview: true,  executionFormalities: [],                          signMethod: 'esign',   reviewSlaDays: 3,  defaultTermMonths: 24, retentionYears: 7,  intakeFields: ['governing_law', 'confidentiality_term_months'], amountBand: null,                hasPaymentSchedule: false, department: 'legal' },
-  { code: 'MSA', category: 'framework', direction: 'sales',    requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'esign',   reviewSlaDays: 5,  defaultTermMonths: 36, retentionYears: 10, intakeFields: ['governing_law', 'payment_terms', 'auto_renew'],  amountBand: [250_000, 4_000_000], hasPaymentSchedule: true,  department: 'sales' },
-  { code: 'SOW', category: 'service',   direction: 'sales',    requiresLegalReview: false, executionFormalities: [],                          signMethod: 'esign',   reviewSlaDays: 3,  defaultTermMonths: 12, retentionYears: 10, intakeFields: ['payment_terms', 'parent_contract'],              amountBand: [40_000, 700_000],   hasPaymentSchedule: true,  department: 'sales' },
-  { code: 'ORD', category: 'sales',     direction: 'sales',    requiresLegalReview: false, executionFormalities: [],                          signMethod: 'esign',   reviewSlaDays: 2,  defaultTermMonths: 12, retentionYears: 7,  intakeFields: ['payment_terms'],                                 amountBand: [6_000, 95_000],     hasPaymentSchedule: true,  department: 'sales' },
-  { code: 'SUP', category: 'purchase',  direction: 'purchase', requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'either',  reviewSlaDays: 5,  defaultTermMonths: 24, retentionYears: 10, intakeFields: ['governing_law', 'payment_terms', 'auto_renew'],  amountBand: [30_000, 1_400_000], hasPaymentSchedule: true,  department: 'procurement' },
-  { code: 'DPA', category: 'dpa',       direction: 'other',    requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'esign',   reviewSlaDays: 5,  defaultTermMonths: 36, retentionYears: 10, intakeFields: ['governing_law'],                                 amountBand: null,                hasPaymentSchedule: false, department: 'legal' },
-  { code: 'LSE', category: 'lease',     direction: 'purchase', requiresLegalReview: true,  executionFormalities: ['notarized', 'witnessed'],   signMethod: 'wet_ink', reviewSlaDays: 10, defaultTermMonths: 60, retentionYears: 15, intakeFields: ['governing_law', 'auto_renew'],                   amountBand: [400_000, 2_600_000],hasPaymentSchedule: true,  department: 'operations' },
-  { code: 'ICA', category: 'employment',direction: 'purchase', requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'esign',   reviewSlaDays: 5,  defaultTermMonths: 12, retentionYears: 7,  intakeFields: ['payment_terms', 'confidentiality_term_months'],  amountBand: [18_000, 140_000],   hasPaymentSchedule: true,  department: 'people' },
-  { code: 'AMD', category: 'amendment', direction: 'other',    requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'esign',   reviewSlaDays: 3,  defaultTermMonths: 12, retentionYears: 10, intakeFields: ['parent_contract'],                               amountBand: [12_000, 260_000],   hasPaymentSchedule: true,  department: 'legal' },
+  { code: 'NDA', category: 'nda',       direction: 'other',    requiresLegalReview: true,  executionFormalities: [],                          signMethod: 'esign',   reviewSlaDays: 3,  defaultTermMonths: 24, retentionYears: 7,  intakeFields: ['governing_law', 'confidentiality_term_months'], amountBand: null,                hasPaymentSchedule: false, department: 'ARC-LEGAL' },
+  { code: 'MSA', category: 'framework', direction: 'sales',    requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'esign',   reviewSlaDays: 5,  defaultTermMonths: 36, retentionYears: 10, intakeFields: ['governing_law', 'payment_terms', 'auto_renew'],  amountBand: [250_000, 4_000_000], hasPaymentSchedule: true,  department: 'ARC-SALES' },
+  { code: 'SOW', category: 'service',   direction: 'sales',    requiresLegalReview: false, executionFormalities: [],                          signMethod: 'esign',   reviewSlaDays: 3,  defaultTermMonths: 12, retentionYears: 10, intakeFields: ['payment_terms', 'parent_contract'],              amountBand: [40_000, 700_000],   hasPaymentSchedule: true,  department: 'ARC-SALES' },
+  { code: 'ORD', category: 'sales',     direction: 'sales',    requiresLegalReview: false, executionFormalities: [],                          signMethod: 'esign',   reviewSlaDays: 2,  defaultTermMonths: 12, retentionYears: 7,  intakeFields: ['payment_terms'],                                 amountBand: [6_000, 95_000],     hasPaymentSchedule: true,  department: 'ARC-SALES' },
+  { code: 'SUP', category: 'purchase',  direction: 'purchase', requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'either',  reviewSlaDays: 5,  defaultTermMonths: 24, retentionYears: 10, intakeFields: ['governing_law', 'payment_terms', 'auto_renew'],  amountBand: [30_000, 1_400_000], hasPaymentSchedule: true,  department: 'ARC-PROC' },
+  { code: 'DPA', category: 'dpa',       direction: 'other',    requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'esign',   reviewSlaDays: 5,  defaultTermMonths: 36, retentionYears: 10, intakeFields: ['governing_law'],                                 amountBand: null,                hasPaymentSchedule: false, department: 'ARC-LEGAL' },
+  { code: 'LSE', category: 'lease',     direction: 'purchase', requiresLegalReview: true,  executionFormalities: ['notarized', 'witnessed'],   signMethod: 'wet_ink', reviewSlaDays: 10, defaultTermMonths: 60, retentionYears: 15, intakeFields: ['governing_law', 'auto_renew'],                   amountBand: [400_000, 2_600_000],hasPaymentSchedule: true,  department: 'ARC-OPS' },
+  { code: 'ICA', category: 'employment',direction: 'purchase', requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'esign',   reviewSlaDays: 5,  defaultTermMonths: 12, retentionYears: 7,  intakeFields: ['payment_terms', 'confidentiality_term_months'],  amountBand: [18_000, 140_000],   hasPaymentSchedule: true,  department: 'ARC-PEOPLE' },
+  { code: 'AMD', category: 'amendment', direction: 'other',    requiresLegalReview: true,  executionFormalities: ['countersigned_copy'],       signMethod: 'esign',   reviewSlaDays: 3,  defaultTermMonths: 12, retentionYears: 10, intakeFields: ['parent_contract'],                               amountBand: [12_000, 260_000],   hasPaymentSchedule: true,  department: 'ARC-LEGAL' },
 ];
 assertCount('clm_contract_type', CONTRACT_TYPE_PLAN.length, 9);
 

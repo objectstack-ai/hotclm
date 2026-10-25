@@ -96,17 +96,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       department: {
         label: 'Requesting Department',
-        help: 'The business unit that launched the contract. Sharing contracts by department is a customer-specific extension, not part of the standard product.',
-        options: {
-          sales: 'Sales',
-          procurement: 'Procurement',
-          legal: 'Legal',
-          finance: 'Finance',
-          operations: 'Operations',
-          people: 'People / HR',
-          it: 'IT',
-          other: 'Other',
-        },
+        help: 'The department that launched the contract. The choices are the department-kind business units in Setup → Business Units. Sharing contracts by department is a customer-specific extension, not part of the standard product.',
       },
       owner_id: {
         label: 'Business Owner',
@@ -370,6 +360,7 @@ export const contract: Record<string, ObjectTranslationData> = {
           },
           department: {
             label: 'Requesting department',
+            helpText: 'The department launching this contract.',
           },
           amount: {
             label: 'Contract amount',

@@ -18,19 +18,22 @@ import { must, ref } from './_values.js';
  *  - A flat screen renders text / number / currency / date / email / textarea
  *    / boolean, and a select when `options` are declared. It has NO record
  *    picker and NO file input: a `lookup`-typed field falls through to a plain
- *    text box. So the three pickers the intake needs — the contract type, the
- *    counterparty and our signing entity — are collected by the
- *    `launch_contract` ACTION's param dialog (`src/actions/contract.actions.ts`),
- *    whose field-backed lookup params render the real record pickers. The
- *    flow receives them as the input variables `contract_type`, `party` and
- *    `our_entity`. On 17.3.0 those pickers did NOT inherit the fields'
+ *    text box. So the four pickers the intake needs — the contract type, the
+ *    counterparty, our signing entity and the requesting department — are
+ *    collected by the `launch_contract` ACTION's param dialog
+ *    (`src/actions/contract.actions.ts`), whose field-backed lookup params
+ *    render the real record pickers. The flow receives them as the input
+ *    variables `contract_type`, `party`, `our_entity` and `department`. The
+ *    department was a select on the core screen while it was an option list;
+ *    since #109 it is a business-unit row, so it moved to the dialog with the
+ *    other pickers. On 17.3.0 those pickers did NOT inherit the fields'
  *    `lookupFilters`; re-measured on 18.1.0 they do — the dialog's
  *    counterparty picker fetches
  *    `GET /api/v1/data/clm_party?top=50&filter=["risk_flag","!=","blocked"]`
- *    (38 of 40), and the entity picker filters to company-kind business units
- *    the same way. `refuse_blocked` below still stands: a headless caller
- *    passes an id and never meets a picker, so the picker is convenience and
- *    the refusal is the rule.
+ *    (38 of 40), and the entity and department pickers filter to company-kind
+ *    and department-kind business units the same way. `refuse_blocked` below
+ *    still stands: a headless caller passes an id and never meets a picker,
+ *    so the picker is convenience and the refusal is the rule.
  *  - A screen field's `visibleWhen` is bare CEL the CLIENT evaluates against
  *    the screen's OWN field values only — flow variables are not in scope
  *    there (the server re-checks `required` under it with the run's variables
@@ -151,13 +154,13 @@ export const ContractIntakeFlow: Flow = {
   successMessage: 'Contract launched.',
 
   variables: [
-    // The three pickers, supplied by the launch action's dialog (or headlessly).
+    // The four pickers, supplied by the launch action's dialog (or headlessly).
     { name: 'contract_type', type: 'text', isInput: true, isOutput: false },
     { name: 'party', type: 'text', isInput: true, isOutput: false },
     { name: 'our_entity', type: 'text', isInput: true, isOutput: false },
+    { name: 'department', type: 'text', isInput: true, isOutput: false },
     // Core fields. `title` doubles as the headless marker — see the header.
     { name: 'title', type: 'text', isInput: true, isOutput: false },
-    { name: 'department', type: 'text', isInput: true, isOutput: false },
     { name: 'amount', type: 'number', isInput: true, isOutput: false },
     { name: 'currency_code', type: 'text', isInput: true, isOutput: false, defaultValue: 'usd' },
     { name: 'is_amount_estimated', type: 'boolean', isInput: true, isOutput: false, defaultValue: false },
@@ -248,7 +251,6 @@ export const ContractIntakeFlow: Flow = {
           // raw list, hidden by its own predicate, read by the predicates below.
           { name: 'intakeFields', label: 'Intake fields', type: 'text', defaultValue: ref('intakeFields'), visibleWhen: 'intakeFields == null' },
           { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'e.g. Mutual NDA with Acme' },
-          { name: 'department', label: 'Requesting department', type: 'select', options: optionsOf(Contract, 'department') },
           { name: 'amount', label: 'Contract amount', type: 'currency' },
           { name: 'currency_code', label: 'Currency', type: 'select', options: optionsOf(Contract, 'currency_code'), defaultValue: ref('currency_code') },
           { name: 'is_amount_estimated', label: 'Amount is an estimate', type: 'boolean', defaultValue: ref('is_amount_estimated') },

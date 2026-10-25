@@ -73,6 +73,9 @@ export const contractSeed = defineSeed(Contract, {
       // England and Wales → the APAC subsidiary. A code, resolved against the
       // `sys_business_unit` rows `business-unit.seed.ts` upserts on `code`.
       our_entity: SIGNING_ENTITY_PLAN[law.entityIndex]!.code,
+      // The requesting department follows the contract type (`plan.ts`): a
+      // code, resolved against the department-kind `sys_business_unit` rows
+      // `business-unit.seed.ts` upserts on `code`, as `our_entity` is.
       department: type.department,
       // `owner_id` names a user the way `legal_owner` on the next line does —
       // a `lookup('sys_user')` resolved against `sys_user.name` by the two-boot

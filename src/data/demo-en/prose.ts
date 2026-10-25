@@ -21,6 +21,20 @@ export const SIGNING_ENTITIES: readonly string[] & { length: 3 } = [
   'Arcadia Asia Pacific Pte. Ltd.',
 ] as const;
 
+/**
+ * The departments that launch contracts, in `DEPARTMENT_PLAN`'s order
+ * (`../plan.ts`). Each is a department-kind business unit under the US parent.
+ */
+export const DEPARTMENTS: readonly string[] & { length: 7 } = [
+  'Sales',
+  'Procurement',
+  'Legal',
+  'Finance',
+  'Operations',
+  'People & HR',
+  'IT',
+] as const;
+
 /** Distinguishes a second contract of the same type with the same counterparty. */
 export const TITLE_QUALIFIERS: readonly string[] & { length: 8 } = [
   'Renewal',

@@ -219,7 +219,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         direction: {
           label: '方向',
         },
-        department: {
+        department_name: {
           label: '发起部门',
         },
         currency_code: {
