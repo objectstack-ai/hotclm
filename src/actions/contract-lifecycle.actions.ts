@@ -106,6 +106,14 @@ const transition = (
   // rendered zero actions on a draft AND on a signing contract.
   visible: P`record.status == ${from}`,
   ...(requiredPermissions ? { requiredPermissions: [...requiredPermissions] } : {}),
+  // The status this button writes is the status the header shows, and the
+  // status every one of these `visible` predicates reads. The spec defaults
+  // `refreshAfter` to `false` (materialized at parse), and the record page
+  // re-reads the record only when it is `true`. Measured on 17.7.0 (issue
+  // #94): without it each press answered `200 {"success":true}` and toasted
+  // success while the header kept the old stage and the old button until a
+  // manual reload; no `GET` of the record followed the action.
+  refreshAfter: true,
 });
 
 /** 提交 — the requester hands the draft over. No capability gate. What limits
