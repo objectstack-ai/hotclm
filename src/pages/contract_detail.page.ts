@@ -103,13 +103,14 @@ export const ContractDetailPage: Page = {
   slots: {
     /**
      * §05: header 挂「提交 / 受理 / 送审 / 发起签署 / 生效 / 终止 / 发起续签」
-     * 动作,按 status 与门控显隐.
+     * 动作,按 status 与门控显隐 — plus 撤回 (`withdraw_contract`), the owner's
+     * button for §03's `draft → cancelled` row.
      *
      * `PageHeaderProps.actions` is `z.array(z.string())` — action IDs, not
      * definitions — so the display rules travel with the ACTION, not with this
-     * list: each of the seven carries `visible` (a CEL predicate on
+     * list: each of them carries `visible` (a CEL predicate on
      * `record.status`) and, where §04 names one, `requiredPermissions`. Listing
-     * all seven here and letting each decide is what makes the header change
+     * all of them here and letting each decide is what makes the header change
      * shape as a contract moves; a custom record page replaces the default
      * header, so an action not named here is unreachable from the record —
      * MEASURED: `start_renewal` was declared, translated and wired to its flow
@@ -123,6 +124,7 @@ export const ContractDetailPage: Page = {
         subtitle: '{title}',
         actions: [
           'submit_contract',
+          'withdraw_contract',
           'accept_contract',
           'send_for_approval',
           'start_signing',
@@ -251,6 +253,34 @@ export const ContractDetailPage: Page = {
                     { name: 'ai', label: 'AI Review', columns: 2,
                       fields: ['ai_summary', 'ai_risk_score', 'ai_risk_rationale', 'ai_reviewed_at'] },
                   ],
+                },
+              },
+              {
+                // The forward link `renewed_from` points back along. Renewal is
+                // a NEW contract (§03 「续签不是转换」), so the old contract's own
+                // fields never name its successor; this list is how a reader of
+                // the old contract reaches the renewal — including the draft
+                // `start_renewal` has just created, since that press leaves the
+                // user on this page (taking them to the draft is the platform's:
+                // a `flow` action cannot declare `onSuccess`, objectstack#25800).
+                //
+                // The title is a plain string, translated by the bundle at
+                // `pages.contract_detail.components.contract_renewals.title`,
+                // which the i18n gate counts — not an inline map (see the header).
+                type: 'record:related_list',
+                id: 'contract_renewals',
+                properties: {
+                  objectName: 'clm_contract',
+                  relationshipField: 'renewed_from',
+                  title: 'Renewals',
+                  columns: ['contract_number', 'title', 'status', 'start_date', 'end_date', 'owner_id', 'created_at'],
+                  sort: [{ field: 'created_at', order: 'desc' }],
+                  limit: 10,
+                  // None of the contract's own list actions: unnamed, the list
+                  // draws every `list_toolbar` action of `clm_contract`, and
+                  // "Launch Contract" above a list of renewals starts an
+                  // unrelated intake. A renewal is started from the header.
+                  actions: [],
                 },
               },
             ],

@@ -459,6 +459,11 @@ export const contract: Record<string, ObjectTranslationData> = {
           },
         },
       },
+      withdraw_contract: {
+        label: 'Withdraw',
+        description: 'Withdraw your own draft. It becomes Cancelled, which is final.',
+        confirmText: 'Withdraw this draft? It becomes Cancelled, which is final: it cannot be submitted or reopened. To go ahead later, launch a new contract.',
+      },
     },
     _views: {
       all_contracts: {

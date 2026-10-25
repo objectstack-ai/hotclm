@@ -2,6 +2,7 @@
 export { LaunchContractAction } from './contract.actions.js';
 export {
   SubmitContractAction,
+  WithdrawContractAction,
   AcceptContractAction,
   SendForApprovalAction,
   StartSigningAction,

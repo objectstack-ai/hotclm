@@ -459,6 +459,11 @@ export const contract: Record<string, ObjectTranslationData> = {
           },
         },
       },
+      withdraw_contract: {
+        label: '撤回',
+        description: '撤回你自己的草稿。撤回后合同变为「已作废」，这是终态。',
+        confirmText: '确定撤回这份草稿吗？撤回后合同变为「已作废」，这是终态：不能再提交，也不能重新打开。之后如还要推进，请重新发起一份合同。',
+      },
     },
     _views: {
       all_contracts: {

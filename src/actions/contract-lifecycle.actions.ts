@@ -3,7 +3,9 @@ import { P } from '@objectstack/spec';
 
 /**
  * The contract detail page's header actions — DESIGN.md §05: "header 挂
- * 「提交 / 受理 / 送审 / 发起签署 / 生效 / 终止 / 发起续签」动作,按 status 与门控显隐".
+ * 「提交 / 受理 / 送审 / 发起签署 / 生效 / 终止 / 发起续签」动作,按 status 与门控显隐",
+ * plus 撤回 (`withdraw_contract`), the button for §03's `draft → cancelled`
+ * row (「发起人撤回」).
  *
  * ## Why these are declarative status writes and not new business logic
  *
@@ -60,6 +62,12 @@ const transition = (
   to: string,
   description: string,
   requiredPermissions?: readonly string[],
+  options?: {
+    /** Offer the button only to the contract's owner (`owner_id`), on top of the status test. */
+    ownerOnly?: boolean;
+    /** The one confirm question of a param-less action whose write cannot be taken back. */
+    confirmText?: string;
+  },
 ): Action => ({
   name,
   label,
@@ -91,7 +99,22 @@ const transition = (
   type: 'script',
   body: {
     language: 'js',
-    source: `const id = ctx.recordId; await ctx.api.object('clm_contract').update({ id, status: '${to}' }, { where: { id } });`,
+    // `ownerOnly` also puts its two display tests INTO the body, because for
+    // such an action they are the only thing that limits it: the body is
+    // trusted (it skips the caller's row-level edit window), the action has no
+    // `requiredPermissions`, and the hook allows `${to}` from more than one
+    // status. Without the guard, anyone who can READ a contract could post
+    // this action at it in any status the hook lets reach `${to}` — measured:
+    // the owner's press on their own `in_approval` contract answered 200 and
+    // wrote `cancelled`. `ctx.record` is the route's caller-scoped load and
+    // `ctx.user` the caller. The other actions keep the bare write; their
+    // targets are reachable from one status only, or a capability gates them.
+    source: options?.ownerOnly
+      ? `const id = ctx.recordId; const rec = ctx.record || {}; const me = ctx.user && ctx.user.id;`
+        + ` if (rec.status !== '${from}') throw new Error('Only a ${from} contract can be changed this way; this one is ' + rec.status + '.');`
+        + ` if (!me || rec.owner_id !== me) throw new Error('Only the owner of this contract can do this.');`
+        + ` await ctx.api.object('clm_contract').update({ id, status: '${to}' }, { where: { id } });`
+      : `const id = ctx.recordId; await ctx.api.object('clm_contract').update({ id, status: '${to}' }, { where: { id } });`,
     capabilities: ['api.write'],
   },
   locations: ['record_header'],
@@ -104,8 +127,16 @@ const transition = (
   // hidden by status. Measured, not reasoned: `GET /api/v1/meta/actions`
   // served `source: "record.status == '\\"submitted\\"'"` and the header
   // rendered zero actions on a draft AND on a signing contract.
-  visible: P`record.status == ${from}`,
+  //
+  // `ownerOnly` adds `record.owner_id == current_user.id`, the same
+  // `current_user` the requester's row policies read. Like the status test it
+  // is a convenience, not a control — see `WithdrawContractAction` for what
+  // refuses a non-owner.
+  visible: options?.ownerOnly
+    ? P`record.status == ${from} && record.owner_id == current_user.id`
+    : P`record.status == ${from}`,
   ...(requiredPermissions ? { requiredPermissions: [...requiredPermissions] } : {}),
+  ...(options?.confirmText ? { confirmText: options.confirmText } : {}),
   // The status this button writes is the status the header shows, and the
   // status every one of these `visible` predicates reads. The spec defaults
   // `refreshAfter` to `false` (materialized at parse), and the record page
@@ -127,6 +158,40 @@ export const SubmitContractAction: Action = transition(
   'submit_contract', 'Submit', 'send',
   'draft', 'submitted',
   'Hand the draft to legal. Routing (F2) stamps the approval flags and either assigns a reviewer or sends it straight to approval.',
+);
+
+/**
+ * 撤回 — the owner takes back their own draft: `draft → cancelled`, the
+ * 「发起人撤回」 half of DESIGN.md §03's last transition row
+ * (「draft / … → cancelled | 发起人撤回或法务作废」). It adds no edge: the
+ * hook's `TRANSITIONS` already lists `cancelled` from `draft`, and this is the
+ * button for it, as `submit_contract` is the button for `draft → submitted`.
+ * It is also the owner's way out of a draft they no longer want — the intake
+ * wizard abandoned after its first version step leaves exactly such a draft,
+ * and the requester can neither delete it (§04 grants RCU) nor, before this,
+ * end it from the page.
+ *
+ * Shown only to the owner, only on a draft, and refused to everyone else.
+ * A caller who cannot read the contract — another requester — is answered
+ * 404 by the route's caller-scoped load before the body runs (see the
+ * header). Everything else is refused by the body itself (`ownerOnly`): the
+ * hook allows `cancelled` from six statuses and this action carries no
+ * capability, so the status and owner tests the button shows under are
+ * re-checked server-side. A reader who is not the owner (legal, the CLM
+ * administrator) is neither offered nor served it; legal's own way to
+ * `cancelled` is its edit grant on the status field — the 「法务作废」 half —
+ * and it is untouched here. `cancelled` is terminal, so the press is
+ * confirmed first.
+ */
+export const WithdrawContractAction: Action = transition(
+  'withdraw_contract', 'Withdraw', 'undo-2',
+  'draft', 'cancelled',
+  'Withdraw your own draft. It becomes Cancelled, which is final.',
+  undefined,
+  {
+    ownerOnly: true,
+    confirmText: 'Withdraw this draft? It becomes Cancelled, which is final: it cannot be submitted or reopened. To go ahead later, launch a new contract.',
+  },
 );
 
 /** 受理 — legal takes the file. F2 normally assigns `legal_owner` on submission;
