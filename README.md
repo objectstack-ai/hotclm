@@ -67,9 +67,10 @@ pnpm lint:i18n-gate  # every zh-CN key present — a missing one renders as Engl
 
 ## The demo dataset
 
-`pnpm demo` loads 820 rows: nine contract types, a thirty-clause playbook, a
-six-rule approval matrix, forty counterparties and 120 contracts with their
-reviews, deviations, signature rounds, obligations and payment instalments.
+`pnpm demo` loads 830 rows: nine contract types, a thirty-clause playbook, a
+six-rule approval matrix, three signing companies and seven departments, forty
+counterparties and 120 contracts with their reviews, deviations, signature
+rounds, obligations and payment instalments.
 Every date is relative to boot, so ten contracts always expire within the next
 thirty days and the arrears lists are always in arrears.
 

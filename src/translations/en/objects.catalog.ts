@@ -313,7 +313,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       country_code: {
         label: 'Country',
-        help: 'ISO 3166-1 alpha-2 country code of the party (e.g. US, DE, CN). Drives governing-law defaults and screening.',
+        help: 'Two-letter ISO 3166-1 code of the country the party is based in (e.g. US, DE, CN).',
       },
       registration_no: {
         label: 'Registration / Tax ID',

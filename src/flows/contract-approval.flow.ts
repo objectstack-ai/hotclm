@@ -205,7 +205,10 @@ const RUNG_POLICY = {
 export const ContractApprovalFlow: Flow = {
   name: 'contract_approval',
   label: 'Contract Approval Ladder',
-  description: 'Five-rung approval for a contract entering approval: direct manager, then the legal/finance joint sign-off, the executive and the general manager as the routing flags require.',
+  // "As the approval matrix requires" = the route_* flags: F2 stamps them from
+  // the matching clm_approval_rule rows, and F6 adds route_legal_head for an
+  // accepted deviation from a flagged clause (see the header).
+  description: 'Approval for a contract entering approval: the direct manager first, then the head of legal and/or the finance controller, the executive and the general manager, as the approval matrix and any accepted clause deviations require.',
   type: 'record_change',
   status: 'active',
   // See the header — the approvals service's mirror write carries no user.
@@ -288,7 +291,9 @@ export const ContractApprovalFlow: Flow = {
     {
       id: 'legal_finance_joint',
       type: 'approval',
-      label: 'Head of Legal + Finance Controller (会签)',
+      // The step name approvers read. 会签 in the zh-CN bundle; "joint
+      // sign-off" here, so the English UI carries no Chinese.
+      label: 'Head of Legal + Finance Controller (joint sign-off)',
       config: {
         // 会签: `per_group` advances only once EACH group has reached
         // `minApprovals`. The two group labels are what make them two groups —
@@ -441,7 +446,7 @@ export const ContractApprovalFlow: Flow = {
     // Rung 2 selection — four branches over two flags, in opposite polarity so
     // they partition: exactly one is true for every pair of values.
     {
-      id: 'e06', source: 'decision_rung2', target: 'legal_finance_joint', type: 'default', label: 'Legal + finance (会签)',
+      id: 'e06', source: 'decision_rung2', target: 'legal_finance_joint', type: 'default', label: 'Legal + finance, jointly',
       condition: when(routed('legal'), routed('finance')),
     },
     {

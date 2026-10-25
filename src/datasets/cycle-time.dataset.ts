@@ -66,8 +66,9 @@ import { defineDataset } from '@objectstack/spec/ui';
 export const CycleTimeDataset = defineDataset({
   name: 'contract_cycle_time',
   label: 'Contract Cycle',
+  // Why there is no duration measure: the module comment above.
   description:
-    'Stage coverage by contract type and legal owner: how many contracts have reached each lifecycle stamp, and when. Carries no duration measure — see the module comment for the measurement that rules one out.',
+    'Stage coverage by contract type and legal owner: how many contracts have reached each lifecycle stage, and when. It counts the stages reached; it does not measure how long a stage took.',
   object: 'clm_contract',
   include: ['contract_type'],
 

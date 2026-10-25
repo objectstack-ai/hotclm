@@ -10,9 +10,11 @@ import { editableOnly, hidden, inList } from './_grants.js';
  * no seal keeper; execution registration and archive are one position).
  *
  * "RU（signing 及之后；执行与归档字段）" on contracts. The rows arrive through
- * `contract_records_execution` (`edit`, signing onward); the row policy
- * repeats the window for the OR-merge; and field-level security limits the
- * edit to the two execution/archive fields a person actually writes:
+ * two sharing rules: `contract_records_execution` (`edit`, signing onward) and
+ * `contract_records_approved_read` (`read`, approved only — ruling A on #100,
+ * so records can read the contract it starts signing). The row policy repeats
+ * the edit window for the OR-merge, and field-level security limits the edit
+ * to the two execution/archive fields a person actually writes:
  *
  *  - `status` — execution IS the `signing → active` transition the
  *    `execute_contract` gate authorises (the state machine guards it);
@@ -52,7 +54,9 @@ export const RecordsSet = definePermissionSet({
     {
       name: 'contract_records_execution_window',
       label: 'Records edits a contract from signing onward',
-      description: 'DESIGN.md §04 contract_records_execution, restated as the row policy that survives the OR-merge with clm_requester.',
+      // DESIGN.md §04 contract_records_execution, restated as the row policy
+      // that survives the OR-merge with clm_requester.
+      description: 'Lets the records manager edit a contract that is Signing, Active, Expired or Terminated.',
       object: 'clm_contract',
       operation: 'update',
       using: inList('status', EXECUTION_STATUSES),

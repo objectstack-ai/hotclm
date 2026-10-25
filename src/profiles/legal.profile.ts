@@ -75,7 +75,9 @@ export const LegalSet = definePermissionSet({
     {
       name: 'contract_legal_edit_any_status',
       label: 'Legal edits a contract in any status',
-      description: 'The permissive companion of contract_requester_edit_window (policies OR-merge across the sets a person holds).',
+      // The permissive companion of contract_requester_edit_window (policies
+      // OR-merge across the sets a person holds).
+      description: 'Lets legal edit a contract in any status, not only while it is Draft or Submitted.',
       object: 'clm_contract',
       operation: 'update',
       using: inList('status', CONTRACT_STATUSES),
@@ -83,7 +85,8 @@ export const LegalSet = definePermissionSet({
     {
       name: 'review_legal_insert_any_stage',
       label: 'Legal records a review at any stage',
-      description: 'The permissive companion of the finance stage policies on clm_review.',
+      // The permissive companion of the finance stage policies on clm_review.
+      description: 'Lets legal record a review at any stage, the finance stage included.',
       object: 'clm_review',
       operation: 'insert',
       check: inList('stage', REVIEW_STAGES),
@@ -91,7 +94,8 @@ export const LegalSet = definePermissionSet({
     {
       name: 'review_legal_update_any_stage',
       label: 'Legal updates a review at any stage',
-      description: 'The permissive companion of the finance stage policies on clm_review.',
+      // The permissive companion of the finance stage policies on clm_review.
+      description: 'Lets legal update a review at any stage, the finance stage included.',
       object: 'clm_review',
       operation: 'update',
       using: inList('stage', REVIEW_STAGES),
@@ -99,7 +103,8 @@ export const LegalSet = definePermissionSet({
     {
       name: 'obligation_legal_update_any',
       label: 'Legal updates any obligation of a contract it can edit',
-      description: 'The permissive companion of obligation_requester_own.',
+      // The permissive companion of obligation_requester_own.
+      description: 'Lets legal update any obligation of a contract it can edit, not only the ones assigned to it.',
       object: 'clm_obligation',
       operation: 'update',
       using: inList('status', OBLIGATION_STATUSES),
