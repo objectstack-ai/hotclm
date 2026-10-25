@@ -16,14 +16,18 @@ import type { HookApi } from './_hook-api.js';
  *   of the `route_*` flags of every matching rule, and — when the type
  *   requires legal review — assigns `legal_owner` to the legal counsel with
  *   the fewest open contracts. Runs at priority 150, between the type stamp
- *   and the state machine, so the machine's onward hop can read what it set.
+ *   and the state machine, so the machine's onward-hop check can read what it
+ *   set.
  * - `contract_state_machine` (beforeUpdate on `status`): the transition table
  *   and every guard of §03 状态机, refusing with a structured error rather
- *   than coercing, and stamping the stage timestamp on each entry. Since F2
- *   the machine also takes the AUTOMATIC onward hop of §06: `draft →
- *   submitted` continues to `in_review` (a legal owner was assigned) or to
- *   `in_approval` (the type needs no legal review) in the same write, and the
- *   hop is validated by the same guard block a hand-made transition meets.
+ *   than coercing, and stamping the stage timestamp on each entry. On `draft →
+ *   submitted` it also CHECKS the automatic onward hop of §06 F2 — into
+ *   `in_review` (a legal owner was assigned) or `in_approval` (the type needs
+ *   no legal review) — with the same guard block a hand-made transition
+ *   meets, so a submission whose hop would be refused is refused whole.
+ * - `contract_route_onward` (afterUpdate, F2 of §06): TAKES that hop, as a
+ *   system write, once the submission has landed as `submitted`. See the hook
+ *   for why the hop is a second write and not part of the submitter's.
  * - `contract_archive` (beforeUpdate, F14 of §06): a closed contract that
  *   gains an `archive_no` is stamped `archived_at`, an archive number on a
  *   live contract is refused, and an archived contract is frozen against
@@ -392,12 +396,18 @@ const contractStateMachine: Hook = {
       return type;
     }
 
-    // One write may carry MORE than one transition: `draft → submitted`
-    // continues to `in_review` or `in_approval` in the same write (§06 F2).
-    // Each hop goes through the SAME table check and the SAME guard blocks a
-    // hand-made transition meets — the onward hop is a second iteration, not
-    // a second copy of the guards. Two hops is the ceiling the table allows.
+    // `draft → submitted` is followed by F2's automatic onward hop into
+    // `in_review` or `in_approval` (§06 F2). The hop is CHECKED here, as a
+    // second iteration through the SAME table check and the SAME guard blocks
+    // a hand-made transition meets — not a second copy of the guards — so a
+    // submission whose hop would be refused (an open deviation on a type that
+    // goes straight to approval) is refused whole, in this write. It is NOT
+    // taken here: `status` stays `submitted` on this write, and
+    // `contract_route_onward` (afterUpdate) takes the hop as a system write.
+    // `checkingHop` marks that second iteration, which stamps nothing — the
+    // hop's own write meets this machine again and stamps then.
     let to = requested;
+    let checkingHop = false;
     for (let hop = 0; ; hop += 1) {
       if (hop > 2) throw refuse(`The contract status hopped more than twice in one write (${from} → ${to}); refusing to loop.`, 'INTERNAL_ERROR', 500);
       let onward: string | null = null;
@@ -432,11 +442,12 @@ const contractStateMachine: Hook = {
           throw refuse('Upload a first version, or choose a contract type that carries a template, before submitting.', 'INVALID_STATE', 422);
         }
         input.submitted_at = now;
-        // F2's onward hop. `contract_route` (priority 150) has already stamped
-        // the `route_*` union and, when the type requires legal review, assigned
-        // `legal_owner` to the least-loaded legal counsel. No legal review →
-        // straight to approval; a legal owner in hand → into review; a type
-        // that wants legal review but no counsel could be assigned → the
+        // F2's onward hop — the same decision `contract_route_onward` takes on
+        // the committed row. `contract_route` (priority 150) has already
+        // stamped the `route_*` union and, when the type requires legal review,
+        // assigned `legal_owner` to the least-loaded legal counsel. No legal
+        // review → straight to approval; a legal owner in hand → into review; a
+        // type that wants legal review but no counsel could be assigned → the
         // contract stays `submitted` for the legal queue to accept by hand.
         if (type.requires_legal_review === false) onward = 'in_approval';
         else if (isSet(get('legal_owner'))) onward = 'in_review';
@@ -453,7 +464,7 @@ const contractStateMachine: Hook = {
           if (!isSet(get('legal_owner'))) {
             throw refuse('Assign a legal owner before the contract enters review.', 'INVALID_STATE', 422);
           }
-          input.review_started_at = now;
+          if (!checkingHop) input.review_started_at = now;
         } else if (requiresLegalReview) {
           throw refuse('This contract type requires legal review; the next state after submitted is in_review, not in_approval.', 'INVALID_STATE', 422);
         }
@@ -560,8 +571,100 @@ const contractStateMachine: Hook = {
       if (!onward) break;
       from = to;
       to = onward;
-      input.status = onward;
+      checkingHop = true;
     }
+  },
+};
+
+/**
+ * F2's automatic onward hop (DESIGN.md §06 F2: "…分配 `legal_owner` 并进
+ * `in_review`，否则直进 `in_approval`"), taken as a SECOND write, by the system,
+ * after the submission has landed as `submitted`.
+ *
+ * ## Why the hop is not part of the submitter's write
+ *
+ * It used to be: `contract_state_machine` rewrote `input.status` from
+ * `submitted` to the hop's target inside the submitter's own write. On
+ * 17.5+ the row-level CHECK is judged on the row AS ITS beforeUpdate HOOKS
+ * LEAVE IT (`RowLevelSecurityPolicySchema.check`; with no declared `check`,
+ * `using` stands in), and `clm_requester`'s `contract_requester_edit_window`
+ * admits only `draft` / `submitted`. So every caller-scoped submission by a
+ * requester was refused — `[Security] RLS check FAILED on update
+ * 'clm_contract'` — on every door that writes as the caller: the intake
+ * wizard's "Submit now" (`contract_intake`'s `update_record`, issue #90), the
+ * same flow headless through `launch_contract`, and a `PATCH` of `status`.
+ * The header Submit button kept working only because a script action's body
+ * runs system-elevated (see `contract-lifecycle.actions.ts`), which skips the
+ * check altogether.
+ *
+ * Splitting the hop off keeps both halves honest without widening anything:
+ * the submitter's write is judged by the submitter's own policy and lands
+ * inside it (`submitted`), and the hop — routing, which is F2's act and not
+ * the requester's — is written by the system. A `check` on the window that
+ * admitted `in_review` / `in_approval` would have let a requester write those
+ * statuses directly (self-accepting a contract into review, for one), which
+ * DESIGN.md §04 does not grant them.
+ *
+ * ## Why it cannot fail on its own
+ *
+ * The submitter's write already ran the hop through the state machine's
+ * guards (the `checkingHop` iteration there), so a hop that would be refused
+ * refuses the submission itself, atomically. This write meets the same
+ * guards again and stamps `review_started_at`; it is decided on the
+ * COMMITTED row, re-read here, never on the payload. If it throws anyway the
+ * error reaches the caller loudly — it is not swallowed into a contract
+ * silently resting in `submitted`.
+ *
+ * `runAs: 'system'`: `status` past `submitted` is outside the requester's
+ * window by design, and `review_started_at` is a stage stamp no position may
+ * write (§04 FLS). `ctx.session` and the carried `userId` still name the
+ * submitter, so F5's record-change run and the audit stamps attribute the hop
+ * to the person who submitted.
+ */
+const contractRouteOnward: Hook = {
+  name: 'contract_route_onward',
+  object: 'clm_contract',
+  events: ['afterUpdate'],
+  priority: 150,
+  runAs: 'system',
+  description: 'F2: after a contract enters submitted from draft, take the automatic onward hop as a system write — into in_review when a legal owner was assigned, straight into in_approval when the type needs no legal review.',
+  handler: async (ctx: HookContext) => {
+    function refuse(message: string, code: string, status: number): Error {
+      const err = new Error(message) as Error & { code: string; status: number };
+      err.code = code;
+      err.status = status;
+      return err;
+    }
+    const previous = ctx.previous ?? {};
+    // ENTERING submitted from draft on THIS write. The hop's own write has
+    // `previous.status === 'submitted'` and returns here, so this never loops.
+    if (previous.status !== 'draft') return;
+    const id = typeof previous.id === 'string' ? previous.id : '';
+    if (!id) return;
+    const isSet = (value: unknown): boolean =>
+      !(value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0));
+
+    const api = ctx.api as HookApi | undefined;
+    if (!api) throw refuse('The data API is not available to the contract onward-routing hook.', 'INTERNAL_ERROR', 500);
+
+    const row = await api.object('clm_contract').findOne({
+      where: { id },
+      fields: ['id', 'status', 'contract_type', 'legal_owner'],
+    });
+    if (!row || row.status !== 'submitted') return;
+    const typeId = row.contract_type;
+    const type = isSet(typeId)
+      ? await api.object('clm_contract_type').findOne({ where: { id: typeId }, fields: ['id', 'requires_legal_review'] })
+      : null;
+    if (!type) return;
+
+    // The decision `contract_state_machine` checked on the submitter's write.
+    let onward: string | null = null;
+    if (type.requires_legal_review === false) onward = 'in_approval';
+    else if (isSet(row.legal_owner)) onward = 'in_review';
+    if (!onward) return;
+
+    await api.object('clm_contract').update({ id, status: onward }, { where: { id } });
   },
 };
 
@@ -1040,6 +1143,7 @@ export default [
   contractTypeStamp,
   contractRoute,
   contractStateMachine,
+  contractRouteOnward,
   contractArchive,
   contractActivate,
   deviationStateMachine,

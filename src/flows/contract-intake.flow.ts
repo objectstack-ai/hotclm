@@ -426,8 +426,12 @@ export const ContractIntakeFlow: Flow = {
     },
     { id: 'decision_submit', type: 'decision', label: 'Submit Now?' },
     {
-      // The write that enters F2: `contract_route` stamps the routing and the
-      // state machine takes the contract into review or approval.
+      // The write that enters F2, as the launcher like every other write here:
+      // `contract_route` stamps the routing and the state machine checks the
+      // onward hop, and this write lands `submitted` — inside the requester's
+      // edit window, which judges it. The hop into review or approval is then
+      // taken by `contract_route_onward` as a system write (`contract.hook.ts`
+      // says why it is a second write; issue #90 is what the single write cost).
       id: 'submit_contract', type: 'update_record', label: 'Submit Contract',
       config: { objectName: 'clm_contract', filter: { id: '{contractRecord.id}' }, fields: { status: 'submitted' } },
     },
