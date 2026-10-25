@@ -1,6 +1,7 @@
 import type { Hook } from '@objectstack/spec/data';
 
 import contractHooks from './contract.hook.js';
+import contractVersionHooks from './contract-version.hook.js';
 import mirrorHooks from './mirror.hook.js';
 
 /**
@@ -8,4 +9,4 @@ import mirrorHooks from './mirror.hook.js';
  * apart from `index.ts` on purpose: that barrel is spread into `objects` via
  * `Object.values()`, and a hook array in it would be registered as an object.
  */
-export const allHooks: Hook[] = [...contractHooks, ...mirrorHooks];
+export const allHooks: Hook[] = [...contractHooks, ...contractVersionHooks, ...mirrorHooks];
