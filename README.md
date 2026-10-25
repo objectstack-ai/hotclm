@@ -38,6 +38,10 @@ intention — a fictional multi-entity group, six months of negotiation and a
 book of contracts already in force, so every list has something on its first
 screen. Sign in with `admin@objectos.ai` / `admin123`.
 
+`pnpm demo` also turns on the platform's scheduled work, which is off by
+default, so the daily reminder sweeps run on the demo book; a deployment that
+wants those reminders in the inbox sets `OS_AUTOMATION_SCHEDULED_WORK_ENABLED=true`.
+
 Point the two locales at different databases; they key their rows on localised
 titles, so seeding one on top of the other gives you both books.
 
