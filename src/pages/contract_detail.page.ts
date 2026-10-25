@@ -276,6 +276,11 @@ export const ContractDetailPage: Page = {
                   columns: ['contract_number', 'title', 'status', 'start_date', 'end_date', 'owner_id', 'created_at'],
                   sort: [{ field: 'created_at', order: 'desc' }],
                   limit: 10,
+                  // None of the contract's own list actions: unnamed, the list
+                  // draws every `list_toolbar` action of `clm_contract`, and
+                  // "Launch Contract" above a list of renewals starts an
+                  // unrelated intake. A renewal is started from the header.
+                  actions: [],
                 },
               },
             ],
