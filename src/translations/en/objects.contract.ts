@@ -537,6 +537,11 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: 'Archive',
       },
     },
+    _validations: {
+      contract_entity_is_active_company: {
+        message: 'Our Signing Entity must be one of our active legal entities: a business unit of kind Company that is still active. A department, an office or a retired company cannot sign. Choose an entity from the list, or ask an administrator to add or reactivate it in Setup → Business Units.',
+      },
+    },
   },
 
   clm_contract_version: {
