@@ -59,6 +59,7 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
           // 说明文字取自运行时：合同类型有没有模板，决定显示哪一句 `templateNote`。
           description: '{{ templateNote }}',
           fields: {
+            templateAvailable: { label: '有模板' },
             draft_from_template: { label: '从模板起草' },
           },
         },

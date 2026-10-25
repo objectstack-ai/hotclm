@@ -433,6 +433,12 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
       // record interpolation, so it reads the same in every locale.
       title: '{contract_number}',
       subtitle: '{title}',
+      components: {
+        // The Overview tab's list of contracts whose `renewed_from` is this one.
+        contract_renewals: {
+          title: 'Renewals',
+        },
+      },
     },
   },
 };

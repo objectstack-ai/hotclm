@@ -60,6 +60,7 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
           // decides which of two `templateNote` assignments it shows.
           description: '{{ templateNote }}',
           fields: {
+            templateAvailable: { label: 'Template available' },
             draft_from_template: { label: 'Draft from template' },
           },
         },

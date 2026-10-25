@@ -325,7 +325,14 @@ export const ContractIntakeFlow: Flow = {
         title: 'First version',
         description: '{{ templateNote }}',
         fields: [
-          { name: 'draft_from_template', label: 'Draft from template', type: 'boolean', defaultValue: ref('draft_from_template') },
+          // Carrier, as `intakeFields` on the core screen: `visibleWhen` sees
+          // only this screen's own fields, so the type's answer is brought onto
+          // the screen (server-interpolated, a boolean) and hidden by its own
+          // predicate. The toggle is then offered only on a type that carries
+          // a template; on one that does not, the description above says so
+          // and there is nothing to tick.
+          { name: 'templateAvailable', label: 'Template available', type: 'boolean', defaultValue: ref('templateAvailable'), visibleWhen: 'templateAvailable == null' },
+          { name: 'draft_from_template', label: 'Draft from template', type: 'boolean', defaultValue: ref('draft_from_template'), visibleWhen: 'templateAvailable == true' },
         ],
       },
     },
