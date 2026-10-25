@@ -615,21 +615,38 @@ export const Contract = ObjectSchema.create({
     //    bundles). A message thrown from a hook reaches the caller in English
     //    only.
     //
-    // A TRANSITION check, not an invariant: the first clause limits it to
-    // writes that SET the entity (an insert, or an update to a different unit).
-    // A contract that already names a company retired since stays editable on
-    // every other field, and re-sending the same entity with a form save is
-    // not a change. `previous` is null on an insert. The comparison reads the
-    // unit's id through the hop (`record.our_entity.id`), because a rule may
-    // not read a reference both through the hop and as a bare value.
+    // A TRANSITION check, not an invariant, which is why it is a
+    // `conditional`: `when` admits only writes that SET the entity (an insert,
+    // where `previous` is null, or an update naming a different unit), and the
+    // hop is read only inside `then`. A contract that already names a company
+    // retired since stays editable on every other field; re-sending the same
+    // entity with a form save is not a change; and a row whose unit can no
+    // longer be read at all (a pre-#118 database still holding the old
+    // `head_office` string) is not frozen by an unchanged entity either, which
+    // a single rule reading the hop on every write would do. The two halves
+    // are separate expressions for a second reason: a rule may not read a
+    // reference both through the hop and as a bare value.
+    //
+    // The refusal is `then`'s, so `then`'s message is the one a caller sees
+    // and the one both bundles translate. The outer rule's `message` is
+    // required by the schema and never surfaced: the engine returns the
+    // branch's violation, not the conditional's.
     {
-      type: 'cross_field' as const,
-      name: 'contract_entity_is_active_company',
-      label: 'Signing entity is an active company',
-      description: 'A write that sets our_entity must name an active company-kind business unit. Contracts that already name a unit retired since are not judged until the entity is changed.',
-      condition: P`(previous == null || previous.our_entity != record.our_entity.id) && (record.our_entity.kind != "company" || record.our_entity.active != true)`,
-      fields: ['our_entity'],
-      message: 'Our Signing Entity must be one of our active legal entities: a business unit of kind Company that is still active. A department, an office or a retired company cannot sign. Choose an entity from the list, or ask an administrator to add or reactivate it in Setup → Business Units.',
+      type: 'conditional' as const,
+      name: 'contract_entity_set',
+      label: 'Signing entity set or changed',
+      description: 'Judges our_entity only on a write that sets or changes it; an unchanged entity is never re-judged.',
+      when: P`previous == null || previous.our_entity != record.our_entity`,
+      message: 'Our Signing Entity must be one of our active legal entities.',
+      then: {
+        type: 'cross_field' as const,
+        name: 'contract_entity_is_active_company',
+        label: 'Signing entity is an active company',
+        description: 'A write that sets our_entity must name an active company-kind business unit.',
+        condition: P`record.our_entity.kind != "company" || record.our_entity.active != true`,
+        fields: ['our_entity'],
+        message: 'Our Signing Entity must be one of our active legal entities: a business unit of kind Company that is still active. A department, an office or a retired company cannot sign. Choose an entity from the list, or ask an administrator to add or reactivate it in Setup → Business Units.',
+      },
     },
   ],
 
