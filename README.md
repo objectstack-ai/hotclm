@@ -109,7 +109,26 @@ stays empty.
 Every dataset is an upsert, so **create the accounts and run `pnpm demo` again**
 and their contracts and obligations are handed over. Get a name wrong by one
 character and the column stays empty with no error — that is the one thing to
-double-check.
+double-check in the names.
+
+**Do that re-run before the daily jobs have run on the database.** Only a clean
+database is guaranteed to come back as the known corpus: the fixture re-asserts
+every column it declares, the job-written ones included, so once rows have
+moved on — the jobs' work above all — a re-run does one of two things to each.
+
+- **Where the state machine allows the way back, it walks the job's work back,
+  silently.** The 18 part-paid instalments `payment_overdue` (F11) moved to
+  `overdue` return to `partial` — a legal edge, so they count as ordinary
+  `updated` rows with no error — and a reset `is_expiring` makes F12 send a
+  renewal notice it has already sent.
+- **Where it does not, the row is refused and dropped whole.** A contract that
+  has since expired or been terminated is not moved back to `active`: the row
+  shows as `errored` in the loader's `Seed loading completed` summary, and none
+  of its other columns are written either.
+
+The fix is the platform's — seed columns written on create only, upstream
+`objectstack-ai/objectstack#25761`, still open — and until it lands, a fresh
+database is the only way back to the corpus as shipped.
 
 **One obligation is deliberately left with no owner** and is not a name you have
 missed. F10 (`obligation_due`) reminds an obligation's owner and takes a "nobody
