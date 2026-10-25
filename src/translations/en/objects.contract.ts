@@ -313,11 +313,11 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       activate_contract: {
         label: 'Activate',
-        description: 'Bring a signed contract into force. F9 stamps `activated_at` and opens the renewal-reminder obligation.',
+        description: 'Bring a signed contract into force. Its activation date is recorded and the renewal reminder is set up.',
       },
       executed_upload: {
         label: 'Backfill Executed Contract',
-        description: 'Record a contract that was signed before this system, or outside it: it is created directly in active with is_backfilled set, skipping review and approval, and the executed copy is filed as its final signed version.',
+        description: 'Record a contract that was signed before this system, or outside it. It is created directly as active and marked as backfilled, skipping review and approval, and the executed copy is filed as its final signed version.',
         successMessage: 'Executed contract recorded.',
         params: {
           contract_type: {
@@ -328,11 +328,11 @@ export const contract: Record<string, ObjectTranslationData> = {
           },
           signed_date: {
             label: 'Signed On',
-            helpText: 'The date on the executed document. It becomes both signed_at and executed_at.',
+            helpText: 'The date on the executed document. It is recorded as both the signed date and the execution date.',
           },
           executed_file: {
             label: 'Executed Copy',
-            helpText: 'The signed PDF or scan. It is filed as version 1, kind final_signed.',
+            helpText: 'The signed PDF or scan. It is filed as version 1, the final signed version.',
           },
           archive_no: {
             helpText: 'Optional. The existing paper file reference, if this contract already has one.',
@@ -426,7 +426,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       send_for_approval: {
         label: 'Send for Approval',
-        description: 'Close legal review and open the approval ladder (F5). Refused while any deviation is still open.',
+        description: 'Close legal review and start approval. Not possible while any deviation is still open.',
       },
       start_signing: {
         label: 'Start Signing',
@@ -434,7 +434,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       submit_contract: {
         label: 'Submit',
-        description: 'Hand the draft to legal. Routing (F2) stamps the approval flags and either assigns a reviewer or sends it straight to approval.',
+        description: 'Hand the draft over. Its approval route is worked out, and it is either assigned to a lawyer for review or, for a type without legal review, sent straight to approval.',
       },
       start_renewal: {
         label: 'Start Renewal',

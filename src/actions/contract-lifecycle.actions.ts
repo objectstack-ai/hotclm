@@ -153,11 +153,13 @@ const transition = (
  *  `contract_requester_edit_window`, which the trusted body skips. The
  *  caller-scoped doors (the intake wizard, a `PATCH`) are judged by that
  *  window, and land inside it since F2's onward hop became a system write
- *  (`contract_route_onward`). */
+ *  (`contract_route_onward`). On submission F2 (`contract_route`) stamps the
+ *  `route_*` approval flags and either assigns a legal owner or, for a type
+ *  without legal review, hops straight to `in_approval`. */
 export const SubmitContractAction: Action = transition(
   'submit_contract', 'Submit', 'send',
   'draft', 'submitted',
-  'Hand the draft to legal. Routing (F2) stamps the approval flags and either assigns a reviewer or sends it straight to approval.',
+  'Hand the draft over. Its approval route is worked out, and it is either assigned to a lawyer for review or, for a type without legal review, sent straight to approval.',
 );
 
 /**
@@ -203,12 +205,12 @@ export const AcceptContractAction: Action = transition(
   ['clm_legal.access'],
 );
 
-/** 送审 — review is done, start the approval ladder. F6's deviation gate refuses
+/** 送审 — review is done, start the approval ladder (F5). F6's deviation gate refuses
  *  this while any deviation is still `open`; the refusal comes from the hook. */
 export const SendForApprovalAction: Action = transition(
   'send_for_approval', 'Send for Approval', 'git-branch',
   'in_review', 'in_approval',
-  'Close legal review and open the approval ladder (F5). Refused while any deviation is still open.',
+  'Close legal review and start approval. Not possible while any deviation is still open.',
   ['clm_legal.access'],
 );
 
@@ -220,7 +222,8 @@ export const StartSigningAction: Action = transition(
   ['execute_contract'],
 );
 
-/** 生效 — the execution formalities are complete.
+/** 生效 — the execution formalities are complete. F9 (`contract_activate`)
+ *  stamps `activated_at` and opens the renewal-reminder obligation.
  *
  *  The description no longer promises a payment schedule. Decision #14 was
  *  ruled A on 2026-09-09: F9 expands NO intake-captured payment arrangement,
@@ -232,7 +235,7 @@ export const StartSigningAction: Action = transition(
 export const ActivateContractAction: Action = transition(
   'activate_contract', 'Activate', 'circle-check',
   'signing', 'active',
-  'Bring a signed contract into force. F9 stamps `activated_at` and opens the renewal-reminder obligation.',
+  'Bring a signed contract into force. Its activation date is recorded and the renewal reminder is set up.',
   ['execute_contract'],
 );
 

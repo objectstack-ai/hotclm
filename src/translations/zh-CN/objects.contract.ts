@@ -434,7 +434,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       submit_contract: {
         label: '提交',
-        description: '把草稿交给法务。系统会盖上审批标记，并指派审查人或直接送审。',
+        description: '把草稿交出去。系统会定好它的审批路线，并指派一位法务审查；不需要法务审查的类型则直接送审。',
       },
       start_renewal: {
         label: '发起续签',
