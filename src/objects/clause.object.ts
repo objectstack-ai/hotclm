@@ -102,7 +102,7 @@ export const Clause = ObjectSchema.create({
       label: 'Deviation Needs Head of Legal',
       group: 'scope',
       defaultValue: false,
-      description: 'An accepted deviation from this clause routes the contract through the head-of-legal rung (F6).',
+      description: 'An accepted deviation from this clause routes the contract through the head-of-legal rung.',
     }),
     is_active: Field.boolean({
       label: 'Active',

@@ -36,7 +36,7 @@ export const Deviation = ObjectSchema.create({
       readonly: true,
       searchable: true,
       maxLength: 200,
-      description: 'Stored mirror "<clause title> · <status>", stamped by mirror.hook.ts.',
+      description: 'Filled in automatically as "clause title · status".',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',
@@ -82,7 +82,7 @@ export const Deviation = ObjectSchema.create({
       group: 'decision',
       required: true,
       storage: { notNull: true },
-      description: 'open → accepted / rejected / withdrawn; the decided states are terminal (contract.hook.ts).',
+      description: 'Moves from Open to Accepted, Rejected or Withdrawn; those three are final.',
       options: [
         { label: 'Open',      value: 'open',      color: '#F59E0B', default: true },
         { label: 'Accepted',  value: 'accepted',  color: '#2F7D5B' },

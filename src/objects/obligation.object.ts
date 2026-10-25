@@ -47,7 +47,7 @@ export const Obligation = ObjectSchema.create({
       readonly: true,
       searchable: true,
       maxLength: 200,
-      description: 'Stored mirror of title, stamped by mirror.hook.ts.',
+      description: 'Filled in automatically from the title.',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',
@@ -70,7 +70,7 @@ export const Obligation = ObjectSchema.create({
     kind: Field.select({
       label: 'Kind',
       group: 'obligation',
-      description: 'What class of commitment this is; the reminder job and the dashboards band on it.',
+      description: 'What class of commitment this is; reminders and dashboards group by it.',
       options: [
         { label: 'Deliverable', value: 'deliverable', color: '#3B82F6', default: true },
         { label: 'Payment',     value: 'payment',     color: '#0B6E63' },
@@ -85,7 +85,7 @@ export const Obligation = ObjectSchema.create({
       group: 'obligation',
       required: true,
       storage: { notNull: true },
-      description: 'The date the daily job (card 09) measures arrears against.',
+      description: 'The date the daily check measures arrears against.',
     }),
     owner: Field.user({
       label: 'Owner',
@@ -98,7 +98,9 @@ export const Obligation = ObjectSchema.create({
       group: 'progress',
       required: true,
       storage: { notNull: true },
-      description: 'pending → in_progress / done / waived / overdue; in_progress → done / waived; overdue → done / waived. Enforced by contract.hook.ts; overdue is written only by the daily job (card 09).',
+      // The full table, including in_progress → overdue (decision #10, 1A), is the
+      // state machine in contract.hook.ts.
+      description: 'Pending moves to In Progress, Done, Waived or Overdue; In Progress to Done, Waived or Overdue; Overdue to Done or Waived. Done and Waived are final. Only the daily check sets Overdue.',
       options: [
         { label: 'Pending',     value: 'pending',     color: '#94A3B8', default: true },
         { label: 'In Progress', value: 'in_progress', color: '#3B82F6' },

@@ -49,7 +49,7 @@ export const PaymentPlan = ObjectSchema.create({
       readonly: true,
       searchable: true,
       maxLength: 80,
-      description: 'Stored mirror "#<seq> · <planned_date>", stamped by mirror.hook.ts. ASCII by design; the localized form belongs to the zh-CN bundle.',
+      description: 'Filled in automatically as "#instalment number · planned date".',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',
@@ -68,14 +68,14 @@ export const PaymentPlan = ObjectSchema.create({
       scale: 0,
       min: 1,
       max: 999,
-      description: 'Position in the schedule, 1-based. Unique within the contract.',
+      description: 'Position in the schedule, starting at 1. Unique within the contract.',
     }),
     planned_date: Field.date({
       label: 'Planned Date',
       group: 'schedule',
       required: true,
       storage: { notNull: true },
-      description: 'The date the daily job (card 09) measures arrears against.',
+      description: 'The date the daily check measures arrears against.',
     }),
     planned_amount: Field.currency({
       label: 'Planned Amount',
@@ -83,7 +83,8 @@ export const PaymentPlan = ObjectSchema.create({
       required: true,
       storage: { notNull: true },
       min: 0,
-      description: 'In the contract currency (clm_contract.currency_code); the instalment amounts are not separately denominated.',
+      // Denominated in clm_contract.currency_code.
+      description: 'In the contract currency; the instalment amounts are not separately denominated.',
     }),
     condition: Field.textarea({
       label: 'Condition',
@@ -96,7 +97,9 @@ export const PaymentPlan = ObjectSchema.create({
       group: 'actual',
       required: true,
       storage: { notNull: true },
-      description: 'planned → due; due → partial / paid / overdue; overdue → partial / paid. Enforced by contract.hook.ts; overdue is written only by the daily job (card 09).',
+      // The full table, including the partial edges (decision #10, 2A), is the
+      // state machine in contract.hook.ts.
+      description: 'Planned moves to Due; Due to Partial, Paid or Overdue; Partial to Paid or Overdue; Overdue to Partial or Paid. Paid is final. Only the daily check sets Overdue.',
       options: [
         { label: 'Planned', value: 'planned', color: '#94A3B8', default: true },
         { label: 'Due',     value: 'due',     color: '#F59E0B' },
@@ -114,7 +117,7 @@ export const PaymentPlan = ObjectSchema.create({
       label: 'Actual Amount',
       group: 'actual',
       min: 0,
-      description: 'What actually arrived, in the contract currency. Below planned_amount on a partial instalment.',
+      description: 'What actually arrived, in the contract currency. Below the planned amount on a partial instalment.',
     }),
     invoice_no: Field.text({
       label: 'Invoice Number',

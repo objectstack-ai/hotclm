@@ -62,7 +62,7 @@ export const Contract = ObjectSchema.create({
       readonly: true,
       searchable: true,
       maxLength: 32,
-      description: 'Generated on insert by contract.hook.ts as <type code>-<year>-<4-digit sequence>, one sequence per type per year (DESIGN.md §13 Q5). Regenerated only if the type changes while the contract is still a draft.',
+      description: 'Generated when the contract is created: the type code, the year and a four-digit sequence (e.g. NDA-2026-0001), one sequence per type per year. Regenerated only if the type changes while the contract is still a draft.',
     }),
     title: Field.text({
       label: 'Title',
@@ -80,7 +80,8 @@ export const Contract = ObjectSchema.create({
       // Inactive types are hidden from the picker; existing contracts keep
       // them (clm_contract_type.is_active).
       lookupFilters: [{ field: 'is_active', operator: 'eq', value: true }],
-      description: 'The workflow this contract runs: intake fields, review, execution method and formalities (DESIGN.md §02).',
+      // The type IS the workflow definition (DESIGN.md §02).
+      description: 'The workflow this contract runs: intake fields, review, execution method and formalities.',
     }),
     category: Field.select({
       label: 'Category',
@@ -116,7 +117,9 @@ export const Contract = ObjectSchema.create({
       group: 'identity',
       required: true,
       storage: { notNull: true },
-      description: 'Lifecycle state. Transitions and their guards are enforced by contract.hook.ts (DESIGN.md §03 状态机); expired, terminated and cancelled are terminal.',
+      // Transitions and their guards: the state machine in contract.hook.ts
+      // (DESIGN.md §03 状态机), on every write path.
+      description: 'Where the contract is in its lifecycle. Status changes follow fixed rules; Expired, Terminated and Cancelled are final.',
       options: [
         { label: 'Draft',       value: 'draft',       color: '#94A3B8', default: true },
         { label: 'Submitted',   value: 'submitted',   color: '#3B82F6' },
@@ -146,14 +149,16 @@ export const Contract = ObjectSchema.create({
       group: 'identity',
       readonly: true,
       defaultValue: false,
-      description: 'An already-executed contract entered after the fact through the F16 executed_upload action (DESIGN.md §13 Q8) — the only writer. Such a contract starts active and skipped review and approval.',
+      // Only writer: the F16 executed_upload action (DESIGN.md §13 Q8).
+      description: 'An already-signed contract recorded after the fact with Backfill Executed Contract. It starts active, without review or approval.',
     }),
     archive_no: Field.text({
       label: 'Archive Number',
       group: 'identity',
       searchable: true,
       maxLength: 40,
-      description: 'Physical or records-management archive reference, assigned at archive time (F14).',
+      // Assigned by the archive step (DESIGN.md §06 F14).
+      description: 'Physical or records-management archive reference, assigned at archive time.',
     }),
 
     // ─── Parties & owners ───────────────────────────────────────────────
@@ -169,7 +174,8 @@ export const Contract = ObjectSchema.create({
     our_entity: Field.select({
       label: 'Our Signing Entity',
       group: 'parties',
-      description: 'Which of our legal entities signs. The shipped list is a single placeholder — a group with several legal entities replaces it with its own (DESIGN.md §01: signing entities are configuration, not schema).',
+      // DESIGN.md §01: signing entities are configuration, not schema.
+      description: 'Which of our legal entities signs. The shipped list is a single placeholder — a group with several legal entities replaces it with its own.',
       options: [
         { label: 'Head office', value: 'head_office', default: true },
       ],
@@ -177,7 +183,9 @@ export const Contract = ObjectSchema.create({
     department: Field.select({
       label: 'Requesting Department',
       group: 'parties',
-      description: 'The business unit that launched the contract. A redundant scalar on the contract because RLS cannot cross objects (DESIGN.md §04); department-level sharing is a customer overlay (§13 Q2).',
+      // A redundant scalar on the contract because RLS cannot cross objects
+      // (DESIGN.md §04); department-level sharing is a customer overlay (§13 Q2).
+      description: 'The business unit that launched the contract. Sharing contracts by department is a customer-specific extension, not part of the standard product.',
       options: [
         { label: 'Sales',        value: 'sales' },
         { label: 'Procurement',  value: 'procurement' },
@@ -227,12 +235,14 @@ export const Contract = ObjectSchema.create({
       label: 'Contract Amount',
       group: 'commercial',
       min: 0,
-      description: 'Total contract value in currency_code. The approval matrix bands on it (clm_approval_rule).',
+      // In currency_code; the clm_approval_rule amount bands read it.
+      description: 'Total contract value, in the contract currency. The approval matrix bands on it.',
     }),
     currency_code: Field.select({
       label: 'Currency',
       group: 'commercial',
-      description: 'ISO 4217 code. The organization-level default is a setting, not schema; the factory default is USD (DESIGN.md §01).',
+      // DESIGN.md §01: the organization-level default is a setting, not schema.
+      description: 'ISO 4217 code. The organization\'s default currency is a setting; out of the box it is USD.',
       options: [
         { label: 'USD — US Dollar',        value: 'usd', default: true },
         { label: 'EUR — Euro',             value: 'eur' },
@@ -250,7 +260,9 @@ export const Contract = ObjectSchema.create({
     payment_terms: Field.select({
       label: 'Payment Terms',
       group: 'commercial',
-      description: 'Same value set as HotCRM crm_contract.payment_terms so the F15 hand-off maps 1:1.',
+      // Same value set as HotCRM crm_contract.payment_terms so the F15 hand-off
+      // maps 1:1.
+      description: 'The same values HotCRM uses for payment terms, so the two match one to one when a contract is handed over.',
       options: [
         { label: 'Net 15',         value: 'net_15' },
         { label: 'Net 30',         value: 'net_30' },
@@ -263,7 +275,7 @@ export const Contract = ObjectSchema.create({
       label: 'Liability Cap',
       group: 'commercial',
       min: 0,
-      description: 'Maximum aggregate liability in currency_code. Empty means uncapped or not negotiated.',
+      description: 'Maximum aggregate liability, in the contract currency. Empty means uncapped or not negotiated.',
     }),
 
     // ─── Term & renewal ─────────────────────────────────────────────────
@@ -274,7 +286,9 @@ export const Contract = ObjectSchema.create({
     end_date: Field.date({
       label: 'End Date',
       group: 'term',
-      description: 'The expiry job (F13) flags is_expiring renewal_notice_days before this date.',
+      // F12 renewal_notice (renewal-notice.flow.ts) flags is_expiring
+      // renewal_notice_days before this date.
+      description: 'The contract is flagged Expiring Soon once this date is within its renewal notice period.',
     }),
     term_months: Field.number({
       label: 'Term (months)',
@@ -294,24 +308,27 @@ export const Contract = ObjectSchema.create({
       scale: 0,
       min: 0,
       max: 365,
-      description: 'Days before end_date by which a non-renewal notice must be given.',
+      description: 'Days before the end date by which a non-renewal notice must be given.',
     }),
     renewed_from: Field.lookup('clm_contract', {
       label: 'Renewed From',
       group: 'term',
-      description: 'Set by the "start renewal" action on the new draft; renewal is a new contract, not a transition (DESIGN.md §03).',
+      // Written by the start_renewal flow; DESIGN.md §03: renewal is a new
+      // contract, not a transition.
+      description: 'Set by Start Renewal on the new draft. A renewal is a new contract, not a status change.',
     }),
     parent_contract: Field.lookup('clm_contract', {
       label: 'Parent Contract',
       group: 'term',
-      description: 'The framework agreement this order sits under, or the main contract an amendment (category: amendment) modifies.',
+      description: 'The framework agreement this order sits under, or the main contract an amendment modifies.',
     }),
     is_expiring: Field.boolean({
       label: 'Expiring Soon',
       group: 'term',
       readonly: true,
       defaultValue: false,
-      description: 'Stamped daily by the expiry job (F13) when end_date is within the renewal notice window.',
+      // Stamped by F12 renewal_notice — see end_date above.
+      description: 'Set by the daily check once the end date is within the renewal notice period.',
     }),
 
     // ─── Legal ──────────────────────────────────────────────────────────
@@ -330,7 +347,8 @@ export const Contract = ObjectSchema.create({
     contract_language: Field.select({
       label: 'Contract Language',
       group: 'legal',
-      description: 'ISO 639-1 code of the governing text.',
+      // Option values are ISO 639-1 codes.
+      description: 'The language whose text governs the contract.',
       options: [
         { label: 'English',  value: 'en', default: true },
         { label: 'Chinese',  value: 'zh' },
@@ -353,7 +371,7 @@ export const Contract = ObjectSchema.create({
       group: 'legal',
       multiple: true,
       readonly: true,
-      description: 'Stamped from the contract type. Activation waits for a completed signature whose formalities_done covers every value here.',
+      description: 'Stamped from the contract type. Activation waits for a completed signing round whose Formalities Done covers every value here.',
       options: [
         { label: 'Countersigned copy returned', value: 'countersigned_copy' },
         { label: 'Company seal',                value: 'company_seal' },
@@ -364,7 +382,7 @@ export const Contract = ObjectSchema.create({
     summary: Field.richtext({
       label: 'Summary',
       group: 'legal',
-      description: 'Human-written summary of the deal. The AI summary lives in ai_summary and is adopted separately.',
+      description: 'Human-written summary of the deal. The AI summary is kept in its own field and adopted separately.',
     }),
 
     // ─── Routing & approval — stamped by F2 (route) and F5 (ladder) ────
@@ -376,7 +394,8 @@ export const Contract = ObjectSchema.create({
       label: 'Approval Status',
       group: 'routing',
       readonly: true,
-      description: 'Mirror of the approval ladder (F5) decision node; written by the flow, never by hand.',
+      // Mirror of the F5 approval ladder's decision node (contract-approval.flow.ts).
+      description: 'The outcome of the approval process. Set by the approval flow; do not edit it by hand.',
       options: [
         { label: 'Not Required', value: 'not_required', color: '#94A3B8', default: true },
         { label: 'Pending',      value: 'pending',      color: '#F59E0B' },
@@ -433,7 +452,7 @@ export const Contract = ObjectSchema.create({
       group: 'lifecycle',
       requiredWhen: P`record.status == "terminated"`,
       maxLength: 2000,
-      description: 'Why the contract was ended before its term ran out. Required to terminate (DESIGN.md §03 active → terminated); asked once, by the Terminate action, and never on the intake form.',
+      description: 'Why the contract was ended before its term ran out. Required to terminate; asked once, by the Terminate action, and never on the intake form.',
     }),
     archived_at:       Field.datetime({ label: 'Archived At',       group: 'lifecycle', readonly: true }),
 
@@ -442,7 +461,9 @@ export const Contract = ObjectSchema.create({
       label: 'AI Summary',
       group: 'ai',
       readonly: true,
-      description: 'Adopted from an S2/S6 suggestion (DESIGN.md §07). Empty when nothing has been adopted, or when the ai capability is off.',
+      // Adopted from an S2/S6 suggestion (DESIGN.md §07); empty while the ai
+      // capability is off.
+      description: 'Adopted from an AI suggestion. Empty when nothing has been adopted, or when AI is turned off.',
     }),
     ai_risk_score: Field.number({
       label: 'AI Risk Score',
@@ -451,7 +472,8 @@ export const Contract = ObjectSchema.create({
       scale: 0,
       min: 0,
       max: 100,
-      description: '0 (no concern) to 100 (do not sign). Adopted from the S6 approver memo after legal review; never written directly by the model.',
+      // Adopted from the S6 approver memo (DESIGN.md §07).
+      description: '0 (no concern) to 100 (do not sign). Adopted from the AI approver memo after legal review; never written directly by the AI.',
     }),
     ai_risk_rationale: Field.textarea({
       label: 'AI Risk Rationale',
@@ -484,7 +506,7 @@ export const Contract = ObjectSchema.create({
       readonly: true,
       scale: 0,
       min: 0,
-      description: 'Count of clm_contract_version rows on this contract.',
+      description: 'How many document versions this contract has.',
       summaryOperations: {
         object: 'clm_contract_version',
         relationshipField: 'contract',
@@ -498,7 +520,9 @@ export const Contract = ObjectSchema.create({
       readonly: true,
       scale: 0,
       min: 0,
-      description: 'Count of clm_deviation rows still open. The in_review → in_approval guard reads the children directly (a guard must not trust a cached aggregate); this is the number people list and sort on.',
+      // The in_review → in_approval guard in contract.hook.ts reads the children
+      // directly: a guard must not trust a cached aggregate.
+      description: 'How many clause deviations are still open. Used for listing and sorting; sending for approval checks the deviations themselves, not this number.',
       summaryOperations: {
         object: 'clm_deviation',
         relationshipField: 'contract',
@@ -513,7 +537,9 @@ export const Contract = ObjectSchema.create({
       readonly: true,
       scale: 0,
       min: 0,
-      description: 'Count of clm_obligation rows in arrears. Moves only when the daily job (card 09) flips a child to overdue — the roll-up is recomputed by that write like any other.',
+      // Only the daily job (card 09, obligation-due.flow.ts) writes overdue; the
+      // roll-up is recomputed by that write like any other.
+      description: 'How many obligations are overdue. Only the daily check marks an obligation overdue.',
       summaryOperations: {
         object: 'clm_obligation',
         relationshipField: 'contract',
@@ -528,7 +554,7 @@ export const Contract = ObjectSchema.create({
       readonly: true,
       scale: 2,
       min: 0,
-      description: 'Sum of clm_payment_plan.planned_amount, in the contract currency. Compare with `amount`: that is the negotiated total, this is what the schedule actually adds up to.',
+      description: 'Total planned amount of the payment schedule, in the contract currency. Compare it with Contract Amount: that is the negotiated total, this is what the schedule actually adds up to.',
       summaryOperations: {
         object: 'clm_payment_plan',
         relationshipField: 'contract',
@@ -542,7 +568,7 @@ export const Contract = ObjectSchema.create({
       readonly: true,
       scale: 2,
       min: 0,
-      description: 'Sum of clm_payment_plan.actual_amount, in the contract currency — what has actually arrived against the schedule.',
+      description: 'Total actual amount of the payment schedule, in the contract currency — what has actually arrived against the schedule.',
       summaryOperations: {
         object: 'clm_payment_plan',
         relationshipField: 'contract',

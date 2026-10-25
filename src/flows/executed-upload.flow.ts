@@ -128,7 +128,9 @@ const PARTY_BAD = '!has(vars.partyRecord) || vars.partyRecord == null || !has(va
 export const ExecutedUploadFlow: Flow = {
   name: 'executed_upload',
   label: 'Backfill An Executed Contract',
-  description: 'Record a contract that was signed outside this system: create it directly in active with is_backfilled set, and file the executed copy as its final signed version.',
+  // Creates the contract in `active` with `is_backfilled` set and files the
+  // executed copy as a `final_signed` version.
+  description: 'Record a contract that was signed outside this system: create it directly as active, marked as backfilled, and file the executed copy as its final signed version.',
   type: 'autolaunched',
   status: 'active',
   // See the header: the ONE thing elevation buys is the right to insert a

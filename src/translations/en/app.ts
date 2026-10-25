@@ -158,7 +158,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         overdue_amount: {
           title: 'Overdue Amount',
-          description: 'Scheduled value of instalments the daily job has stamped overdue',
+          description: 'Scheduled value of instalments the daily check has marked overdue',
         },
         overdue_count: {
           title: 'Overdue Instalments',
@@ -188,15 +188,15 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         review_ageing: {
           title: 'In Review Over 30 Days',
-          description: 'Older than every seeded type SLA (longest is 10 days) — a fixed threshold, not the per-type breach',
+          description: 'A fixed 30-day threshold, not each contract type\'s own review SLA.',
         },
         negotiation_stalled: {
           title: 'Waiting on Counterparty',
-          description: 'The ball is in their court — the queue F4 chases',
+          description: 'The ball is in their court — the queue to chase',
         },
         approval_throughput: {
           title: 'Approved This Month',
-          description: 'Contracts reaching approved this month, against the previous period. Not an average duration — see the PR.',
+          description: 'Contracts approved this month, compared with last month. A count, not an average turnaround time.',
         },
         stage_funnel: {
           title: 'Pipeline by Stage',

@@ -34,7 +34,7 @@ export const Review = ObjectSchema.create({
       readonly: true,
       searchable: true,
       maxLength: 160,
-      description: 'Stored mirror "<stage> · <reviewer>", stamped by mirror.hook.ts.',
+      description: 'Filled in automatically as "stage · reviewer".',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',

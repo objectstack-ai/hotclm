@@ -87,15 +87,15 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       review_sla_days: {
         label: '审查时限（天）',
-        help: '法务完成审查的自然日天数，超时会触发催办提醒。',
+        help: '法务完成这种类型合同审查的自然日天数。催办提醒目前不按这个值，而是固定在 30 天时触发。',
       },
       template_file: {
         label: '模板',
-        help: '起草首版所依据的文档。平台目前没有文档渲染引擎，发起表单会把模板和占位符清单交给起草人。',
+        help: '起草首版所依据的文档。发起表单会把模板和占位符清单交给起草人，不会自动填好模板。',
       },
       template_placeholders: {
         label: '模板占位符',
-        help: '由 { key, label, type, required } 组成的数组，形状与平台文档模板的占位符一致。',
+        help: '模板占位符的 JSON 列表，每个占位符一项，形如 { key, label, type, required }。',
       },
       default_term_months: {
         label: '默认期限（月）',

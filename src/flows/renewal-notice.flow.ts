@@ -228,7 +228,8 @@ export const RenewalNoticeFlow: Flow = sweepFlow({
 export const RenewalStartFlow: Flow = {
   name: 'renewal_start',
   label: 'Start Renewal',
-  description: 'Create a renewal draft of this contract, pre-filled from it and linked back through renewed_from.',
+  // "Linked back" = `renewed_from` on the new draft.
+  description: 'Create a renewal draft of this contract, pre-filled from it and linked back to it.',
   type: 'autolaunched',
   status: 'active',
   runAs: 'user',

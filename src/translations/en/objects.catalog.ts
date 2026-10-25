@@ -64,7 +64,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       requires_legal_review: {
         label: 'Requires Legal Review',
-        help: 'When off, a submitted contract of this type goes straight to approval (DESIGN.md §03 状态机).',
+        help: 'When off, a submitted contract of this type skips legal review and goes straight to approval.',
       },
       execution_formalities: {
         label: 'Execution Formalities',
@@ -87,15 +87,15 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       review_sla_days: {
         label: 'Review SLA (days)',
-        help: 'Calendar days legal has to finish review before the overdue reminder fires (F3).',
+        help: 'Calendar days legal has to finish reviewing a contract of this type. The overdue reminder does not use this value: it currently fires at a fixed 30 days.',
       },
       template_file: {
         label: 'Template',
-        help: 'The document a first version is drafted from. No rendering engine exists on the platform yet — the launch form hands the template and its placeholder list to the drafter (DESIGN.md §12).',
+        help: 'The document a first version is drafted from. The launch form hands the template and its placeholder list to the drafter; it does not fill the template in.',
       },
       template_placeholders: {
         label: 'Template Placeholders',
-        help: 'Array of { key, label, type, required } — the same shape as DocumentTemplate.placeholders in @objectstack/spec.',
+        help: 'A JSON list of the template\'s placeholders, one { key, label, type, required } entry per placeholder.',
       },
       default_term_months: {
         label: 'Default Term (months)',
@@ -189,7 +189,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       requires_legal_head: {
         label: 'Deviation Needs Head of Legal',
-        help: 'An accepted deviation from this clause routes the contract through the head-of-legal rung (F6).',
+        help: 'An accepted deviation from this clause routes the contract through the head-of-legal rung.',
       },
       is_active: {
         label: 'Active',
@@ -346,7 +346,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       risk_flag: {
         label: 'Risk Flag',
-        help: 'Blocked parties cannot be chosen on a new contract (intake guard, F1).',
+        help: 'Blocked parties cannot be chosen on a new contract.',
         options: {
           none: 'None',
           watch: 'Watch',
@@ -358,7 +358,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       screening_status: {
         label: 'Screening',
-        help: 'Result of the last sanctions / registry screening. Written by the screening connector when one is configured (DESIGN.md §08), otherwise by legal.',
+        help: 'Result of the last sanctions / registry screening. Written by the screening connector when one is configured, otherwise by legal.',
         options: {
           not_screened: 'Not screened',
           clear: 'Clear',

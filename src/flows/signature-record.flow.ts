@@ -205,7 +205,8 @@ const when = (...clauses: string[]) => expression(clauses.join(' && '));
 export const SignatureRecordFlow: Flow = {
   name: 'signature_record',
   label: 'Signature Completed — Execution Check',
-  description: 'When a signing round completes, compare the formalities done against the ones the contract requires: stamp executed_at and file the final signed version when covered, or tell the legal owner which formality is missing.',
+  // "Record the execution date" = stamp `executed_at`.
+  description: 'When a signing round completes, compare the formalities done against the ones the contract requires: record the execution date and file the final signed version when covered, or tell the legal owner which formality is missing.',
   type: 'record_change',
   status: 'active',
   // See the header: the stamp lands on a readonly, field-secured column, and
@@ -440,7 +441,7 @@ export const SignatureRecordOnCreateFlow: Flow = {
   ...SignatureRecordFlow,
   name: 'signature_record_on_create',
   label: 'Signature Completed — Execution Check (on create)',
-  description: 'Execution-formalities check for a signing round created already completed (insert-time twin of signature_record).',
+  description: 'The same execution check, for a signing round that is recorded as already completed.',
   nodes: SignatureRecordFlow.nodes.map((node) =>
     node.id === 'start'
       ? { ...node, config: { ...node.config, triggerType: 'record-after-create' } }

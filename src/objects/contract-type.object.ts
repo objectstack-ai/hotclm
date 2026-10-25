@@ -110,7 +110,8 @@ export const ContractType = ObjectSchema.create({
       label: 'Requires Legal Review',
       group: 'workflow',
       defaultValue: true,
-      description: 'When off, a submitted contract of this type goes straight to approval (DESIGN.md §03 状态机).',
+      // The submitted → in_approval edge of the DESIGN.md §03 state machine.
+      description: 'When off, a submitted contract of this type skips legal review and goes straight to approval.',
     }),
     execution_formalities: Field.select({
       label: 'Execution Formalities',
@@ -141,7 +142,11 @@ export const ContractType = ObjectSchema.create({
       min: 0,
       max: 90,
       defaultValue: 5,
-      description: 'Calendar days legal has to finish review before the overdue reminder fires (F3).',
+      // DESIGN.md §06 F3 reads this per type, but the reminder fires at a fixed
+      // 30 days until the platform can compare dates (decision #31, 1C + 2B — see
+      // legal-review-sla.flow.ts), so the help text must not promise a per-type
+      // reminder.
+      description: 'Calendar days legal has to finish reviewing a contract of this type. The overdue reminder does not use this value: it currently fires at a fixed 30 days.',
     }),
 
     template_file: Field.file({
@@ -149,12 +154,14 @@ export const ContractType = ObjectSchema.create({
       group: 'template',
       accept: ['application/pdf', '.docx'],
       maxSize: 20 * 1024 * 1024,
-      description: 'The document a first version is drafted from. No rendering engine exists on the platform yet — the launch form hands the template and its placeholder list to the drafter (DESIGN.md §12).',
+      // No rendering engine exists on the platform yet (DESIGN.md §12).
+      description: 'The document a first version is drafted from. The launch form hands the template and its placeholder list to the drafter; it does not fill the template in.',
     }),
     template_placeholders: Field.json({
       label: 'Template Placeholders',
       group: 'template',
-      description: 'Array of { key, label, type, required } — the same shape as DocumentTemplate.placeholders in @objectstack/spec.',
+      // The same shape as DocumentTemplate.placeholders in @objectstack/spec.
+      description: 'A JSON list of the template\'s placeholders, one { key, label, type, required } entry per placeholder.',
     }),
 
     default_term_months: Field.number({
