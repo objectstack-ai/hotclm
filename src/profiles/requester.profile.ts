@@ -99,14 +99,17 @@ export const RequesterSet = definePermissionSet({
     // and all 640 activity rows served to one of them were about records that
     // requester can read.
     //
-    // Deliberately absent: `sys_approval_request` (the Approvals tab). Its data
-    // door has no such parent scoping — a read granted here serves every
-    // approval request in the organization, payload snapshot included, to
-    // every holder — so whether and how requesters see approval history is a
-    // maintainer decision (#86), not a line in this set.
+    // `sys_approval_request` (the Approvals tab, 审批记录) follows the same
+    // shape. The platform serves a caller only the approval requests they may
+    // see, and `enable.approvalsVisibleToReaders` on `clm_contract` widens that
+    // to whoever can read the contract, on a read that names it — a list that
+    // names no contract answers nothing beyond the caller's own participation.
+    // The read is object-level only: approve, reject and the rest keep
+    // authorizing on the approver slate (#86, ruling A).
     sys_comment:          { allowCreate: true,  allowRead: true, allowEdit: false, allowDelete: false },
     sys_activity:         { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     sys_attachment:       { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
+    sys_approval_request: { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
   },
   fields: {
     ...readOnly(Contract, CONTRACT_STAMPED_FIELDS),
