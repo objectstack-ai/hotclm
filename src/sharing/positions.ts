@@ -1,5 +1,5 @@
 import { definePosition } from '@objectstack/spec/identity';
-import { AdminSet, FinanceSet, LegalSet, RecordsSet, RequesterSet } from '../profiles/index.js';
+import { AdminSet, FinanceSet, LegalSet, RecordsSet } from '../profiles/index.js';
 
 /**
  * The seven positions of DESIGN.md §04 — flat capability-distribution groups
@@ -9,19 +9,19 @@ import { AdminSet, FinanceSet, LegalSet, RecordsSet, RequesterSet } from '../pro
  * rows reach it through the sharing rules in `contract.sharing.ts` that name
  * the position as their recipient.
  *
- * Every position names its own set (if it has one) AND `clm_requester`: §04
- * makes that set every employee's default, the platform refuses to bind a set
- * carrying a system permission to the `everyone` anchor (see
- * `requester.profile.ts`), and the two leadership rungs hold no set of their
- * own — the object-level read on `clm_contract` that lets
- * `contract_executive_routed` / `contract_gm_routed` deliver rows comes from
- * this one. Up to 17.x the same pairs were `sys_position_permission_set` rows a
- * boot-time binder wrote; 18 retired that object, and the binding is now part
- * of the definition.
+ * A position names only its own set, and the two leadership rungs name none.
+ * `clm_requester` reaches every holder anyway: it is the app's default set
+ * (`isDefault: true`), bound to the platform's `everyone` anchor, so every
+ * member of the organization holds it with or without a position — see the
+ * header of `src/profiles/requester.profile.ts`. That is also where the
+ * executive and general-manager rungs get the object-level read on
+ * `clm_contract` that `contract_executive_routed` / `contract_gm_routed`
+ * deliver rows into. Up to 17.x the position-to-set pairs were
+ * `sys_position_permission_set` rows a boot-time binder wrote; 18 retired that
+ * object, and the binding is now part of the definition.
  *
  * There is deliberately no "employee" position. `clm_requester` is the set
- * every employee holds by default (§04), and a default is not a position —
- * see the distribution note at the top of `src/profiles/requester.profile.ts`.
+ * every employee holds by default (§04), and a default is not a position.
  *
  * The names are exported as constants so the sharing rules and the approval
  * ladder (card 06) spell them from one place.
@@ -43,42 +43,40 @@ export const ClmPositions = [
     name: CLM_POSITION.legalCounsel,
     label: 'Legal Counsel',
     description: 'Reviews and negotiates contracts. Reads and edits every contract through the legal sharing rule; accepts submissions and runs the review.',
-    permissionSets: [LegalSet.name, RequesterSet.name],
+    permissionSets: [LegalSet.name],
   }),
   definePosition({
     name: CLM_POSITION.legalHead,
     label: 'Head of Legal',
     description: 'The legal rung of the approval ladder. Same contract reach as legal counsel; receives the review-overdue escalations.',
-    permissionSets: [LegalSet.name, RequesterSet.name],
+    permissionSets: [LegalSet.name],
   }),
   definePosition({
     name: CLM_POSITION.financeController,
     label: 'Finance Controller',
     description: 'The finance rung of the approval ladder. Edits contracts from approved onward with the legal fields and the status locked; owns the payment schedule.',
-    permissionSets: [FinanceSet.name, RequesterSet.name],
+    permissionSets: [FinanceSet.name],
   }),
   definePosition({
     name: CLM_POSITION.executive,
     label: 'Executive',
     description: 'Reads the contracts routed to the executive rung of the approval ladder.',
-    permissionSets: [RequesterSet.name],
   }),
   definePosition({
     name: CLM_POSITION.generalManager,
     label: 'General Manager',
     description: 'Reads the contracts routed to the general-manager rung of the approval ladder.',
-    permissionSets: [RequesterSet.name],
   }),
   definePosition({
     name: CLM_POSITION.recordsManager,
     label: 'Records Manager',
     description: 'Execution registration, archive and the contract ledger: reads approved contracts to start signing; edits contracts from signing onward on the execution and archive fields only.',
-    permissionSets: [RecordsSet.name, RequesterSet.name],
+    permissionSets: [RecordsSet.name],
   }),
   definePosition({
     name: CLM_POSITION.admin,
     label: 'CLM Administrator',
     description: 'Maintains the configuration objects and holds full reach over every CLM object.',
-    permissionSets: [AdminSet.name, RequesterSet.name],
+    permissionSets: [AdminSet.name],
   }),
 ];

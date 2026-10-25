@@ -91,17 +91,19 @@ requester a manager ([below](#rung-1-of-the-approval-ladder-is-a-manager)):
 | `clm_admin` | 1 | Maintains the configuration objects and holds full reach over every CLM object: the only position that may write `clm_contract_type` and `clm_approval_rule`, and the only one the app's **Administration** group is served to |
 
 **Three more accounts are business requesters, which is not a position.**
-`clm_requester` is every employee's default set ([DESIGN.md](./DESIGN.md) §04),
-so a requester holds no position at all: the set is granted in Setup as a
-`sys_user_permission_set` row — a different object from the `sys_user_position`
-rows above. They launch contracts and see their own.
+Every member of the organization holds `clm_requester` by default
+([DESIGN.md](./DESIGN.md) §04): it is the app's default permission set, bound
+to the platform's `everyone` anchor, so a requester needs no position and no
+grant — creating the account is the whole of it. They launch contracts and see
+their own. The seven positions above hold the same set the same way, on top of
+their own.
 
 **Five of the accounts above have to be named exactly**, because the fixture
 references them by name:
 
 | Name it exactly | Give it | It receives |
 |---|---|---|
-| `Business Requester 1` · `Business Requester 2` · `Business Requester 3` | the default `clm_requester` set | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 |
+| `Business Requester 1` · `Business Requester 2` · `Business Requester 3` | nothing — every member already holds `clm_requester` | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 |
 | `Legal Counsel 1` · `Legal Counsel 2` | the `clm_legal_counsel` position | the `legal_owner` of every contract legal has accepted — 34 / 34 · all 56 compliance obligations, by the same counterparty relationship — 29 / 27 · and the `decided_by` of all 17 decided deviations — 10 / 7 |
 
 Each requester's **我的合同 › Launched by Me** and **› My Obligations**, and each
@@ -143,13 +145,15 @@ proves it reachable and says why one is both the minimum and the maximum.
 The other six positions are named however you like; they are reached through
 the position, not by name.
 
-The dev admin is deliberately none of them: it holds no `clm_*` permission set,
-so `clm_requester.access` hides every 我的合同 item from it,
-`GET /api/v1/meta/app/clm` serves it `navigation: []`, and `clm_legal.access`
-gates the legal workbench away too. A row parked there — a contract's business
-owner or legal owner, an obligation's owner — belongs to the one account that
-cannot open the screen it is for, and its reminders go to somebody who cannot
-act on them.
+The dev admin is deliberately none of them. Like every member it holds
+`clm_requester`, so it sees 我的合同 and 分析 (`GET /api/v1/meta/app/clm` serves
+it exactly those two groups), but it holds no position and no other `clm_*` set:
+`clm_legal.access` gates the legal workbench away, and the finance, records and
+administration groups stay hidden the same way. A row parked there still lands
+on the wrong account — as a contract's legal owner it sits behind a workbench
+the dev admin cannot open, and as a business owner or an obligation's owner it
+fills the setup account's 我的合同 instead of the requester's — and its
+reminders go to somebody who is not going to act on them.
 
 `clm_review.reviewer` is the one reference that still **has to** name the dev
 admin: it is `required: true`, so a name that resolves to nothing takes the row
@@ -193,18 +197,19 @@ the field name — `sys_user_position.position` is declared `text`, and its own 
 it carries: *"Position machine name (references `sys_position.name`)."* The field name tells you
 nothing here, because this object mixes both kinds freely: `user_id`, `granted_by`, `delegated_from`
 and `certified_by` are all genuine lookups, and only three of its fourteen fields carry an `_id`
-suffix at all. What makes the analogy tempting is the neighbouring API —
-`sys_user_permission_set.permission_set_id` really is id-typed — so the one you would reach for by
-analogy takes an id where this one does not.
+suffix at all. The neighbouring object binds the same way: a direct permission-set grant is a
+`sys_user_permission_set` row whose `permission_set` column is `text` and carries the set's **name**
+(`{ "user_id": "…", "permission_set": "clm_legal" }`) — there is no id-typed column to reach for.
 
 ```http
 POST /api/v1/data/sys_user_position
 { "user_id": "…", "position": "clm_legal_counsel" }
 ```
 
-A name-spelled row grants that position's own permission set **and** `clm_requester`, because every
-position names that set too (`permissionSets` in `src/sharing/positions.ts`) — a lawyer holds `clm_legal` and
-`clm_requester` both. To read back what an account actually ended up with:
+A name-spelled row grants the permission set that position names (`permissionSets` in
+`src/sharing/positions.ts`). `clm_requester` does not come from the position but from membership — a
+lawyer holds `clm_legal` and `clm_requester` both, and `security/explain` attributes the second to the
+"additive baseline". To read back what an account actually ended up with:
 
 ```http
 POST /api/v1/security/explain
@@ -216,9 +221,9 @@ POST /api/v1/security/explain
 
 **An id in the `position` field is accepted, not refused.** Nothing resolves that column on write, so
 a row spelled with the position's id is stored verbatim, matches no position and grants no permission
-set — and the write still answers `201`, with no diagnostic anywhere to say so. The account lands in
-the state the dev admin is in above: signed in, holding no `clm_*` set, served `navigation: []` and
-empty lists, with nothing in the response that created it pointing at why. The silent acceptance is
+set — and the write still answers `201`, with no diagnostic anywhere to say so. The account lands where
+a plain member does: signed in with `clm_requester` alone, served 我的合同 and 分析 but none of the
+position's own groups, with nothing in the response that created it pointing at why. The silent acceptance is
 the platform's — `objectstack-ai/objectstack#16712`, still open — so until that lands, the spelling is
 the whole defence.
 

@@ -8,29 +8,28 @@ import { CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, hidden, inList, r
 /**
  * `clm_requester` — every employee (DESIGN.md §04 "所有员工默认").
  *
- * ## How the default is distributed
+ * ## How the default reaches every member
  *
- * The platform's mechanism for "the set every member holds" is `isDefault:
- * true`, which auto-binds the set to the built-in `everyone` anchor. It is NOT
- * used here, and cannot be: §04 grants `clm_requester.access` through
- * `systemPermissions`, and a set carrying ANY system permission is
- * high-privilege by the platform's definition (ADR-0090 D5/D9,
- * `describeHighPrivilegeBits`) — the runtime refuses the binding at boot with
- * a warning, and `os lint` refuses the declaration outright
- * (`security-anchor-high-privilege`, an error). So under this platform version
- * the default is DISTRIBUTED, not implicit:
+ * `isDefault: true` is the platform's mechanism for "the set every member
+ * holds": the security plugin binds the set to the built-in `everyone` anchor
+ * at boot (ADR-0090 D5), so `security/explain` lists it for any member as
+ * "additive baseline". Nobody grants it in Setup and no position has to name
+ * it — the seven positions in `src/sharing/positions.ts` name only their own
+ * set, and the executive and general-manager rungs, which have none, still
+ * reach `clm_contract` through this one: it is what gives them the
+ * object-level read that `contract_executive_routed` / `contract_gm_routed`
+ * deliver rows into. The dev admin and every platform account in the
+ * organization hold it too.
  *
- *  - every one of the seven positions is bound to this set as well as to its
- *    own (`permissionSets` in `src/sharing/positions.ts`), so legal, finance, records,
- *    admin and the two leadership rungs are all requesters too — which is also
- *    the only way an executive holds an object-level read on `clm_contract`
- *    for the rows `contract_executive_routed` shares with them;
- *  - an employee who holds no position receives the set in Setup (a
- *    `sys_user_permission_set` grant), which is the platform's supported path.
- *
- * Whether §04's wording should change, or the platform's high-privilege rule
- * should learn to tell an app capability token from `manage_users`, is a
- * maintainer decision; the card-04 PR files it. Nothing here pre-empts it.
+ * The binding is refused for a high-privilege set, and a `systemPermissions`
+ * token counts as high-privilege unless the stack DECLARES it (ADR-0090
+ * D5/D9, `describeHighPrivilegeBits`; `os lint` rule
+ * `security-anchor-high-privilege`). This set grants two tokens, so the
+ * `capabilities:` list in `objectstack.config.ts` is the other half of this
+ * flag: measured on 18.1.0, `isDefault: true` with no declaration fails
+ * `os lint`, `os validate` and the dev compile, and with the eleven app
+ * tokens declared all three pass. Granting this set a token that list does
+ * not declare puts it back over the line.
  *
  * ## Row scope
  *
@@ -51,14 +50,15 @@ import { CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, hidden, inList, r
  * ## `approve_contract`
  *
  * The first rung of the approval ladder is the requester's direct manager
- * (§06 F5, `type: 'manager'`), who holds no position and therefore only this
- * set. The gate is held here so that rung can act; WHICH approval is theirs is
- * the flow's assignment, not the gate's. The executive and general-manager
- * rungs hold it the same way.
+ * (§06 F5, `type: 'manager'`), who need hold no position: this set is all a
+ * plain member has. The gate is held here so that rung can act; WHICH
+ * approval is theirs is the flow's assignment, not the gate's. The executive
+ * and general-manager rungs hold it the same way.
  */
 export const RequesterSet = definePermissionSet({
   name: 'clm_requester',
   label: 'Requester',
+  isDefault: true,
   description: 'Every employee: launches contracts, follows their own through review and approval, performs the obligations assigned to them.',
   systemPermissions: ['clm_requester.access', 'approve_contract'],
   objects: {
