@@ -90,6 +90,20 @@ const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
  */
 const DEMO_USER = 'Dev Admin';
 
+/**
+ * The persona accounts the fixture's OPTIONAL user references name — the three
+ * business requesters and two legal counsel of DESIGN.md §10 that the operator
+ * creates in Setup, and that the closing note is about.
+ *
+ * ⚠️ These MIRROR `CONTRACT_OWNERS` and `LEGAL_OWNERS` in `src/data/keys.ts`,
+ * for the reason `DEMO_USER` mirrors its twin: this file runs before anything
+ * is compiled. The README's "Name it exactly" table is the third copy. A drift
+ * here costs the note its truth and nothing else: the seed does not read this
+ * list, so the rows land exactly as they would without it.
+ */
+const REQUESTER_ACCOUNTS = ['Business Requester 1', 'Business Requester 2', 'Business Requester 3'];
+const COUNSEL_ACCOUNTS = ['Legal Counsel 1', 'Legal Counsel 2'];
+
 // The same credentials and env overrides `@objectstack/plugin-auth` itself
 // reads, so an operator who has changed them is not silently probed for an
 // account that was never going to exist.
@@ -165,10 +179,55 @@ const signIn = async (port) => {
     if (response.status !== 200) return null;
     const body = await response.json().catch(() => ({}));
     const user = body?.user ?? {};
-    return { name: typeof user.name === 'string' ? user.name : null };
+    return {
+      name: typeof user.name === 'string' ? user.name : null,
+      token: typeof body?.token === 'string' ? body.token : null,
+    };
   } catch {
     // Not up yet, or up and not answering. Either way: not ready.
     return null;
+  }
+};
+
+/**
+ * Which of the named persona accounts exist, and which requesters have a
+ * manager — read from the priming server as the dev admin, because the
+ * closing note's steps are only true while they are undone.
+ *
+ * Read HERE, before the demo boot, and that is the right moment rather than a
+ * convenient one: the demo boot's seed resolves its user references against
+ * exactly the accounts that exist when it runs, and nothing creates one in
+ * between. So "these accounts exist now" is "this boot hands their rows over".
+ *
+ * `manager_id` is readable on `sys_user` through the data API even though it is
+ * not writable there (the README's Set Manager section).
+ *
+ * Returns `{ missing, unmanaged }` — persona names with no account, and
+ * existing requesters with no manager — or `{ unknown: reason }` when the read
+ * fails, which the note reports instead of guessing either way.
+ */
+const readRoster = async (port, token) => {
+  const origin = `http://localhost:${port}`;
+  const names = [...REQUESTER_ACCOUNTS, ...COUNSEL_ACCOUNTS];
+  const query = new URLSearchParams({
+    fields: 'id,name,manager_id',
+    filter: JSON.stringify({ name: { $in: names } }),
+  });
+  try {
+    const response = await fetch(`${origin}/api/v1/data/sys_user?${query}`, {
+      headers: { authorization: `Bearer ${token}`, origin },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (response.status !== 200) return { unknown: `GET /api/v1/data/sys_user answered ${response.status}` };
+    const body = await response.json();
+    if (!Array.isArray(body?.records)) return { unknown: 'GET /api/v1/data/sys_user answered no records list' };
+    const byName = new Map(body.records.map((user) => [user.name, user]));
+    return {
+      missing: names.filter((name) => !byName.has(name)),
+      unmanaged: REQUESTER_ACCOUNTS.filter((name) => byName.has(name) && !byName.get(name).manager_id),
+    };
+  } catch (error) {
+    return { unknown: `GET /api/v1/data/sys_user failed: ${error.message}` };
   }
 };
 
@@ -193,9 +252,10 @@ const fail = (headline, detail, log) => {
  * Idempotent: on a database that already has an account this boot mints
  * nothing, the first probe succeeds, and it costs one short boot.
  *
- * Returns how long it took, in ms. That number is a MEASUREMENT of what a
- * compile-and-boot costs on this box right now, and the closing note below
- * uses it as its own timescale rather than carrying a guessed constant.
+ * Returns how long it took, in ms (`primingMs`), and what `readRoster` found
+ * (`roster`). The duration is a MEASUREMENT of what a compile-and-boot costs on
+ * this box right now, and the closing note below uses it as its own timescale
+ * rather than carrying a guessed constant.
  */
 const primeAdminAccount = async () => {
   const startedAt = Date.now();
@@ -260,6 +320,11 @@ const primeAdminAccount = async () => {
     }
     const session = await signIn(port);
     if (session) {
+      // Read the roster while the priming server is still up — the one
+      // request this boot makes besides the sign-in (see `readRoster`).
+      const roster = session.token
+        ? await readRoster(port, session.token)
+        : { unknown: 'the sign-in answered no session token' };
       // Stop the priming server FIRST: it is detached and holding the
       // database, so exiting around it would orphan a server nobody can see.
       await stop();
@@ -279,7 +344,7 @@ const primeAdminAccount = async () => {
           log,
         );
       }
-      return Date.now() - startedAt;
+      return { primingMs: Date.now() - startedAt, roster };
     }
     await sleep(1_000);
   }
@@ -402,8 +467,21 @@ const expectedPort = (argv) => {
  * ⛔ SHAPE, never a census: no error-line count, no row totals, nothing quoted
  * from the loader's summary. Dealing owners differently or seeding differently
  * moves such a number, no gate reads printed prose, and it reads as a promise.
+ *
+ * ── Only the steps still undone, because a re-run is the instruction ───────
+ *
+ * Step 1 ends "run this again", so the second run is the one the note itself
+ * asks for — and on it the first-run text is false: measured on `449667e`
+ * after the five accounts were created, the re-run printed "The seeded rows
+ * have no people on them yet" while `owner_id` read 43 / 44 / 34 across the
+ * three requesters and no `ERROR [SeedLoader]` line appeared. So the note is
+ * built from `readRoster`: the first-run text, unchanged, while none of the
+ * five accounts exists (or the roster could not be read, which it says); the
+ * steps still undone, naming the accounts they are about, once some do; and a
+ * short all-done note when every account exists and every requester has a
+ * manager.
  */
-const OPERATOR_SETUP_NOTE = [
+const FIRST_RUN_NOTE = [
   '',
   '  ────────────────────────────────────────────────────────────────────────',
   '   Before you open the app — two setup steps, and one thing about the log',
@@ -442,7 +520,111 @@ const OPERATOR_SETUP_NOTE = [
   '',
 ];
 
-const announceOperatorSetup = async (child, port, blindWaitMs) => {
+const RULE = '  ────────────────────────────────────────────────────────────────────────';
+const NOTE_WIDTH = 76;
+
+/**
+ * Word-wrap one paragraph under `first`, continuing under `rest`. A backticked
+ * name is one word, so an account name never breaks across two lines.
+ */
+const wrap = (text, first, rest) => {
+  const lines = [];
+  let line = first;
+  let empty = true;
+  for (const word of text.match(/`[^`]*`\S*|\S+/g)) {
+    if (!empty && line.length + 1 + word.length > NOTE_WIDTH) {
+      lines.push(line);
+      line = rest + word;
+    } else {
+      line += (empty ? '' : ' ') + word;
+    }
+    empty = false;
+  }
+  lines.push(line);
+  return lines;
+};
+
+const named = (names) => {
+  const quoted = names.map((name) => `\`${name}\``);
+  return quoted.length < 2 ? quoted.join('') : `${quoted.slice(0, -1).join(', ')} and ${quoted.at(-1)}`;
+};
+
+/** The closing note for what `readRoster` found — see the section above. */
+const operatorSetupNote = (roster) => {
+  const everyName = [...REQUESTER_ACCOUNTS, ...COUNSEL_ACCOUNTS];
+  if (roster.unknown) {
+    return [
+      '',
+      ...wrap(`(Could not tell which of the named accounts exist — ${roster.unknown} — so every first-run step is shown.)`, '  ', '   '),
+      ...FIRST_RUN_NOTE,
+    ];
+  }
+  const { missing, unmanaged } = roster;
+  if (missing.length === everyName.length) return FIRST_RUN_NOTE;
+
+  const missingRequesters = REQUESTER_ACCOUNTS.filter((name) => missing.includes(name));
+  const needManager = [...missingRequesters, ...unmanaged].sort();
+  const steps = [];
+  if (missing.length) {
+    steps.push(
+      `Some seeded rows still have no people on them: ${named(missing)} ` +
+      `${missing.length === 1 ? 'does' : 'do'} not exist yet, and no seed may create a user (DESIGN.md §10). ` +
+      'Until an account exists no column naming it reaches it — a missing requester\'s `owner_id` is parked on ' +
+      'the dev admin, the rest are NULL — so its 我的合同 or 法务工作台 stays empty. Add each in Setup → Users, ' +
+      'named exactly, and run this again; the README says who gets what.',
+    );
+  }
+  if (needManager.length) {
+    steps.push(
+      `Give ${named(needManager)} a manager${missingRequesters.length ? ' (a missing account once it exists)' : ''}: ` +
+      'Setup → Users → the user → ⋯ → Set Manager (any other account will do). Rung 1 of the approval ladder ' +
+      'is the contract owner\'s manager; with none set, a contract sent for approval waits on nobody, locked, ' +
+      'until a platform admin overrides it. The README\'s "Rung 1" section says more.',
+    );
+  }
+  const setupSteps = steps.length;
+  if (missing.length) {
+    steps.push(
+      'The `ERROR [SeedLoader]` lines are those missing accounts, and nothing is lost to them: the loader finds ' +
+      'no account by that name and writes the row anyway with that one column NULL (an ownerless contract is ' +
+      'then claimed by the dev admin). Its closing summary counts those rows as dropped while they sit in the ' +
+      'database — upstream as objectstack#17177 — and they land above this note or, when the boot said ' +
+      '`WARN [Seeder] … continuing in background`, up to a couple of minutes below it.',
+    );
+  }
+
+  if (!steps.length) {
+    return [
+      '',
+      RULE,
+      '   Setup check — nothing left to do',
+      RULE,
+      '',
+      ...wrap(
+        `The five accounts the seed names exist (${named(everyName)}), so this boot's seed hands their contracts, ` +
+        'obligations and deviation rulings to them — after this note when the boot said `WARN [Seeder] … ' +
+        'continuing in background`. Every business requester has a manager, so rung 1 of the approval ladder ' +
+        'has someone to wait on.',
+        '  ',
+        '  ',
+      ),
+      '',
+    ];
+  }
+
+  const count = setupSteps === 1 ? 'one setup step' : 'two setup steps';
+  const lines = [
+    '',
+    RULE,
+    `   Before you open the app — ${count}${missing.length ? ', and one thing about the log' : ''}`,
+    RULE,
+    '',
+  ];
+  steps.forEach((text, index) => lines.push(...wrap(text, `  ${index + 1}. `, '     '), ''));
+  return lines;
+};
+
+const announceOperatorSetup = async (child, port, blindWaitMs, roster) => {
   const alive = () => child.exitCode === null && child.signalCode === null;
   const deadline = Date.now() + ANNOUNCE_DEADLINE_MS;
 
@@ -460,7 +642,7 @@ const announceOperatorSetup = async (child, port, blindWaitMs) => {
   }
 
   if (!alive()) return;
-  for (const line of OPERATOR_SETUP_NOTE) console.log(line);
+  for (const line of operatorSetupNote(roster)) console.log(line);
 };
 
 /** Boot with the demo ON, in the foreground. This is the server you keep. */
@@ -493,7 +675,7 @@ console.log('');
 console.log(`  HotCLM demo — two steps, then the server is yours. Locale: ${locale}`);
 console.log('');
 console.log('  1/2  preparing an admin account and the organization (quiet, a few seconds)…');
-const primingMs = await primeAdminAccount();
+const { primingMs, roster } = await primeAdminAccount();
 console.log('  1/2  done — admin account ready.');
 console.log('  2/2  starting HotCLM with the demo group loaded…');
 console.log('');
@@ -518,4 +700,5 @@ void announceOperatorSetup(
   // about the boot (`os dev` will auto-shift off it), so fall back to the
   // timescale the priming boot just measured on this box.
   portWasBusy ? Math.min(Math.max(primingMs, 20_000), 180_000) : null,
+  roster,
 );
