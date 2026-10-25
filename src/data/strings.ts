@@ -53,6 +53,12 @@ export interface PartyStrings {
 }
 
 export interface DemoStrings {
+  /**
+   * DESIGN.md §10: the group's three legal entities — the US parent, then the
+   * European and the Asia-Pacific subsidiary — in `SIGNING_ENTITY_PLAN`'s
+   * order (`plan.ts`). Their `sys_business_unit.name`.
+   */
+  readonly signingEntities: Strings<3>;
   /** DESIGN.md §10: nine contract types. */
   readonly contractTypes: readonly ContractTypeStrings[] & { length: 9 };
   /** DESIGN.md §10: thirty playbook clauses. */

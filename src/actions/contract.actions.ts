@@ -8,10 +8,10 @@ import { P } from '@objectstack/spec';
  * ## Why the action carries params at all
  *
  * The flat screens of a flow have no record picker (measured on the pinned
- * console — see the flow's header), so the two pickers the intake needs are
+ * console — see the flow's header), so the three pickers the intake needs are
  * collected HERE, by the action's param dialog: field-backed lookup params
  * render the real pickers and inherit the fields' `lookupFilters` (active
- * types only; blocked parties hidden). The console posts them as the flow's
+ * types only; blocked parties hidden; company-kind business units only). The console posts them as the flow's
  * `params`, which the engine seeds into the input variables of the same name.
  *
  * ## The headless half
@@ -55,13 +55,15 @@ export const LaunchContractAction: Action = {
   target: 'contract_intake',
   locations: ['list_toolbar'],
   params: [
-    // The two pickers a flat screen cannot render.
+    // The three pickers a flat screen cannot render.
     { field: 'contract_type', label: 'Contract type', required: true, helpText: 'The workflow this contract runs: which fields are asked, whether legal reviews it, how it is executed.' },
     { field: 'party', label: 'Counterparty', required: false, helpText: 'Pick an existing counterparty, or leave empty to create one on the next step.' },
+    // Required here because it is required on the contract: a signing entity
+    // is a business-unit row, so the action has no default to fall back to.
+    { field: 'our_entity', label: 'Our signing entity', required: true, helpText: 'Which of our legal entities signs.' },
     // Everything else is answered on the flow's screens; declared here for
     // the headless doors only.
     headless('title', 'text', 'Title'),
-    headless('our_entity', 'text', 'Our signing entity'),
     headless('department', 'text', 'Requesting department'),
     headless('amount', 'number', 'Contract amount'),
     headless('currency_code', 'text', 'Currency (ISO 4217, lowercase)'),

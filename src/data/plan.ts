@@ -43,8 +43,37 @@ import { assertCount, pick, rng } from './_shared.js';
  * sprinkle: the US parent's customers contract under New York law in dollars,
  * the EU subsidiary's under German law in euro, the APAC and UK book under
  * English law in sterling.
+ *
+ * The same mapping decides which of the group's three legal entities signs
+ * (`clm_contract.our_entity`, see {@link SIGNING_ENTITY_PLAN}), so the entity,
+ * the law and the currency on a contract always tell one story.
  */
 export type CountryCode = 'US' | 'GB' | 'DE' | 'FR' | 'JP' | 'VG' | 'PA';
+
+/**
+ * The group's own legal entities — DESIGN.md §10's US parent with a European
+ * and an Asia-Pacific subsidiary — as `sys_business_unit` rows of kind
+ * `company` (#20, ruling C: signing entities are data, and the data is the
+ * platform's organisation tree, not an app object).
+ *
+ * `code` is the natural key the seed upserts on and the value every contract's
+ * `our_entity` names. It is locale-blind on purpose: `demo-en` and `demo-zh`
+ * write the same three rows under different `name`s, and the contracts resolve
+ * against the code either way. The index of each entry is the index into the
+ * locale bundle's `signingEntities` tuple.
+ */
+export interface SigningEntityPlan {
+  readonly code: string;
+  /** The parent entity's `code`; `null` for the group's root. */
+  readonly parentCode: string | null;
+}
+
+export const SIGNING_ENTITY_PLAN: readonly SigningEntityPlan[] & { length: 3 } = [
+  { code: 'ARC-US', parentCode: null },
+  { code: 'ARC-EU', parentCode: 'ARC-US' },
+  { code: 'ARC-APAC', parentCode: 'ARC-US' },
+] as const;
+assertCount('sys_business_unit (signing entities)', SIGNING_ENTITY_PLAN.length, 3);
 
 export interface Jurisdiction {
   readonly governingLaw: string;
@@ -52,11 +81,13 @@ export interface Jurisdiction {
   readonly jurisdictionIndex: 0 | 1 | 2;
   readonly currency: 'usd' | 'eur' | 'gbp';
   readonly language: 'en' | 'de';
+  /** Index into {@link SIGNING_ENTITY_PLAN}: which of the group's entities signs. */
+  readonly entityIndex: 0 | 1 | 2;
 }
 
-const NEW_YORK: Jurisdiction = { governingLaw: 'US-NY', jurisdictionIndex: 0, currency: 'usd', language: 'en' };
-const ENGLAND: Jurisdiction = { governingLaw: 'England and Wales', jurisdictionIndex: 1, currency: 'gbp', language: 'en' };
-const GERMANY: Jurisdiction = { governingLaw: 'Germany', jurisdictionIndex: 2, currency: 'eur', language: 'de' };
+const NEW_YORK: Jurisdiction = { governingLaw: 'US-NY', jurisdictionIndex: 0, currency: 'usd', language: 'en', entityIndex: 0 };
+const ENGLAND: Jurisdiction = { governingLaw: 'England and Wales', jurisdictionIndex: 1, currency: 'gbp', language: 'en', entityIndex: 2 };
+const GERMANY: Jurisdiction = { governingLaw: 'Germany', jurisdictionIndex: 2, currency: 'eur', language: 'de', entityIndex: 1 };
 
 const JURISDICTION_BY_COUNTRY: Record<CountryCode, Jurisdiction> = {
   US: NEW_YORK,

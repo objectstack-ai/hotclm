@@ -147,7 +147,7 @@ export const ExecutedUploadFlow: Flow = {
     { name: 'title', type: 'text', isInput: true, isOutput: false },
     { name: 'signed_date', type: 'text', isInput: true, isOutput: false },
     { name: 'executed_file', type: 'text', isInput: true, isOutput: false },
-    { name: 'our_entity', type: 'text', isInput: true, isOutput: false, defaultValue: 'head_office' },
+    { name: 'our_entity', type: 'text', isInput: true, isOutput: false },
     { name: 'department', type: 'text', isInput: true, isOutput: false },
     { name: 'amount', type: 'number', isInput: true, isOutput: false },
     { name: 'currency_code', type: 'text', isInput: true, isOutput: false, defaultValue: 'usd' },

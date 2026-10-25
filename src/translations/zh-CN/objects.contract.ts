@@ -92,10 +92,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       our_entity: {
         label: '我方签约主体',
-        help: '由我方哪个法律主体签署。出厂只带一个占位选项，多法人集团用自己的主体清单替换它。',
-        options: {
-          head_office: '总部',
-        },
+        help: '由我方哪个法律主体签署。可选项是「设置 → 业务单元」中类型为公司的业务单元。',
       },
       department: {
         label: '发起部门',
@@ -369,6 +366,7 @@ export const contract: Record<string, ObjectTranslationData> = {
           },
           our_entity: {
             label: '我方签约主体',
+            helpText: '由我方哪个法律主体签署。',
           },
           department: {
             label: '发起部门',

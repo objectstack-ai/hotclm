@@ -11,6 +11,16 @@
  * the same positions, and the plan never sees which language it is drawing.
  */
 
+/**
+ * The group's own legal entities, in `SIGNING_ENTITY_PLAN`'s order (`../plan.ts`):
+ * the US parent, the European subsidiary, the Asia-Pacific subsidiary.
+ */
+export const SIGNING_ENTITIES: readonly string[] & { length: 3 } = [
+  'Arcadia Holdings Inc.',
+  'Arcadia Europe GmbH',
+  'Arcadia Asia Pacific Pte. Ltd.',
+] as const;
+
 /** Distinguishes a second contract of the same type with the same counterparty. */
 export const TITLE_QUALIFIERS: readonly string[] & { length: 8 } = [
   'Renewal',

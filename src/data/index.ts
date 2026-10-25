@@ -2,6 +2,7 @@
 
 import type { Seed } from '@objectstack/spec/data';
 
+import { businessUnitSeed } from './business-unit.seed.js';
 import { approvalRuleSeed, clauseSeed, contractTypeSeed } from './catalog.seed.js';
 import { contractSeed } from './contract.seed.js';
 import { deviationSeed, reviewSeed, signatureSeed } from './negotiation.seed.js';
@@ -24,9 +25,10 @@ import { obligationSeed, paymentPlanSeed } from './post-signature.seed.js';
  * anyway:
  *
  *  - **The configuration objects come first.** `clm_contract.contract_type`
- *    resolves against a type's `name` and `clm_deviation.clause` against a
- *    clause's `title`; a reference that resolves to nothing on a `required`
- *    column takes the whole row with it.
+ *    resolves against a type's `name`, `clm_contract.our_entity` against a
+ *    business unit's `code` and `clm_deviation.clause` against a clause's
+ *    `title`; a reference that resolves to nothing on a `required` column
+ *    takes the whole row with it.
  *  - **`clm_contract` comes before its five children**, all of which reference
  *    it by title through the one function in `keys.ts`.
  *
@@ -50,8 +52,10 @@ import { obligationSeed, paymentPlanSeed } from './post-signature.seed.js';
  * whether this deployment wanted a demo at all.
  */
 export const demoSeeds: Seed[] = [
-  // 1. Configuration first — every contract resolves its type here, and every
+  // 1. Configuration first — every contract resolves its type here, its
+  //    signing entity (a `sys_business_unit` of kind `company`), and every
   //    deviation its clause.
+  businessUnitSeed,
   contractTypeSeed,
   clauseSeed,
   approvalRuleSeed,

@@ -8,6 +8,13 @@
  * 字符串，而计划本身从不知道自己正在为哪一种语言生成。
  */
 
+/** 集团自己的三个签约主体，顺序同 `../plan.ts` 的 `SIGNING_ENTITY_PLAN`：美国母公司、欧洲子公司、亚太子公司。 */
+export const SIGNING_ENTITIES: readonly string[] & { length: 3 } = [
+  '阿卡迪亚控股公司（美国）',
+  '阿卡迪亚欧洲有限公司',
+  '阿卡迪亚亚太私人有限公司',
+] as const;
+
 /** 同一相对方、同一类型的第二份合同用它区分。 */
 export const TITLE_QUALIFIERS: readonly string[] & { length: 8 } = [
   '续签',
