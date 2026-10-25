@@ -12,7 +12,8 @@ import { ExpirationSweepFlow } from './expiration-sweep.flow.js';
 import { ExecutedUploadFlow, backfillStamps, refuseBackfill } from './executed-upload.flow.js';
 
 // F1–F16 of DESIGN.md §06; this barrel is what `defineStack({ flows })` reads.
-// F8 (e-signature) and F15 (CRM hand-off) arrive with cards 12 and 13.
+// F8 (e-signature) and F15 (CRM hand-off) are not built yet; both arrive with
+// card 12 (docs/backlog/12-esign-and-crm-handoff.md).
 export { ContractIntakeFlow } from './contract-intake.flow.js';
 export { ContractApprovalFlow } from './contract-approval.flow.js';
 export { SignatureRecordFlow, SignatureRecordOnCreateFlow } from './signature-record.flow.js';

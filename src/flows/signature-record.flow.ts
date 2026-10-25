@@ -307,7 +307,8 @@ export const SignatureRecordFlow: Flow = {
           version_no: ref('execution.nextVersionNo'),
           kind: 'final_signed',
           turn: 'internal',
-          // `is_current` is deliberately left at its `false` default. The
+          // `is_current` is deliberately written `false` here, against the
+          // field's `true` default (contract-version.object.ts). The
           // negotiation flag is what `approved → signing` reads ("a current
           // clean version is required"), and DESIGN.md §03 keeps
           // `signing → approved` open for a failed signing round — moving the

@@ -28,7 +28,8 @@ import { App } from '@objectstack/spec/ui';
  * already pruned every row the caller's capabilities do not open, so the
  * landing is the first surviving row, which can differ per person.
  *
- * Every position also holds `clm_requester` (`bind-position-sets.ts`), so
+ * Every member, position or not, also holds `clm_requester` (the app's
+ * default set, `isDefault: true` in `src/profiles/requester.profile.ts`), so
  * 我的合同 survives for everyone. With it listed first, every audience opened
  * on 我发起的: the right page for a business requester, and an empty one for
  * a lawyer, who launches nothing. §05 gives each audience its own partition and
@@ -319,7 +320,7 @@ export const ClmApp = App.create({
         { id: 'nav_legal_workbench',    type: 'dashboard', dashboardName: 'legal_workbench',    label: 'Legal Workbench',    icon: 'scale',    requiredPermissions: ['clm_legal.access'] },
         // NO row gate, and not by oversight. §09's 管理层 board is for the two
         // leadership rungs, and `clm_executive` / `clm_general_manager` hold
-        // no set of their own (`bind-position-sets.ts`): their capabilities
+        // no set of their own (`src/sharing/positions.ts`): their capabilities
         // are exactly a requester's, so every spelling that hides this row
         // from a requester hides it from leadership too. Who reads it is an
         // open question on #99, not a gate to invent here.
