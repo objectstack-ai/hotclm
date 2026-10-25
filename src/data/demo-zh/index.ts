@@ -13,6 +13,7 @@ import {
   REVIEW_INTERNAL_NOTES,
   RISK_NOTES,
   SIGNATURE_NOTES,
+  SIGNING_ENTITIES,
   TERMINATION_REASONS,
   TITLE_QUALIFIERS,
 } from './prose.js';
@@ -26,6 +27,7 @@ import {
  * 完全相同 —— 不是靠人工核对，而是结构上不可能不同。
  */
 export const ZH_CN: DemoStrings = {
+  signingEntities: SIGNING_ENTITIES,
   contractTypes: CONTRACT_TYPES,
   clauses: CLAUSES,
   approvalRules: APPROVAL_RULES,

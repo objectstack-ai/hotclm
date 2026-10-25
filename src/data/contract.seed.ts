@@ -8,6 +8,7 @@ import { dayOffset } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
 import { contractTitle, legalOwnerOf, ownerOf, titleOfIndex } from './keys.js';
 import { CONTRACT_PLAN, lawOf, renewalFlagged, typeOf, type ContractPlan } from './plan-contracts.js';
+import { SIGNING_ENTITY_PLAN } from './plan.js';
 
 /**
  * The 120 contracts of DESIGN.md §10, in the status spread its table pins.
@@ -67,7 +68,11 @@ export const contractSeed = defineSeed(Contract, {
       contract_type: STRINGS.contractTypes[contract.typeIndex]!.name,
       party: party.name,
       status: contract.status,
-      our_entity: 'head_office' as const,
+      // Which of the group's three entities signs follows the governing law
+      // (`plan.ts`): New York → the US parent, Germany → the EU subsidiary,
+      // England and Wales → the APAC subsidiary. A code, resolved against the
+      // `sys_business_unit` rows `business-unit.seed.ts` upserts on `code`.
+      our_entity: SIGNING_ENTITY_PLAN[law.entityIndex]!.code,
       department: type.department,
       // `owner_id` names a user the way `legal_owner` on the next line does —
       // a `lookup('sys_user')` resolved against `sys_user.name` by the two-boot

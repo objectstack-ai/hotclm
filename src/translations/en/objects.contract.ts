@@ -92,10 +92,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       our_entity: {
         label: 'Our Signing Entity',
-        help: 'Which of our legal entities signs. The shipped list is a single placeholder — a group with several legal entities replaces it with its own.',
-        options: {
-          head_office: 'Head office',
-        },
+        help: 'Which of our legal entities signs. The choices are the company-kind business units in Setup → Business Units.',
       },
       department: {
         label: 'Requesting Department',
@@ -369,6 +366,7 @@ export const contract: Record<string, ObjectTranslationData> = {
           },
           our_entity: {
             label: 'Our signing entity',
+            helpText: 'Which of our legal entities signs.',
           },
           department: {
             label: 'Requesting department',

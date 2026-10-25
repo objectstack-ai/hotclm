@@ -171,13 +171,22 @@ export const Contract = ObjectSchema.create({
       // with one regardless (the picker is convenience, the hook is the rule).
       lookupFilters: [{ field: 'risk_flag', operator: 'ne', value: 'blocked' }],
     }),
-    our_entity: Field.select({
+    // DESIGN.md §01: signing entities are data, not schema. They are the
+    // platform's own organisation records — `sys_business_unit` rows of kind
+    // `company` (#20, ruling C) — so a group adds an entity by adding a row in
+    // Setup → Business Units, and the demo seeds its three (src/data/).
+    // The field keeps its name: `business_unit` is a platform reserved word.
+    our_entity: Field.lookup('sys_business_unit', {
       label: 'Our Signing Entity',
       group: 'parties',
-      // DESIGN.md §01: signing entities are configuration, not schema.
-      description: 'Which of our legal entities signs. The shipped list is a single placeholder — a group with several legal entities replaces it with its own.',
-      options: [
-        { label: 'Head office', value: 'head_office', default: true },
+      required: true,
+      storage: { notNull: true },
+      description: 'Which of our legal entities signs. The choices are the company-kind business units in Setup → Business Units.',
+      // The picker offers legal entities only, never a division, department,
+      // office or cost centre, and only those still active.
+      lookupFilters: [
+        { field: 'kind', operator: 'eq', value: 'company' },
+        { field: 'active', operator: 'eq', value: true },
       ],
     }),
     department: Field.select({

@@ -49,14 +49,16 @@ export const ExecutedUploadAction: Action = {
   requiredPermissions: ['execute_contract'],
   params: [
     // Field-backed where a picker is wanted: the param inherits the field's
-    // type, its label and its `lookupFilters`, so inactive types and blocked
-    // counterparties are already out of the pickers.
+    // type, its label and its `lookupFilters`, so inactive types, blocked
+    // counterparties and non-company business units are already out of the
+    // pickers.
     { field: 'contract_type', required: true, helpText: 'The workflow this contract would have run. It still stamps the number, the category and the execution formalities.' },
     { field: 'party', required: true, helpText: 'The counterparty on the executed document.' },
     { field: 'title', required: true },
     { name: 'signed_date', type: 'date', label: 'Signed On', required: true, helpText: 'The date on the executed document. It becomes both signed_at and executed_at.' },
     { name: 'executed_file', type: 'file', label: 'Executed Copy', required: true, helpText: 'The signed PDF or scan. It is filed as version 1, kind final_signed.' },
-    { field: 'our_entity' },
+    // Required on the contract, and a business-unit row: no default to fall back to.
+    { field: 'our_entity', required: true },
     { field: 'department' },
     { field: 'amount' },
     { field: 'currency_code' },

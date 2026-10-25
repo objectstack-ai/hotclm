@@ -13,6 +13,7 @@ import {
   REVIEW_INTERNAL_NOTES,
   RISK_NOTES,
   SIGNATURE_NOTES,
+  SIGNING_ENTITIES,
   TERMINATION_REASONS,
   TITLE_QUALIFIERS,
 } from './prose.js';
@@ -27,6 +28,7 @@ import {
  * never sees a locale.
  */
 export const EN: DemoStrings = {
+  signingEntities: SIGNING_ENTITIES,
   contractTypes: CONTRACT_TYPES,
   clauses: CLAUSES,
   approvalRules: APPROVAL_RULES,

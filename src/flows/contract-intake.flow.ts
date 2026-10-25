@@ -18,16 +18,19 @@ import { must, ref } from './_values.js';
  *  - A flat screen renders text / number / currency / date / email / textarea
  *    / boolean, and a select when `options` are declared. It has NO record
  *    picker and NO file input: a `lookup`-typed field falls through to a plain
- *    text box. So the two pickers the intake needs — the contract type and the
- *    counterparty — are collected by the `launch_contract` ACTION's param
- *    dialog (`src/actions/contract.actions.ts`), whose field-backed lookup
- *    params render the real record pickers. The flow receives them as the
- *    input variables `contract_type` and `party`. Those pickers do NOT
- *    inherit the fields' `lookupFilters` — measured on 17.3.0, the dialog
- *    fetches `GET /api/v1/data/clm_party?top=50` with no filter on the wire
- *    and offers the blocked party like any other. So `refuse_blocked` below
- *    is not belt-and-braces over an already-filtered picker: on this console
- *    it is the only thing between the launcher and a blocked counterparty.
+ *    text box. So the three pickers the intake needs — the contract type, the
+ *    counterparty and our signing entity — are collected by the
+ *    `launch_contract` ACTION's param dialog (`src/actions/contract.actions.ts`),
+ *    whose field-backed lookup params render the real record pickers. The
+ *    flow receives them as the input variables `contract_type`, `party` and
+ *    `our_entity`. On 17.3.0 those pickers did NOT inherit the fields'
+ *    `lookupFilters`; re-measured on 18.1.0 they do — the dialog's
+ *    counterparty picker fetches
+ *    `GET /api/v1/data/clm_party?top=50&filter=["risk_flag","!=","blocked"]`
+ *    (38 of 40), and the entity picker filters to company-kind business units
+ *    the same way. `refuse_blocked` below still stands: a headless caller
+ *    passes an id and never meets a picker, so the picker is convenience and
+ *    the refusal is the rule.
  *  - A screen field's `visibleWhen` is bare CEL the CLIENT evaluates against
  *    the screen's OWN field values only — flow variables are not in scope
  *    there (the server re-checks `required` under it with the run's variables
@@ -148,12 +151,12 @@ export const ContractIntakeFlow: Flow = {
   successMessage: 'Contract launched.',
 
   variables: [
-    // The two pickers, supplied by the launch action's dialog (or headlessly).
+    // The three pickers, supplied by the launch action's dialog (or headlessly).
     { name: 'contract_type', type: 'text', isInput: true, isOutput: false },
     { name: 'party', type: 'text', isInput: true, isOutput: false },
+    { name: 'our_entity', type: 'text', isInput: true, isOutput: false },
     // Core fields. `title` doubles as the headless marker — see the header.
     { name: 'title', type: 'text', isInput: true, isOutput: false },
-    { name: 'our_entity', type: 'text', isInput: true, isOutput: false, defaultValue: 'head_office' },
     { name: 'department', type: 'text', isInput: true, isOutput: false },
     { name: 'amount', type: 'number', isInput: true, isOutput: false },
     { name: 'currency_code', type: 'text', isInput: true, isOutput: false, defaultValue: 'usd' },
@@ -245,7 +248,6 @@ export const ContractIntakeFlow: Flow = {
           // raw list, hidden by its own predicate, read by the predicates below.
           { name: 'intakeFields', label: 'Intake fields', type: 'text', defaultValue: ref('intakeFields'), visibleWhen: 'intakeFields == null' },
           { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'e.g. Mutual NDA with Acme' },
-          { name: 'our_entity', label: 'Our signing entity', type: 'select', options: optionsOf(Contract, 'our_entity'), defaultValue: ref('our_entity') },
           { name: 'department', label: 'Requesting department', type: 'select', options: optionsOf(Contract, 'department') },
           { name: 'amount', label: 'Contract amount', type: 'currency' },
           { name: 'currency_code', label: 'Currency', type: 'select', options: optionsOf(Contract, 'currency_code'), defaultValue: ref('currency_code') },

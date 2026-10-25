@@ -310,7 +310,7 @@ export const ContractViews = defineView({
         { field: 'direction', width: 110 },
         { field: 'status', width: 130 },
         { field: 'party', width: 200 },
-        { field: 'our_entity', width: 140 },
+        { field: 'our_entity', width: 200 },
         { field: 'department', width: 140 },
         { field: 'owner_id', width: 140 },
         { field: 'legal_owner', width: 140 },
