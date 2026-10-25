@@ -52,7 +52,9 @@ export const RecordsSet = definePermissionSet({
     {
       name: 'contract_records_execution_window',
       label: 'Records edits a contract from signing onward',
-      description: 'DESIGN.md §04 contract_records_execution, restated as the row policy that survives the OR-merge with clm_requester.',
+      // DESIGN.md §04 contract_records_execution, restated as the row policy
+      // that survives the OR-merge with clm_requester.
+      description: 'Lets the records manager edit a contract that is Signing, Active, Expired or Terminated.',
       object: 'clm_contract',
       operation: 'update',
       using: inList('status', EXECUTION_STATUSES),

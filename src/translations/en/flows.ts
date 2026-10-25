@@ -55,12 +55,13 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         },
         screen_document: {
           title: 'First version',
-          // The screen reads its sentence from the run: the type's template
-          // decides which of two `templateNote` assignments it shows.
-          description: '{{ templateNote }}',
+          description: 'The document this contract starts from. By default you upload it on the next step.',
           fields: {
             templateAvailable: { label: 'Template available' },
-            draft_from_template: { label: 'Draft from template' },
+            draft_from_template: {
+              label: 'Draft from template',
+              inlineHelpText: 'This contract type carries a template. Tick to attach it as version 1 instead of uploading a file.',
+            },
           },
         },
         screen_upload: {
@@ -80,7 +81,7 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
       label: 'Contract Approval Ladder',
       approvals: {
         manager_review: { label: 'Direct Manager' },
-        legal_finance_joint: { label: 'Head of Legal + Finance Controller (会签)' },
+        legal_finance_joint: { label: 'Head of Legal + Finance Controller (joint sign-off)' },
         legal_only: { label: 'Head of Legal' },
         finance_only: { label: 'Finance Controller' },
         executive_signoff: { label: 'Executive' },

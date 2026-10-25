@@ -29,7 +29,7 @@ export const PaymentDataset = defineDataset({
   name: 'payment_metrics',
   label: 'Payment Metrics',
   description:
-    'Instalments planned against actual, by month, counterparty and contract direction — plus the arrears the daily job stamps. Amounts are each contract\'s own currency and are not FX-converted.',
+    'Instalments planned against actual, by month, counterparty and contract direction — including those the daily check has marked overdue. Amounts are each contract\'s own currency and are not FX-converted.',
   object: 'clm_payment_plan',
   include: ['contract', 'contract.party'],
 

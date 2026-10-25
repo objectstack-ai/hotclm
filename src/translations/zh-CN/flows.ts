@@ -55,11 +55,13 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         },
         screen_document: {
           title: '首个版本',
-          // 说明文字取自运行时：合同类型有没有模板，决定显示哪一句 `templateNote`。
-          description: '{{ templateNote }}',
+          description: '这份合同的起点文件。默认在下一步上传。',
           fields: {
             templateAvailable: { label: '有模板' },
-            draft_from_template: { label: '从模板起草' },
+            draft_from_template: {
+              label: '从模板起草',
+              inlineHelpText: '这类合同带有模板。勾选后，模板会作为第 1 版附上，不用再上传文件。',
+            },
           },
         },
         screen_upload: {

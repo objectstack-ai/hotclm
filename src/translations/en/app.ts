@@ -285,7 +285,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     contract_cycle_time: {
       label: 'Contract Cycle',
-      description: 'Stage coverage by contract type and legal owner: how many contracts have reached each lifecycle stamp, and when. Carries no duration measure — see the module comment for the measurement that rules one out.',
+      description: 'Stage coverage by contract type and legal owner: how many contracts have reached each lifecycle stage, and when. It counts the stages reached; it does not measure how long a stage took.',
       dimensions: {
         contract_type_name: {
           label: 'Contract Type',
@@ -338,7 +338,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     obligation_metrics: {
       label: 'Obligation Metrics',
-      description: 'Post-signature commitments by status, kind, owner, contract and due month — including the arrears the daily job stamps.',
+      description: 'Post-signature commitments by status, kind, owner, contract and due month — including those the daily check has marked overdue.',
       dimensions: {
         status: {
           label: 'Status',
@@ -379,7 +379,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     payment_metrics: {
       label: 'Payment Metrics',
-      description: 'Instalments planned against actual, by month, counterparty and contract direction — plus the arrears the daily job stamps. Amounts are each contract\'s own currency and are not FX-converted.',
+      description: 'Instalments planned against actual, by month, counterparty and contract direction — including those the daily check has marked overdue. Amounts are each contract\'s own currency and are not FX-converted.',
       dimensions: {
         status: {
           label: 'Status',

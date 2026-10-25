@@ -285,7 +285,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     contract_cycle_time: {
       label: '合同周转',
-      description: '按合同类型与法务经办人统计各阶段覆盖情况：有多少合同走到了每个生命周期节点，以及分别在什么时候。不含时长度量，原因见模块说明中的实测记录。',
+      description: '按合同类型与法务经办人统计各阶段覆盖情况：有多少合同走到了每个生命周期阶段，以及分别在什么时候。只统计走到各阶段的合同数，不统计每个阶段用了多长时间。',
       dimensions: {
         contract_type_name: {
           label: '合同类型',

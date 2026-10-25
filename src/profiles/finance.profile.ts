@@ -53,7 +53,9 @@ export const FinanceSet = definePermissionSet({
     {
       name: 'contract_finance_post_approval_window',
       label: 'Finance edits a contract from approved onward',
-      description: 'DESIGN.md §04 contract_finance_post_approval, restated as the row policy that survives the OR-merge with clm_requester.',
+      // DESIGN.md §04 contract_finance_post_approval, restated as the row policy
+      // that survives the OR-merge with clm_requester.
+      description: 'Lets finance edit a contract that is Approved, Signing, Active, Expired or Terminated.',
       object: 'clm_contract',
       operation: 'update',
       using: inList('status', POST_APPROVAL_STATUSES),
@@ -61,7 +63,8 @@ export const FinanceSet = definePermissionSet({
     {
       name: 'review_finance_stage_insert',
       label: 'Finance records finance-stage reviews',
-      description: 'DESIGN.md §04: RCU（stage=finance）.',
+      // DESIGN.md §04: RCU（stage=finance）.
+      description: 'Finance can record a review only at the finance stage.',
       object: 'clm_review',
       operation: 'insert',
       check: 'stage == "finance"',
@@ -69,7 +72,8 @@ export const FinanceSet = definePermissionSet({
     {
       name: 'review_finance_stage_update',
       label: 'Finance updates finance-stage reviews',
-      description: 'DESIGN.md §04: RCU（stage=finance）.',
+      // DESIGN.md §04: RCU（stage=finance）.
+      description: 'Finance can update a review only at the finance stage.',
       object: 'clm_review',
       operation: 'update',
       using: 'stage == "finance"',

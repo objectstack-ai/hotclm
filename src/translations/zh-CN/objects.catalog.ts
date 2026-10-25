@@ -313,7 +313,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       country_code: {
         label: '国家 / 地区',
-        help: '相对方所在国家或地区的两位代码，例如 US、DE、CN。适用法律的默认值和名单筛查都以它为准。',
+        help: '相对方所在国家或地区的两位 ISO 3166-1 代码，例如 US、DE、CN。',
       },
       registration_no: {
         label: '统一社会信用代码 / 税号',

@@ -40,7 +40,8 @@ export const ContractLegalAllSharingRules = [
   defineSharingRule({
     name: 'contract_legal_all_counsel',
     label: 'Contracts — Legal Counsel (all)',
-    description: 'DESIGN.md §04 contract_legal_all: legal counsel reads and edits every contract.',
+    // DESIGN.md §04 contract_legal_all, legal counsel's row.
+    description: 'Legal counsel reads and edits every contract.',
     object: 'clm_contract',
     type: 'criteria',
     condition: P`record.status in ${CONTRACT_STATUSES}`,
@@ -50,7 +51,8 @@ export const ContractLegalAllSharingRules = [
   defineSharingRule({
     name: 'contract_legal_all_head',
     label: 'Contracts — Head of Legal (all)',
-    description: 'DESIGN.md §04 contract_legal_all: the head of legal reads and edits every contract.',
+    // DESIGN.md §04 contract_legal_all, the head of legal's row.
+    description: 'The head of legal reads and edits every contract.',
     object: 'clm_contract',
     type: 'criteria',
     condition: P`record.status in ${CONTRACT_STATUSES}`,
@@ -62,7 +64,8 @@ export const ContractLegalAllSharingRules = [
 export const ContractFinancePostApprovalSharingRule = defineSharingRule({
   name: 'contract_finance_post_approval',
   label: 'Contracts — Finance (approved onward)',
-  description: 'DESIGN.md §04: the finance controller edits contracts from approved onward; field-level security locks the legal fields and the status (§13 Q1).',
+  // DESIGN.md §04; the field lock is §13 Q1.
+  description: 'The finance controller edits contracts from approved onward. The legal fields and the status stay locked for finance.',
   object: 'clm_contract',
   type: 'criteria',
   condition: P`record.status in ${POST_APPROVAL_STATUSES}`,
@@ -73,7 +76,8 @@ export const ContractFinancePostApprovalSharingRule = defineSharingRule({
 export const ContractRecordsExecutionSharingRule = defineSharingRule({
   name: 'contract_records_execution',
   label: 'Contracts — Records (signing onward)',
-  description: 'DESIGN.md §04: the records manager edits contracts from signing onward; field-level security limits the edit to the execution and archive fields.',
+  // DESIGN.md §04.
+  description: 'The records manager edits contracts from signing onward, and only their execution and archive fields.',
   object: 'clm_contract',
   type: 'criteria',
   condition: P`record.status in ${EXECUTION_STATUSES}`,
@@ -94,7 +98,7 @@ export const ContractRecordsExecutionSharingRule = defineSharingRule({
 export const ContractRecordsApprovedReadSharingRule = defineSharingRule({
   name: 'contract_records_approved_read',
   label: 'Contracts — Records (approved, read only)',
-  description: 'DESIGN.md §04, ruling A on #100: the records manager reads approved contracts so it can start signing; it edits them only from signing onward.',
+  description: 'The records manager reads approved contracts so it can start signing; it edits them only from signing onward.',
   object: 'clm_contract',
   type: 'criteria',
   condition: P`record.status in ${RECORDS_READ_ONLY_STATUSES}`,
@@ -105,7 +109,8 @@ export const ContractRecordsApprovedReadSharingRule = defineSharingRule({
 export const ContractExecutiveRoutedSharingRule = defineSharingRule({
   name: 'contract_executive_routed',
   label: 'Contracts — Executive (routed)',
-  description: 'DESIGN.md §04: an executive reads the contracts the approval matrix routed to the executive rung.',
+  // DESIGN.md §04.
+  description: 'An executive reads the contracts the approval matrix routed to the executive rung.',
   object: 'clm_contract',
   type: 'criteria',
   condition: P`record.route_executive == true`,
@@ -116,7 +121,8 @@ export const ContractExecutiveRoutedSharingRule = defineSharingRule({
 export const ContractGmRoutedSharingRule = defineSharingRule({
   name: 'contract_gm_routed',
   label: 'Contracts — General Manager (routed)',
-  description: 'DESIGN.md §04: the general manager reads the contracts the approval matrix routed to the general-manager rung.',
+  // DESIGN.md §04.
+  description: 'The general manager reads the contracts the approval matrix routed to the general-manager rung.',
   object: 'clm_contract',
   type: 'criteria',
   condition: P`record.route_gm == true`,

@@ -205,17 +205,23 @@ export const ContractIntakeFlow: Flow = {
       id: 'refuse_type', type: 'script', label: 'Refuse: Type Unavailable',
       config: { function: 'clm_intake_refuse', inputs: { kind: 'type_unavailable' } },
     },
-    // Both branches bind `templateAvailable` and `templateNote`, so no later
-    // read meets an unbound variable (the house rule of the flow-variable
-    // conditions table in the spec's FlowVariableSchema note).
+    // Both branches bind `templateAvailable`, so no later read meets an
+    // unbound variable (the house rule of the flow-variable conditions table
+    // in the spec's FlowVariableSchema note).
+    //
+    // No sentence is assigned here. An assignment value is not translatable,
+    // and a screen text slot's `{{ }}` hole is a variable path with no
+    // branching, so a note picked here rendered in English under every locale.
+    // The version screen below says what holds for every type, and the
+    // template sentence is the toggle's own help text — both bundle keys.
     { id: 'decision_template', type: 'decision', label: 'Type Has Template?' },
     {
       id: 'template_yes', type: 'assignment', label: 'Template Available',
-      config: { assignments: { templateAvailable: true, templateNote: 'This contract type carries a template. Tick "Draft from template" to attach it as version 1, or leave it clear to upload the first version on the next step.' } },
+      config: { assignments: { templateAvailable: true } },
     },
     {
       id: 'template_no', type: 'assignment', label: 'No Template',
-      config: { assignments: { templateAvailable: false, templateNote: 'This contract type carries no template; upload the first version on the next step.' } },
+      config: { assignments: { templateAvailable: false } },
     },
     // The type's `intake_fields` list, normalised to an array on both branches
     // and carried onto the core screen as a hidden field — see the header.
@@ -325,16 +331,17 @@ export const ContractIntakeFlow: Flow = {
       id: 'screen_document', type: 'screen', label: 'First Version',
       config: {
         title: 'First version',
-        description: '{{ templateNote }}',
+        description: 'The document this contract starts from. By default you upload it on the next step.',
         fields: [
           // Carrier, as `intakeFields` on the core screen: `visibleWhen` sees
           // only this screen's own fields, so the type's answer is brought onto
           // the screen (server-interpolated, a boolean) and hidden by its own
-          // predicate. The toggle is then offered only on a type that carries
-          // a template; on one that does not, the description above says so
-          // and there is nothing to tick.
+          // predicate. The toggle — and the sentence about the template, its
+          // help text — is then offered only on a type that carries a
+          // template; on one that does not, the description above is the
+          // whole screen and there is nothing to tick.
           { name: 'templateAvailable', label: 'Template available', type: 'boolean', defaultValue: ref('templateAvailable'), visibleWhen: 'templateAvailable == null' },
-          { name: 'draft_from_template', label: 'Draft from template', type: 'boolean', defaultValue: ref('draft_from_template'), visibleWhen: 'templateAvailable == true' },
+          { name: 'draft_from_template', label: 'Draft from template', type: 'boolean', defaultValue: ref('draft_from_template'), visibleWhen: 'templateAvailable == true', inlineHelpText: 'This contract type carries a template. Tick to attach it as version 1 instead of uploading a file.' },
         ],
       },
     },

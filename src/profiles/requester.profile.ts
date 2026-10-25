@@ -138,7 +138,8 @@ export const RequesterSet = definePermissionSet({
     {
       name: 'contract_requester_edit_window',
       label: 'Requesters edit a contract only while it is draft or submitted',
-      description: 'DESIGN.md §04: RCU（本人发起，draft/submitted 可改）. From review onward the contract is edited by legal, finance and records through their own grants.',
+      // DESIGN.md §04: RCU（本人发起，draft/submitted 可改）.
+      description: 'A requester can change a contract only while it is Draft or Submitted. From review onward, legal, finance and records make the changes.',
       object: 'clm_contract',
       operation: 'update',
       using: inList('status', REQUESTER_EDITABLE_STATUSES),
@@ -146,7 +147,8 @@ export const RequesterSet = definePermissionSet({
     {
       name: 'obligation_requester_own',
       label: 'Requesters update the obligations they own',
-      description: 'DESIGN.md §04: RU（本人负责）. Reading follows the contract; updating needs the obligation to be assigned to the caller.',
+      // DESIGN.md §04: RU（本人负责）.
+      description: 'A requester sees the obligations of the contracts they can see, and updates only the ones assigned to them.',
       object: 'clm_obligation',
       operation: 'update',
       using: 'owner == current_user.id',

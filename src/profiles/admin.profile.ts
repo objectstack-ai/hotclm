@@ -85,7 +85,10 @@ export const AdminSet = definePermissionSet({
     {
       name: 'contract_admin_edit_any_status',
       label: 'The administrator edits a contract in any status',
-      description: 'The permissive companion of contract_requester_edit_window (policies OR-merge across the sets a person holds; Modify All Data does not skip them on this object).',
+      // The permissive companion of contract_requester_edit_window: policies
+      // OR-merge across the sets a person holds, and Modify All Data does not
+      // skip them on this object.
+      description: 'Lets the CLM administrator edit a contract in any status, not only while it is Draft or Submitted.',
       object: 'clm_contract',
       operation: 'update',
       using: inList('status', CONTRACT_STATUSES),
@@ -93,7 +96,8 @@ export const AdminSet = definePermissionSet({
     {
       name: 'obligation_admin_update_any',
       label: 'The administrator updates any obligation',
-      description: 'The permissive companion of obligation_requester_own.',
+      // The permissive companion of obligation_requester_own.
+      description: 'Lets the CLM administrator update any obligation, not only the ones assigned to them.',
       object: 'clm_obligation',
       operation: 'update',
       using: inList('status', OBLIGATION_STATUSES),

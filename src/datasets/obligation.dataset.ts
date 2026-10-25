@@ -21,7 +21,7 @@ import { defineDataset } from '@objectstack/spec/ui';
 export const ObligationDataset = defineDataset({
   name: 'obligation_metrics',
   label: 'Obligation Metrics',
-  description: 'Post-signature commitments by status, kind, owner, contract and due month — including the arrears the daily job stamps.',
+  description: 'Post-signature commitments by status, kind, owner, contract and due month — including those the daily check has marked overdue.',
   object: 'clm_obligation',
 
   // `contract` is the master-detail parent; one hop to the contract, two to its

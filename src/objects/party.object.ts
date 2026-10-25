@@ -56,7 +56,9 @@ export const Party = ObjectSchema.create({
       label: 'Country',
       group: 'identity',
       maxLength: 2,
-      description: 'ISO 3166-1 alpha-2 country code of the party (e.g. US, DE, CN). Drives governing-law defaults and screening.',
+      // Nothing reads this field yet: no governing-law default and no
+      // screening step uses it, so the help text promises neither.
+      description: 'Two-letter ISO 3166-1 code of the country the party is based in (e.g. US, DE, CN).',
     }),
     registration_no: Field.text({
       label: 'Registration / Tax ID',
