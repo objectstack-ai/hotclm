@@ -196,6 +196,43 @@ export default defineStack({
   // `permissionSets` (src/sharing/positions.ts).
   positions: ClmPositions,
   permissions: Object.values(profiles),
+
+  // The eleven authorization tokens the five permission sets grant in
+  // `systemPermissions` (ADR-0066 D1) — this app DEFINES them; it is not a
+  // `requires:` service and adds no plugin. Two reasons to declare rather than
+  // let the platform derive them from the sets:
+  //
+  //  - `clm_requester` is every member's default (`isDefault: true`, DESIGN.md
+  //    §04 「所有员工默认」). The platform binds such a set to the `everyone`
+  //    anchor only if it is low-privilege, and a `systemPermissions` token
+  //    counts as high-privilege UNLESS the stack declares it here
+  //    (`security-anchor-high-privilege`, ADR-0090 D5/D9; per token, and a
+  //    platform token is never excused). Measured on 18.1.0: `isDefault: true`
+  //    without this block fails `os lint`, `os validate` and the dev compile;
+  //    with it all three pass and a member holding no position resolves
+  //    `clm_requester` as the additive baseline.
+  //  - A declared capability carries a label and package provenance; a derived
+  //    one is an untitled name.
+  //
+  // Every token is org-scoped: each gates a CLM screen or action inside one
+  // organization. Keep this list and the five `systemPermissions` arrays in
+  // `src/profiles/*.profile.ts` in step — a token granted but not declared
+  // here makes `clm_requester` high-privilege again the moment it is the one
+  // granting it.
+  capabilities: [
+    { name: 'clm_requester.access',  scope: 'org', label: 'CLM: My Contracts',     description: 'Serves the My Contracts and Analytics groups of the CLM app.' },
+    { name: 'clm_legal.access',      scope: 'org', label: 'CLM: Legal',            description: 'Serves the Legal group of the CLM app and the legal-only contract actions.' },
+    { name: 'clm_finance.access',    scope: 'org', label: 'CLM: Finance',          description: 'Serves the Finance group of the CLM app.' },
+    { name: 'clm_records.access',    scope: 'org', label: 'CLM: Records',          description: 'Serves the Records group of the CLM app.' },
+    { name: 'clm_admin.access',      scope: 'org', label: 'CLM: Administration',   description: 'Serves the Administration group of the CLM app.' },
+    { name: 'approve_contract',      scope: 'org', label: 'Approve contracts',     description: 'DESIGN.md §04 action gate for the approval ladder; which request a holder decides is the approval flow\'s assignment.' },
+    { name: 'execute_contract',      scope: 'org', label: 'Execute contracts',     description: 'DESIGN.md §04 action gate for signing, activation and backfill of executed contracts.' },
+    { name: 'archive_contract',      scope: 'org', label: 'Archive contracts',     description: 'DESIGN.md §04 action gate for archiving.' },
+    { name: 'terminate_contract',    scope: 'org', label: 'Terminate contracts',   description: 'DESIGN.md §04 action gate for ending a contract in force.' },
+    { name: 'manage_clauses',        scope: 'org', label: 'Manage clauses',        description: 'DESIGN.md §04 action gate for the clause playbook.' },
+    { name: 'manage_approval_rules', scope: 'org', label: 'Manage approval rules', description: 'DESIGN.md §04 action gate for the approval matrix.' },
+  ],
+
   sharingRules: ClmSharingRules,
 
   // The demo dataset (DESIGN.md §10, card 08). EMPTY unless `CLM_DEMO_SEED`
