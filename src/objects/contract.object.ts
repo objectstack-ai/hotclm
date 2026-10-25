@@ -586,5 +586,11 @@ export const Contract = ObjectSchema.create({
     apiEnabled: true,
     searchable: true,
     files: true,
+    // The contract page's Approvals tab (DESIGN.md §05, 审批记录): whoever can
+    // read a contract sees its approval requests and their full history,
+    // read-only. The platform answers it on a read that names the contract;
+    // no approval action is offered and the inbox is not widened. Default off
+    // (participants only). The object grant it filters is `clm_requester`'s.
+    approvalsVisibleToReaders: true,
   },
 });
