@@ -50,12 +50,39 @@ export const POST_APPROVAL_STATUSES = subset(
   'POST_APPROVAL_STATUSES',
 );
 
-/** DESIGN.md §04 `contract_records_execution`: `signing` and everything after it. */
+/**
+ * DESIGN.md §04 `contract_records_execution`: `signing` and everything after it.
+ * The records manager's EDIT window — the sharing rule's `edit` grant and the
+ * `clm_records` update row policy both read it. It is not the records READ
+ * window, which opens one status earlier (below).
+ */
 export const EXECUTION_STATUSES = subset(
   CONTRACT_STATUSES,
   ['signing', 'active', 'expired', 'terminated'],
   'EXECUTION_STATUSES',
 );
+
+/**
+ * The statuses the records manager READS but does not edit: `approved`.
+ *
+ * Ruling A on #100 (2026-10-25): records holds `execute_contract`, the gate on
+ * 发起签署 (`approved → signing`), so its read window opens at `approved` —
+ * the contract it is about to send for signature — while the edit window stays
+ * `EXECUTION_STATUSES`. Derived, not retyped: the records read window is
+ * `POST_APPROVAL_STATUSES`, and this is the part of it the edit window does not
+ * cover, so the two windows cannot drift apart. The guard below fails the load
+ * if the derivation ever stops being exactly the one status the ruling moved.
+ */
+export const RECORDS_READ_ONLY_STATUSES = subset(
+  CONTRACT_STATUSES,
+  POST_APPROVAL_STATUSES.filter((status) => !EXECUTION_STATUSES.includes(status)),
+  'RECORDS_READ_ONLY_STATUSES',
+);
+if (RECORDS_READ_ONLY_STATUSES.join() !== 'approved') {
+  throw new Error(
+    `RECORDS_READ_ONLY_STATUSES must be exactly [approved] (ruling A on #100); it derived [${RECORDS_READ_ONLY_STATUSES.join(', ')}].`,
+  );
+}
 
 /** Every `clm_review.stage` value. */
 export const REVIEW_STAGES = selectValues(Review, 'stage');

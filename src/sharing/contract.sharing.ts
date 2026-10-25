@@ -1,6 +1,6 @@
 import { P } from '@objectstack/spec';
 import { defineSharingRule } from '@objectstack/spec/security';
-import { CONTRACT_STATUSES, EXECUTION_STATUSES, POST_APPROVAL_STATUSES } from './_lifecycle.js';
+import { CONTRACT_STATUSES, EXECUTION_STATUSES, POST_APPROVAL_STATUSES, RECORDS_READ_ONLY_STATUSES } from './_lifecycle.js';
 import { CLM_POSITION } from './positions.js';
 
 /**
@@ -8,15 +8,20 @@ import { CLM_POSITION } from './positions.js';
  * leadership rungs reach contracts they do not own (`clm_contract` is
  * `private`; the five children are `controlled_by_parent` and follow it).
  *
- * §04 lists six rows. Five are criteria rules and live here. The sixth,
+ * §04 lists six rows. Five are criteria rules and live here (as seven rows —
+ * see the shapes below). The sixth,
  * `contract_manager_reports`, is not a rule at all: it is the
  * `own_and_reports` DEPTH scope on the `clm_requester` grant
  * (`src/profiles/requester.profile.ts`), exactly as the §04 table spells it.
  *
- * Two shapes the platform imposes on the table, neither a change of meaning:
+ * Three shapes the platform imposes on the table, none a change of meaning:
  *
  *  - A rule has ONE recipient. `contract_legal_all` names two positions, so it
  *    is two rows here, one per position, sharing the same criteria and level.
+ *  - A rule has ONE access level. The records manager reads contracts from
+ *    `approved` onward but edits them only from `signing` onward (ruling A on
+ *    #100), so its window is two rows: `contract_records_execution` (edit,
+ *    signing onward) and `contract_records_approved_read` (read, approved).
  *  - "全部" cannot be authored as an empty criteria: a match-all rule is refused
  *    at seed and by `defineRule`, and one that slipped through would match
  *    NOTHING (ADR-0049, `plugin-sharing`'s `isMatchAllCriteria`). "Every
@@ -76,6 +81,27 @@ export const ContractRecordsExecutionSharingRule = defineSharingRule({
   sharedWith: { type: 'position', value: CLM_POSITION.recordsManager },
 });
 
+/**
+ * Ruling A on #100: the records manager holds `execute_contract`, the gate on
+ * 发起签署 (`approved → signing`), so it must be able to READ the approved
+ * contract it is about to send for signature. Read only: the edit window stays
+ * `contract_records_execution` above and the `clm_records` update row policy,
+ * both from `signing` onward. The button still works on a row records can only
+ * read, because the action body writes system-elevated and what binds the
+ * caller is the route's caller-scoped read plus `requiredPermissions`
+ * (src/actions/contract-lifecycle.actions.ts).
+ */
+export const ContractRecordsApprovedReadSharingRule = defineSharingRule({
+  name: 'contract_records_approved_read',
+  label: 'Contracts — Records (approved, read only)',
+  description: 'DESIGN.md §04, ruling A on #100: the records manager reads approved contracts so it can start signing; it edits them only from signing onward.',
+  object: 'clm_contract',
+  type: 'criteria',
+  condition: P`record.status in ${RECORDS_READ_ONLY_STATUSES}`,
+  accessLevel: 'read',
+  sharedWith: { type: 'position', value: CLM_POSITION.recordsManager },
+});
+
 export const ContractExecutiveRoutedSharingRule = defineSharingRule({
   name: 'contract_executive_routed',
   label: 'Contracts — Executive (routed)',
@@ -102,6 +128,7 @@ export const ClmSharingRules = [
   ...ContractLegalAllSharingRules,
   ContractFinancePostApprovalSharingRule,
   ContractRecordsExecutionSharingRule,
+  ContractRecordsApprovedReadSharingRule,
   ContractExecutiveRoutedSharingRule,
   ContractGmRoutedSharingRule,
 ];
