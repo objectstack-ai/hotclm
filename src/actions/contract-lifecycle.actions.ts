@@ -235,7 +235,7 @@ export const StartSigningAction: Action = transition(
 export const ActivateContractAction: Action = transition(
   'activate_contract', 'Activate', 'circle-check',
   'signing', 'active',
-  'Bring a signed contract into force. Its activation date is recorded and the renewal reminder is set up.',
+  'Bring a signed contract into force. Its activation date is recorded and, if it has an end date, a renewal reminder is set up.',
   ['execute_contract'],
 );
 

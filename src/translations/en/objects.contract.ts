@@ -4,10 +4,10 @@
  * `clm_contract` and its document versions — 234 + 25 of this bundle's keys,
  * a third of the whole thing, so they get their own file on size alone.
  *
- * The contract carries the only `_actions` group in the bundle: the six header
- * actions of the record page plus the launch action, each with its label, its
- * description and — for the launch action — every parameter label the intake
- * dialog draws.
+ * The contract carries the only `_actions` group in the bundle: the eight header
+ * actions of the record page plus the two list-toolbar actions (launch and
+ * backfill), each with its label, its description and — for the actions that
+ * open a dialog — the parameter labels and help that dialog draws.
  */
 import type { ObjectTranslationData } from '@objectstack/spec/system';
 
@@ -313,7 +313,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       activate_contract: {
         label: 'Activate',
-        description: 'Bring a signed contract into force. Its activation date is recorded and the renewal reminder is set up.',
+        description: 'Bring a signed contract into force. Its activation date is recorded and, if it has an end date, a renewal reminder is set up.',
       },
       executed_upload: {
         label: 'Backfill Executed Contract',
