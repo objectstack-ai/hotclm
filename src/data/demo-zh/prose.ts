@@ -122,13 +122,6 @@ export const DEVIATION_JUSTIFICATIONS: readonly string[] & { length: 6 } = [
   '业务方提出但未给出理由，法务建议拒绝。',
 ] as const;
 
-export const SIGNATURE_NOTES: readonly string[] & { length: 4 } = [
-  '信封已发给双方签署人，等待相对方签署。',
-  '双方均已电子签署，回签副本已归档。',
-  '湿签流程：原件已快递互换，公司印章已加盖。',
-  '公证已预约，见证副本仍未取得。',
-] as const;
-
 /** 与 `../plan.ts` 中三个适用法律一一对应的法院或仲裁地。 */
 export const TERMINATION_REASONS: readonly string[] & { length: 4 } = [
   '对方严重违约：连续三个交付节点逾期，书面催告后仍未补正。',

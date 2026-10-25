@@ -138,7 +138,6 @@ export const signatureSeed = defineSeed(Signature, {
       status: signature.status,
       formalities_done: [...signature.formalitiesDone],
       completed_at: signedAt,
-      notes: STRINGS.signatureNotes[signature.noteIndex]!,
     };
   }),
 });

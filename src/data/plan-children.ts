@@ -125,7 +125,6 @@ export interface SignaturePlan {
   /** A subset of the type's `execution_formalities`; a completed round covers them all. */
   readonly formalitiesDone: readonly string[];
   readonly completedAt: number | null;
-  readonly noteIndex: number;
   readonly signerCount: 2 | 3;
 }
 
@@ -166,7 +165,6 @@ const planSignatures = (): SignaturePlan[] => {
       // formality the "待执行" list exists to surface.
       formalitiesDone: incomplete ? formalities.slice(0, -1) : [],
       completedAt: null,
-      noteIndex: incomplete ? 3 : 0,
       signerCount: 2,
     };
   });
@@ -179,7 +177,6 @@ const planSignatures = (): SignaturePlan[] => {
       status: 'completed',
       formalitiesDone: typeOf(contract).executionFormalities,
       completedAt: contract.timeline.signedAt,
-      noteIndex: typeOf(contract).signMethod === 'wet_ink' ? 2 : 1,
       signerCount: random() < 0.3 ? 3 : 2,
     });
   }

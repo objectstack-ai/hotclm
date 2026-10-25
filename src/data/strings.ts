@@ -90,8 +90,6 @@ export interface DemoStrings {
   readonly deviationTexts: Strings<8>;
   /** Why the requester is asking for it. */
   readonly deviationJustifications: Strings<6>;
-  /** Notes on a signature round. */
-  readonly signatureNotes: Strings<4>;
   /**
    * Why each of the four `terminated` contracts was ended early.
    *
