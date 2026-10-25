@@ -15,6 +15,17 @@ export const SIGNING_ENTITIES: readonly string[] & { length: 3 } = [
   '阿卡迪亚亚太私人有限公司',
 ] as const;
 
+/** 发起合同的七个部门，顺序同 `../plan.ts` 的 `DEPARTMENT_PLAN`；都是美国母公司之下 kind 为部门的业务单元。 */
+export const DEPARTMENTS: readonly string[] & { length: 7 } = [
+  '销售部',
+  '采购部',
+  '法务部',
+  '财务部',
+  '运营部',
+  '人力资源部',
+  '信息技术部',
+] as const;
+
 /** 同一相对方、同一类型的第二份合同用它区分。 */
 export const TITLE_QUALIFIERS: readonly string[] & { length: 8 } = [
   '续签',

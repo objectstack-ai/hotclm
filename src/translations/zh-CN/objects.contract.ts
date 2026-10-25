@@ -96,17 +96,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       department: {
         label: '发起部门',
-        help: '发起这份合同的业务部门。按部门共享合同属于客户定制，标准品不提供。',
-        options: {
-          sales: '销售',
-          procurement: '采购',
-          legal: '法务',
-          finance: '财务',
-          operations: '运营',
-          people: '人力资源',
-          it: '信息技术',
-          other: '其他',
-        },
+        help: '发起这份合同的业务部门。可选项是「设置 → 业务单元」中类型为部门的业务单元。按部门共享合同属于客户定制，标准品不提供。',
       },
       owner_id: {
         label: '业务承办人',
@@ -370,6 +360,7 @@ export const contract: Record<string, ObjectTranslationData> = {
           },
           department: {
             label: '发起部门',
+            helpText: '发起这份合同的部门。',
           },
           amount: {
             label: '合同金额',

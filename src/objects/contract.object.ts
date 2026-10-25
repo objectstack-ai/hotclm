@@ -191,21 +191,29 @@ export const Contract = ObjectSchema.create({
         { field: 'active', operator: 'eq', value: true },
       ],
     }),
-    department: Field.select({
+    // Departments are organisation structure, so they are data too: the
+    // platform's `sys_business_unit` rows of kind `department` (#109, under
+    // #20's ruling C), maintained in Setup → Business Units next to the
+    // signing entities. The field keeps its name: `business_unit` is a
+    // platform reserved word.
+    //
+    // Still a redundant scalar on the contract, because RLS cannot cross
+    // objects (DESIGN.md §04); department-level sharing is a customer overlay
+    // (§13 Q2). It now stores the unit's id rather than an option value.
+    //
+    // Optional, as it always was. A fresh install has no department until an
+    // admin adds one, and a contract must not wait for the org chart to be
+    // written; a backfilled or renewed contract may have none either.
+    // `storage.notNull` is therefore absent on purpose.
+    department: Field.lookup('sys_business_unit', {
       label: 'Requesting Department',
       group: 'parties',
-      // A redundant scalar on the contract because RLS cannot cross objects
-      // (DESIGN.md §04); department-level sharing is a customer overlay (§13 Q2).
-      description: 'The business unit that launched the contract. Sharing contracts by department is a customer-specific extension, not part of the standard product.',
-      options: [
-        { label: 'Sales',        value: 'sales' },
-        { label: 'Procurement',  value: 'procurement' },
-        { label: 'Legal',        value: 'legal' },
-        { label: 'Finance',      value: 'finance' },
-        { label: 'Operations',   value: 'operations' },
-        { label: 'People / HR',  value: 'people' },
-        { label: 'IT',           value: 'it' },
-        { label: 'Other',        value: 'other' },
+      description: 'The department that launched the contract. The choices are the department-kind business units in Setup → Business Units. Sharing contracts by department is a customer-specific extension, not part of the standard product.',
+      // The picker offers active departments only, never a company, division,
+      // office or cost centre.
+      lookupFilters: [
+        { field: 'kind', operator: 'eq', value: 'department' },
+        { field: 'active', operator: 'eq', value: true },
       ],
     }),
     // `owner_id` is the platform ownership anchor — the one column the private

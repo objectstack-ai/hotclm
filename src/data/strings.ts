@@ -59,6 +59,11 @@ export interface DemoStrings {
    * order (`plan.ts`). Their `sys_business_unit.name`.
    */
   readonly signingEntities: Strings<3>;
+  /**
+   * The seven departments that launch contracts, in `DEPARTMENT_PLAN`'s order
+   * (`plan.ts`). Their `sys_business_unit.name`.
+   */
+  readonly departments: Strings<7>;
   /** DESIGN.md §10: nine contract types. */
   readonly contractTypes: readonly ContractTypeStrings[] & { length: 9 };
   /** DESIGN.md §10: thirty playbook clauses. */

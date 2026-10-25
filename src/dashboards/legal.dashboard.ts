@@ -61,11 +61,14 @@ import type { Dashboard } from '@objectstack/spec/ui';
  * inline map produces none. A filter added later with a plain-string label
  * ships English on a zh-CN board with `pnpm lint:i18n-gate` still green.
  *
- * ⚠️ These option labels DUPLICATE `objects.<object>.fields.<field>.options.*`
- * in the bundle, which is not ideal and is not avoidable here: the filter
- * declares its own option list (the schema requires it for a `select` filter),
- * and the two are separate authored strings that happen to say the same thing.
- * If they drift, the bundle's copy is the one the grid and the record page use.
+ * ⚠️ The `category` filter's option labels DUPLICATE
+ * `objects.<object>.fields.<field>.options.*` in the bundle, which is not
+ * ideal and is not avoidable here: the filter declares its own option list
+ * (the schema requires it for a `select` filter), and the two are separate
+ * authored strings that happen to say the same thing. If they drift, the
+ * bundle's copy is the one the grid and the record page use. The `department`
+ * filter has no such copy since #109: its options are business-unit rows, and
+ * a row's name is data, shown as written.
  */
 export const LegalDashboard: Dashboard = {
   name: 'legal_workbench',
@@ -75,10 +78,10 @@ export const LegalDashboard: Dashboard = {
   columns: 12,
   gap: 4,
 
-  // Both are persisted `Field.select` columns on `clm_contract`, and every
-  // widget on this dashboard is bound to `contract_metrics` (base object
-  // `clm_contract`), so neither filter can reach a widget whose object lacks
-  // the column.
+  // Both are persisted columns on `clm_contract` (`category` a select,
+  // `department` a lookup), and every widget on this dashboard is bound to
+  // `contract_metrics` (base object `clm_contract`), so neither filter can
+  // reach a widget whose object lacks the column.
   globalFilters: [
     {
       name: 'category',
@@ -100,23 +103,24 @@ export const LegalDashboard: Dashboard = {
         { value: 'other', label: { en: 'Other', 'zh-CN': '其他' } },
       ],
     },
+    // `department` is a lookup to `sys_business_unit` since #109, so the
+    // filter's options are the department-kind units themselves, read at run
+    // time, and the value it applies is the unit's id, which is what the
+    // column holds. Retired departments stay in the list on purpose: their
+    // contracts are still on the board.
     {
       name: 'department',
       field: 'department',
       object: 'clm_contract',
       label: { en: 'Requesting Department', 'zh-CN': '发起部门' },
-      type: 'select',
+      type: 'lookup',
       scope: 'dashboard',
-      options: [
-        { value: 'sales', label: { en: 'Sales', 'zh-CN': '销售' } },
-        { value: 'procurement', label: { en: 'Procurement', 'zh-CN': '采购' } },
-        { value: 'legal', label: { en: 'Legal', 'zh-CN': '法务' } },
-        { value: 'finance', label: { en: 'Finance', 'zh-CN': '财务' } },
-        { value: 'operations', label: { en: 'Operations', 'zh-CN': '运营' } },
-        { value: 'people', label: { en: 'People / HR', 'zh-CN': '人力资源' } },
-        { value: 'it', label: { en: 'IT', 'zh-CN': '信息技术' } },
-        { value: 'other', label: { en: 'Other', 'zh-CN': '其他' } },
-      ],
+      optionsFrom: {
+        object: 'sys_business_unit',
+        valueField: 'id',
+        labelField: 'name',
+        filter: { kind: 'department' },
+      },
     },
   ],
 

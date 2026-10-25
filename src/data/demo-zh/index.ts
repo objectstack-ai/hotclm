@@ -4,6 +4,7 @@ import type { DemoStrings } from '../strings.js';
 import { APPROVAL_RULES, CLAUSES, CONTRACT_TYPES } from './catalog.js';
 import { PARTIES } from './parties.js';
 import {
+  DEPARTMENTS,
   DEVIATION_JUSTIFICATIONS,
   DEVIATION_TEXTS,
   JURISDICTIONS,
@@ -27,6 +28,7 @@ import {
  */
 export const ZH_CN: DemoStrings = {
   signingEntities: SIGNING_ENTITIES,
+  departments: DEPARTMENTS,
   contractTypes: CONTRACT_TYPES,
   clauses: CLAUSES,
   approvalRules: APPROVAL_RULES,

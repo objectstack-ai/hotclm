@@ -57,13 +57,13 @@ import { App } from '@objectstack/spec/ui';
  *   switcher builds a tab per named `listViews` entry, so `status_kanban` is
  *   one click from 全部合同 under its own label and zero clicks further than a
  *   second sidebar row would be.
- * - **签约主体与部门** (管理) is not a row here yet. The signing entities are
- *   rows now — `our_entity` is a lookup to the platform's `sys_business_unit`
- *   (kind `company`, #20 ruling C), maintained in Setup → Business Units, the
- *   platform's own org-chart surface — but `department` is still a
- *   `Field.select` option list on `clm_contract` (schema, not rows) until #109
- *   moves it onto the same object. The sidebar row for the pair is decided
- *   once both halves are data, rather than half a row now.
+ * - **签约主体与部门** (管理) is not a row here yet. Both halves are rows of
+ *   the platform's `sys_business_unit` now: `our_entity` is a lookup to the
+ *   company-kind units (#20 ruling C) and `department` to the
+ *   department-kind ones (#109). Both are maintained in Setup → Business
+ *   Units, the platform's own org-chart surface. Whether the 管理 group also
+ *   gets a row pointing there is a §05 navigation decision of its own, not
+ *   part of either card.
  * - **报表** (管理) is still absent. Card 10 landed §09's four datasets and
  *   three DASHBOARDS, which the 分析 group below points at with
  *   `type: 'dashboard'` items; no `reports:` metadata exists yet, and a
