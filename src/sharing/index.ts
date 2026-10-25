@@ -9,5 +9,6 @@ export {
   ContractFinancePostApprovalSharingRule,
   ContractGmRoutedSharingRule,
   ContractLegalAllSharingRules,
+  ContractRecordsApprovedReadSharingRule,
   ContractRecordsExecutionSharingRule,
 } from './contract.sharing.js';

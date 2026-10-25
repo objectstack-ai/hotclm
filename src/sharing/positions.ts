@@ -72,7 +72,7 @@ export const ClmPositions = [
   definePosition({
     name: CLM_POSITION.recordsManager,
     label: 'Records Manager',
-    description: 'Execution registration, archive and the contract ledger: edits contracts from signing onward on the execution and archive fields only.',
+    description: 'Execution registration, archive and the contract ledger: reads approved contracts to start signing; edits contracts from signing onward on the execution and archive fields only.',
     permissionSets: [RecordsSet.name, RequesterSet.name],
   }),
   definePosition({
