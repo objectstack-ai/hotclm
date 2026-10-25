@@ -110,6 +110,17 @@ export const RequesterSet = definePermissionSet({
     sys_activity:         { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     sys_attachment:       { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     sys_approval_request: { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
+    // `clm_contract.our_entity` is a required lookup to the platform's
+    // business units (the active company-kind ones are the signing entities),
+    // and `member_default` grants no read on them. Without this line every
+    // non-admin member got `403 PERMISSION_DENIED` in the launch dialog's
+    // "Our signing entity" picker — so could not launch a contract — and the
+    // record page showed the entity's raw id (issue #124). It sits here
+    // because every member holds this set, the legal, finance and records
+    // positions included. Read only: units are maintained in Setup → Business
+    // Units by an administrator. The object's sharing baseline is org-wide,
+    // so the read reaches the organization's own units and nothing else.
+    sys_business_unit:    { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
   },
   fields: {
     ...readOnly(Contract, CONTRACT_STAMPED_FIELDS),
