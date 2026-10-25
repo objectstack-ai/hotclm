@@ -117,7 +117,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       legal_owner: {
         label: '法务经办人',
-        help: '受理这次审查的法务。合同进入审查前必须先有经办人。',
+        help: '在法务归口负责这份合同档案的律师。通常在合同进入法务审查时分配；补录的合同不经审查，由法务直接在这里指定。',
       },
       current_turn: {
         label: '当前轮次',

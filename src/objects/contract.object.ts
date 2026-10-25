@@ -210,10 +210,18 @@ export const Contract = ObjectSchema.create({
       readonly: false,
       description: 'The requester who owns the contract on the business side.',
     }),
+    // `legal_owner` is the contract's custodian in legal for its whole life,
+    // not only the lawyer of one review (#53, ruled B). F2 assigns it on
+    // submission for a type that needs legal review, and the state machine
+    // still refuses `submitted -> in_review` without it. F16's backfill does
+    // NOT assign one, and `clm_records` cannot write it (`editableOnly` locks
+    // every contract field but `status` and `archive_no`): on a backfilled
+    // contract it is set by legal (or an admin) editing the record -- hence
+    // "legal names" in the help text, not "records assigns".
     legal_owner: Field.user({
       label: 'Legal Owner',
       group: 'parties',
-      description: 'The lawyer who accepted the review. Required before a submitted contract enters review.',
+      description: 'The lawyer in legal who owns this contract\'s file. Usually assigned when the contract enters legal review; a backfilled contract skips review, so legal names its lawyer here directly.',
     }),
     current_turn: Field.select({
       label: 'Ball In Court',
