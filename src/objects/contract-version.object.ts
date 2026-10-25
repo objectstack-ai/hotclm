@@ -9,7 +9,8 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  *
  * Two versions gate the contract's state machine: `approved → signing` needs
  * a current `clean` version, and `signing → active` needs a `final_signed`
- * one (`contract.hook.ts`). `display_name` is a stored mirror ("v<n> · <kind>")
+ * one (`contract.hook.ts`). At most one version of a contract is current
+ * (`contract-version.hook.ts`). `display_name` is a stored mirror ("v<n> · <kind>")
  * stamped by `mirror.hook.ts` — a stored title, never a formula, so the record
  * is searchable and pickable.
  */
@@ -83,8 +84,11 @@ export const ContractVersion = ObjectSchema.create({
     is_current: Field.boolean({
       label: 'Current',
       group: 'version',
-      defaultValue: false,
-      // The approved → signing guard in contract.hook.ts reads this flag.
+      // A new version is current by default; `contract-version.hook.ts` keeps
+      // the flag to one row per contract and never moves it onto a
+      // `final_signed` copy while other versions exist. The approved → signing
+      // guard in contract.hook.ts reads this flag.
+      defaultValue: true,
       description: 'The version negotiation is currently on. A contract can go to signing only once its current version is a clean copy.',
     }),
 
