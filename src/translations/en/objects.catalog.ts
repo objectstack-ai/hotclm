@@ -91,11 +91,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       template_file: {
         label: 'Template',
-        help: 'The document a first version is drafted from. The launch form hands the template and its placeholder list to the drafter; it does not fill the template in.',
-      },
-      template_placeholders: {
-        label: 'Template Placeholders',
-        help: 'A JSON list of the template\'s placeholders, one { key, label, type, required } entry per placeholder.',
+        help: 'The document a first version is drafted from. The launch form hands the template to the drafter; it does not fill the template in.',
       },
       default_term_months: {
         label: 'Default Term (months)',
@@ -364,9 +360,6 @@ export const catalog: Record<string, ObjectTranslationData> = {
           clear: 'Clear',
           hit: 'Hit',
         },
-      },
-      screened_at: {
-        label: 'Screened At',
       },
       is_active: {
         label: 'Active',
