@@ -19,6 +19,29 @@ import { App } from '@objectstack/spec/ui';
  * none. Every negative in the PR's audience matrix is recorded beside the
  * positive control that proves the group renders at all.
  *
+ * ## The group ORDER decides each audience's first screen (issue #99 item 6)
+ *
+ * An app opens on its first navigation entry that addresses something. The
+ * console's `findFirstRoute` walks the tree it was SERVED, in declaration
+ * order, and skips `action` / `url` / `component` rows. `homePageId` is
+ * retired (spec 17.0.0) and nothing else picks a landing. The server has
+ * already pruned every row the caller's capabilities do not open, so the
+ * landing is the first surviving row, which can differ per person.
+ *
+ * Every position also holds `clm_requester` (`bind-position-sets.ts`), so
+ * 我的合同 survives for everyone. With it listed first, every audience opened
+ * on 我发起的: the right page for a business requester, and an empty one for
+ * a lawyer, who launches nothing. §05 gives each audience its own partition and
+ * marks 我的合同 as the one shared by all (所有人). So the four partitions
+ * that each belong to one audience come first, then 我的合同 and 分析:
+ *
+ *   legal → 待受理 · finance → 收付款计划 · records → 待执行 ·
+ *   clm_admin → 审批矩阵 · requester and the two leadership rungs → 我发起的
+ *
+ * The order inside each group is still §05's 导航 column. Only the group
+ * order differs from §05's table. Analytics stays after 我的合同, or a
+ * requester's first screen would be a dashboard.
+ *
  * ## Items are objects, never bare strings
  *
  * Every entry is `{ id, type, label, … }`. `NavigationItemSchema` used to
@@ -60,6 +83,73 @@ export const ClmApp = App.create({
   },
 
   navigation: [
+    {
+      // 法务工作台 — §05 row 2. The lawyer's whole desk, in the order a
+      // contract travels: intake → review → negotiation → the full book.
+      id: 'group_legal',
+      type: 'group',
+      label: 'Legal Desk',
+      icon: 'scale',
+      expanded: true,
+      requiredPermissions: ['clm_legal.access'],
+      children: [
+        { id: 'nav_legal_intake',    type: 'object', objectName: 'clm_contract',      viewName: 'legal_intake',    label: 'Awaiting Intake', icon: 'inbox' },
+        { id: 'nav_legal_review',    type: 'object', objectName: 'clm_contract',      viewName: 'legal_in_review', label: 'My Reviews',      icon: 'file-search' },
+        { id: 'nav_legal_negotiate', type: 'object', objectName: 'clm_contract',      viewName: 'negotiating',     label: 'In Negotiation',  icon: 'messages-square' },
+        { id: 'nav_all_contracts',   type: 'object', objectName: 'clm_contract',      viewName: 'all_contracts',   label: 'All Contracts',   icon: 'files' },
+        { id: 'nav_expiry_calendar', type: 'object', objectName: 'clm_contract',      viewName: 'expiry_calendar', label: 'Expiry Calendar', icon: 'calendar-days' },
+        { id: 'nav_clause_library',  type: 'object', objectName: 'clm_clause',        label: 'Clause Library',  icon: 'book-open' },
+        { id: 'nav_contract_types',  type: 'object', objectName: 'clm_contract_type', label: 'Contract Types',  icon: 'shapes' },
+      ],
+    },
+
+    {
+      // 财务 — §05 row 3. The three cuts of the payment schedule ride the view
+      // switcher on the first entry; the board is its own row because §05's
+      // 导航 column names it.
+      id: 'group_finance',
+      type: 'group',
+      label: 'Finance',
+      icon: 'banknote',
+      expanded: true,
+      requiredPermissions: ['clm_finance.access'],
+      children: [
+        { id: 'nav_payment_plans',  type: 'object', objectName: 'clm_payment_plan', viewName: 'all_payment_plans', label: 'Payment Schedule', icon: 'calendar-clock' },
+        { id: 'nav_active_finance', type: 'object', objectName: 'clm_contract',     viewName: 'active_contracts',  label: 'Active Contracts', icon: 'file-check' },
+        { id: 'nav_payment_board',  type: 'object', objectName: 'clm_payment_plan', viewName: 'payment_kanban',    label: 'Payment Board',    icon: 'columns-3' },
+      ],
+    },
+
+    {
+      // 执行与档案 — §05 row 4.
+      id: 'group_records',
+      type: 'group',
+      label: 'Execution & Records',
+      icon: 'archive',
+      expanded: true,
+      requiredPermissions: ['clm_records.access'],
+      children: [
+        { id: 'nav_pending_execution', type: 'object', objectName: 'clm_contract', viewName: 'pending_execution', label: 'Awaiting Execution', icon: 'stamp' },
+        { id: 'nav_pending_archive',   type: 'object', objectName: 'clm_contract', viewName: 'pending_archive',   label: 'Awaiting Archive',   icon: 'folder-input' },
+        { id: 'nav_register',          type: 'object', objectName: 'clm_contract', viewName: 'contract_register', label: 'Contract Register',  icon: 'table' },
+      ],
+    },
+
+    {
+      // 管理 — §05 row 5. Two of the four items §05 lists have no destination
+      // in this repo yet; see the file header for which and why.
+      id: 'group_admin',
+      type: 'group',
+      label: 'Administration',
+      icon: 'settings',
+      expanded: true,
+      requiredPermissions: ['clm_admin.access'],
+      children: [
+        { id: 'nav_approval_matrix', type: 'object', objectName: 'clm_approval_rule', label: 'Approval Matrix', icon: 'git-branch' },
+        { id: 'nav_parties',         type: 'object', objectName: 'clm_party',         label: 'Counterparties',  icon: 'building-2' },
+      ],
+    },
+
     {
       /**
        * 我的合同（所有人） — DESIGN.md §05 row 1.
@@ -131,58 +221,6 @@ export const ClmApp = App.create({
     },
 
     {
-      // 法务工作台 — §05 row 2. The lawyer's whole desk, in the order a
-      // contract travels: intake → review → negotiation → the full book.
-      id: 'group_legal',
-      type: 'group',
-      label: 'Legal Desk',
-      icon: 'scale',
-      expanded: true,
-      requiredPermissions: ['clm_legal.access'],
-      children: [
-        { id: 'nav_legal_intake',    type: 'object', objectName: 'clm_contract',      viewName: 'legal_intake',    label: 'Awaiting Intake', icon: 'inbox' },
-        { id: 'nav_legal_review',    type: 'object', objectName: 'clm_contract',      viewName: 'legal_in_review', label: 'My Reviews',      icon: 'file-search' },
-        { id: 'nav_legal_negotiate', type: 'object', objectName: 'clm_contract',      viewName: 'negotiating',     label: 'In Negotiation',  icon: 'messages-square' },
-        { id: 'nav_all_contracts',   type: 'object', objectName: 'clm_contract',      viewName: 'all_contracts',   label: 'All Contracts',   icon: 'files' },
-        { id: 'nav_expiry_calendar', type: 'object', objectName: 'clm_contract',      viewName: 'expiry_calendar', label: 'Expiry Calendar', icon: 'calendar-days' },
-        { id: 'nav_clause_library',  type: 'object', objectName: 'clm_clause',        label: 'Clause Library',  icon: 'book-open' },
-        { id: 'nav_contract_types',  type: 'object', objectName: 'clm_contract_type', label: 'Contract Types',  icon: 'shapes' },
-      ],
-    },
-
-    {
-      // 财务 — §05 row 3. The three cuts of the payment schedule ride the view
-      // switcher on the first entry; the board is its own row because §05's
-      // 导航 column names it.
-      id: 'group_finance',
-      type: 'group',
-      label: 'Finance',
-      icon: 'banknote',
-      expanded: true,
-      requiredPermissions: ['clm_finance.access'],
-      children: [
-        { id: 'nav_payment_plans',  type: 'object', objectName: 'clm_payment_plan', viewName: 'all_payment_plans', label: 'Payment Schedule', icon: 'calendar-clock' },
-        { id: 'nav_active_finance', type: 'object', objectName: 'clm_contract',     viewName: 'active_contracts',  label: 'Active Contracts', icon: 'file-check' },
-        { id: 'nav_payment_board',  type: 'object', objectName: 'clm_payment_plan', viewName: 'payment_kanban',    label: 'Payment Board',    icon: 'columns-3' },
-      ],
-    },
-
-    {
-      // 执行与档案 — §05 row 4.
-      id: 'group_records',
-      type: 'group',
-      label: 'Execution & Records',
-      icon: 'archive',
-      expanded: true,
-      requiredPermissions: ['clm_records.access'],
-      children: [
-        { id: 'nav_pending_execution', type: 'object', objectName: 'clm_contract', viewName: 'pending_execution', label: 'Awaiting Execution', icon: 'stamp' },
-        { id: 'nav_pending_archive',   type: 'object', objectName: 'clm_contract', viewName: 'pending_archive',   label: 'Awaiting Archive',   icon: 'folder-input' },
-        { id: 'nav_register',          type: 'object', objectName: 'clm_contract', viewName: 'contract_register', label: 'Contract Register',  icon: 'table' },
-      ],
-    },
-
-    {
       /**
        * 分析 — DESIGN.md §09's three dashboards, one row each.
        *
@@ -248,9 +286,13 @@ export const ClmApp = App.create({
        * D-C), visible in the generated SQL as a
        * `WHERE "clm_payment_plan"."contract" IN (...)` clause.
        *
-       * Narrowing the ROWS is what this app can express; narrowing the NAV per
-       * audience needs an OR the platform does not have, and inventing a
-       * per-board capability would be a §04 change this card does not own.
+       * What still needs an OR is the GROUP: no single spelling serves it to
+       * "legal or finance or …". The ROWS do not: each one names one audience,
+       * so each one carries that audience's single capability under this
+       * group gate (issue #99 item 1, below). The group gate stays the shared
+       * one so the group reaches every holder of any row. (An emptied group is
+       * dropped server-side, but none empties today: Executive Overview has no
+       * row gate, so every holder of this group is served at least that row.)
        *
        * `type: 'dashboard'` + `dashboardName`, the only shape
        * `DashboardNavItemSchema` accepts. Each name matches a dashboard
@@ -266,24 +308,21 @@ export const ClmApp = App.create({
       expanded: true,
       requiredPermissions: ['clm_requester.access'],
       children: [
-        { id: 'nav_legal_workbench',    type: 'dashboard', dashboardName: 'legal_workbench',    label: 'Legal Workbench',    icon: 'scale' },
+        // Each ROW is gated on top of the group gate (issue #99 item 1). The
+        // filter prunes a child on its own `requiredPermissions` before it
+        // looks at the group, so one capability per row needs no OR: these
+        // two boards are §09's 法务工作台 and 财务, the analytics of the §05
+        // partitions of the same name, and they carry exactly that partition's
+        // gate. A requester is served neither row.
+        { id: 'nav_legal_workbench',    type: 'dashboard', dashboardName: 'legal_workbench',    label: 'Legal Workbench',    icon: 'scale',    requiredPermissions: ['clm_legal.access'] },
+        // NO row gate, and not by oversight. §09's 管理层 board is for the two
+        // leadership rungs, and `clm_executive` / `clm_general_manager` hold
+        // no set of their own (`bind-position-sets.ts`): their capabilities
+        // are exactly a requester's, so every spelling that hides this row
+        // from a requester hides it from leadership too. Who reads it is an
+        // open question on #99, not a gate to invent here.
         { id: 'nav_executive_overview', type: 'dashboard', dashboardName: 'executive_overview', label: 'Executive Overview', icon: 'trending-up' },
-        { id: 'nav_finance_overview',   type: 'dashboard', dashboardName: 'finance_overview',   label: 'Finance Overview',   icon: 'banknote' },
-      ],
-    },
-
-    {
-      // 管理 — §05 row 5. Two of the four items §05 lists have no destination
-      // in this repo yet; see the file header for which and why.
-      id: 'group_admin',
-      type: 'group',
-      label: 'Administration',
-      icon: 'settings',
-      expanded: true,
-      requiredPermissions: ['clm_admin.access'],
-      children: [
-        { id: 'nav_approval_matrix', type: 'object', objectName: 'clm_approval_rule', label: 'Approval Matrix', icon: 'git-branch' },
-        { id: 'nav_parties',         type: 'object', objectName: 'clm_party',         label: 'Counterparties',  icon: 'building-2' },
+        { id: 'nav_finance_overview',   type: 'dashboard', dashboardName: 'finance_overview',   label: 'Finance Overview',   icon: 'banknote', requiredPermissions: ['clm_finance.access'] },
       ],
     },
   ],
