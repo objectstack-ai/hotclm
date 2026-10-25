@@ -179,16 +179,23 @@ const RUNG_POLICY = {
   // RECORD_LOCKED even for the platform admin. The recovery is real — a
   // platform admin's `POST /api/v1/approvals/requests/<id>/approve` answered
   // 200, resumed the run and carried the contract to `approved`, while the
-  // same call from a non-approver non-admin answered 403 FORBIDDEN — but it
-  // is API-ONLY in Console 17.3.0: neither the inbox's All tab nor the
-  // request record page renders an approve/reject/reassign control for the
-  // override actor (#3424). That residual is a platform gap, recorded in the
-  // PR rather than papered over here: the lint's suggested fallback
-  // (`{ type: 'org_membership_level', value: 'owner' }`) would seat the org
-  // owner on the legal, finance, executive and GM rungs as a silent
-  // co-approver, and DESIGN.md §03 fixes the ladder at five NAMED rungs with
-  // the matrix deciding only which are climbed (§13 Q3 puts an extra approver
-  // in the customer overlay, not the standard product).
+  // same call from a non-approver non-admin answered 403 FORBIDDEN. On 17.3.0
+  // that override was API-only in the Console (#3424); re-measured on 17.7.0
+  // (#93), the platform admin's Setup → Approvals → Approvals Inbox → All tab
+  // offers Override Approve / Reject / Reassign / Recall on the request.
+  //
+  // The lint's suggested fallbacks stay unauthored. An extra
+  // `{ type: 'org_membership_level', value: 'owner' }` approver would seat the
+  // org owner on every rung as a silent co-approver; `'fallback'` needs a
+  // `fallbackApprovers` list naming who takes an unstaffed rung, a choice
+  // DESIGN.md does not make. §03 fixes the ladder at five NAMED rungs with the
+  // matrix deciding only which are climbed (§13 Q3 puts an extra approver in
+  // the customer overlay, not the standard product).
+  //
+  // The rung an install hits FIRST is the manager rung: its slate is
+  // `sys_user.manager_id`, runtime data no seed, position or permission set
+  // fills. Its remedy is operator setup, named in the README ("Rung 1 of the
+  // approval ladder is a manager"), not a policy here.
   onEmptyApprovers: 'admin_rescue' as const,
   lockRecord: true,
   approvalStatusField: 'approval_status',
@@ -264,8 +271,11 @@ export const ContractApprovalFlow: Flow = {
       type: 'approval',
       label: 'Direct Manager',
       config: {
-        // No `value`: the engine resolves the submitter's `sys_user.manager_id`
-        // (`APPROVER_VALUE_BINDINGS.manager` is `{ source: 'auto' }`).
+        // No `value`: the engine resolves the contract OWNER's
+        // `sys_user.manager_id` (`record[value] ?? record.owner_id` — see the
+        // header), never the submitter's. Only an operator fills that column,
+        // which is why the README's operator setup names the step; re-measured
+        // on 17.7.0 (#93): unset, the request opens on `manager:undefined`.
         approvers: [{ type: 'manager' }],
         behavior: 'first_response',
         ...RUNG_POLICY,
