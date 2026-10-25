@@ -155,13 +155,10 @@ export const ContractType = ObjectSchema.create({
       accept: ['application/pdf', '.docx'],
       maxSize: 20 * 1024 * 1024,
       // No rendering engine exists on the platform yet (DESIGN.md §12).
-      description: 'The document a first version is drafted from. The launch form hands the template and its placeholder list to the drafter; it does not fill the template in.',
-    }),
-    template_placeholders: Field.json({
-      label: 'Template Placeholders',
-      group: 'template',
-      // The same shape as DocumentTemplate.placeholders in @objectstack/spec.
-      description: 'A JSON list of the template\'s placeholders, one { key, label, type, required } entry per placeholder.',
+      // No placeholder list is declared next to it: nothing fills a template
+      // and no template-filling feature is scheduled, so a placeholder field
+      // would be a declaration nothing reads (issue #38, ruling group 3).
+      description: 'The document a first version is drafted from. The launch form hands the template to the drafter; it does not fill the template in.',
     }),
 
     default_term_months: Field.number({

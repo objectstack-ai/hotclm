@@ -77,11 +77,18 @@ export const Signature = ObjectSchema.create({
       searchable: true,
       maxLength: 120,
       // Written and read by the e-signature dispatch and callback (DESIGN.md §06 F8).
+      // That consumer is scheduled, not built: hotclm#83 (card 12, F8) on the
+      // platform e-signature connector objectstack-ai/objectstack#25747. Kept
+      // as declared on that schedule (issue #38, ruling group 1).
       description: 'The provider\'s envelope or agreement id, for status checks and audit.',
     }),
     signers: Field.json({
       label: 'Signers',
       group: 'round',
+      // Seeded today; its consumer (the F8 dispatch that posts the signers with
+      // the clean version, and the callback that writes each signer's status
+      // back) is scheduled on hotclm#83 with objectstack-ai/objectstack#25747
+      // (issue #38, ruling group 1).
       description: 'Array of { side: our | counterparty, name, email, order, status, signed_at } — one row per signer, in signing order.',
     }),
     status: Field.select({

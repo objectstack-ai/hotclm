@@ -4,7 +4,7 @@ import { defineSeed } from '@objectstack/spec/data';
 
 import { Party } from '../objects/party.object.js';
 
-import { dayOffset, assertUniqueKeys } from './_shared.js';
+import { assertUniqueKeys } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
 import { PARTY_PLAN, bankAccountFor, contactEmailFor, contactPhoneFor } from './plan.js';
 
@@ -43,9 +43,6 @@ export const partySeed = defineSeed(Party, {
     risk_flag: party.riskFlag,
     risk_note: party.riskNoteIndex === null ? null : STRINGS.riskNotes[party.riskNoteIndex]!,
     screening_status: party.screening,
-    // A counterparty that has never been screened has no screening date; one
-    // that has, was screened at some point in the last year.
-    screened_at: party.screening === 'not_screened' ? null : dayOffset(-(20 + ((i * 13) % 320))),
     is_active: party.riskFlag !== 'blocked',
   })),
 });

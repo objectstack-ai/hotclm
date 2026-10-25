@@ -21,7 +21,7 @@ import { assertUniqueKeys } from './_shared.js';
  * would hoist them regardless, but the barrel lists them first so the ordering
  * is legible without knowing that.
  *
- * `template_file` and `template_placeholders` are NOT seeded. A `file` value
+ * `template_file` is NOT seeded. A `file` value
  * is an opaque `sys_file` id minted by an upload, and a seed cannot mint one —
  * the same wall `clm_contract_version` runs into, and the same answer: an
  * id-shaped placeholder would point at nothing while looking like a document

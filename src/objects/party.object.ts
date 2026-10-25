@@ -8,8 +8,10 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  *
  * Party master data only: qualification, scoring and onboarding are an SRM's
  * job, not this object's (DESIGN.md §01 范围外). Screening (sanctions,
- * registry lookup) is an optional connector that stamps the two screening
- * fields; the object never calls anything itself.
+ * registry lookup) is an optional connector that stamps `screening_status`;
+ * the object never calls anything itself. There is deliberately no screening
+ * date: no connector is scheduled to write one, and a seeded date on the
+ * record page would claim a screening that never ran (issue #38, group 3).
  */
 export const Party = ObjectSchema.create({
   name: 'clm_party',
@@ -129,10 +131,6 @@ export const Party = ObjectSchema.create({
         { label: 'Clear',        value: 'clear',        color: '#2F7D5B' },
         { label: 'Hit',          value: 'hit',          color: '#EF4444' },
       ],
-    }),
-    screened_at: Field.datetime({
-      label: 'Screened At',
-      group: 'risk',
     }),
     is_active: Field.boolean({
       label: 'Active',

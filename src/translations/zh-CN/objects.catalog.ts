@@ -91,11 +91,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       template_file: {
         label: '模板',
-        help: '起草首版所依据的文档。发起表单会把模板和占位符清单交给起草人，不会自动填好模板。',
-      },
-      template_placeholders: {
-        label: '模板占位符',
-        help: '模板占位符的 JSON 列表，每个占位符一项，形如 { key, label, type, required }。',
+        help: '起草首版所依据的文档。发起表单会把模板交给起草人，不会自动填好模板。',
       },
       default_term_months: {
         label: '默认期限（月）',
@@ -364,9 +360,6 @@ export const catalog: Record<string, ObjectTranslationData> = {
           clear: '通过',
           hit: '命中',
         },
-      },
-      screened_at: {
-        label: '筛查时间',
       },
       is_active: {
         label: '启用',
