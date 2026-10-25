@@ -210,7 +210,11 @@ export const Contract = ObjectSchema.create({
       group: 'parties',
       description: 'The department that launched the contract. The choices are the department-kind business units in Setup → Business Units. Sharing contracts by department is a customer-specific extension, not part of the standard product.',
       // The picker offers active departments only, never a company, division,
-      // office or cost centre.
+      // office or cost centre. The picker is the only check on kind: a write
+      // that bypasses it may name a unit of another kind (measured on 18.1.0,
+      // 200), while an id that names no unit is refused by the engine
+      // (`reference_not_found`). No write-side rule like `our_entity`'s
+      // `contract_entity_is_active_company` exists for it (#109 reports why).
       lookupFilters: [
         { field: 'kind', operator: 'eq', value: 'department' },
         { field: 'active', operator: 'eq', value: true },
