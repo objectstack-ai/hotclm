@@ -246,9 +246,10 @@ export const ClmApp = App.create({
        * `systemPermissions` are `clm_admin.access` plus six action gates, so an
        * administrator does NOT hold `clm_legal.access`. The one capability every
        * CLM audience shares is `clm_requester.access`, because
-       * `bind-position-sets.ts` binds `RequesterSet` to *every* position:
+       * every position names `RequesterSet` in its `permissionSets`
+       * (`src/sharing/positions.ts`):
        *
-       *     ...Object.values(CLM_POSITION).map((position) => [position, RequesterSet.name])
+       *     permissionSets: [LegalSet.name, RequesterSet.name]
        *
        * PR #25's audience matrix is the measurement: 我的合同, gated on exactly
        * this capability, is served to legal, finance, records, clm_admin and an

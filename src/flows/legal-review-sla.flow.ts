@@ -1,5 +1,6 @@
 import type { Flow } from '@objectstack/spec/automation';
 import { holdersPrelude, rowBody, sweepFlow } from './_daily-sweep.js';
+import { ref } from './_values.js';
 
 /**
  * F3 `legal_review_sla` — the daily nudge on contracts sitting in legal review
@@ -70,14 +71,14 @@ export const LegalReviewSlaFlow: Flow = sweepFlow({
       item: 'review',
       body: rowBody({
         id: 'over30',
-        recipients: { primary: '{review.legal_owner}' },
+        recipients: { primary: ref('review.legal_owner') },
         notice: {
           topic: 'clm_legal_review_over_30_days',
           severity: 'warning',
           sourceObject: 'clm_contract',
-          sourceId: '{review.id}',
-          title: 'In legal review over 30 days: {review.title}',
-          message: 'Contract {review.contract_number} has been in legal review since {review.review_started_at} — more than 30 days. This is a fixed 30-day threshold, not this contract type\'s own review SLA. Move it on, or record what it is waiting for.',
+          sourceId: ref('review.id'),
+          title: 'In legal review over 30 days: {{ review.title }}',
+          message: 'Contract {{ review.contract_number }} has been in legal review since {{ review.review_started_at }} — more than 30 days. This is a fixed 30-day threshold, not this contract type\'s own review SLA. Move it on, or record what it is waiting for.',
         },
       }),
     },
@@ -93,14 +94,14 @@ export const LegalReviewSlaFlow: Flow = sweepFlow({
       item: 'review',
       body: rowBody({
         id: 'over60',
-        recipients: { primary: '{review.legal_owner}', also: '{legalHeads.userIds}' },
+        recipients: { primary: ref('review.legal_owner'), also: ref('legalHeads.userIds') },
         notice: {
           topic: 'clm_legal_review_over_60_days',
           severity: 'critical',
           sourceObject: 'clm_contract',
-          sourceId: '{review.id}',
-          title: 'In legal review over 60 days: {review.title}',
-          message: 'Contract {review.contract_number} has been in legal review since {review.review_started_at} — more than 60 days, twice the 30-day reminder threshold, so the head of legal is copied. This is a fixed threshold, not this contract type\'s own review SLA.',
+          sourceId: ref('review.id'),
+          title: 'In legal review over 60 days: {{ review.title }}',
+          message: 'Contract {{ review.contract_number }} has been in legal review since {{ review.review_started_at }} — more than 60 days, twice the 30-day reminder threshold, so the head of legal is copied. This is a fixed threshold, not this contract type\'s own review SLA.',
         },
       }),
     },

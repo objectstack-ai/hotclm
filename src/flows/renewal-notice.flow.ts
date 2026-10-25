@@ -1,5 +1,7 @@
+import { expression } from '@objectstack/spec';
 import type { Flow, FlowNode } from '@objectstack/spec/automation';
 import { HAS_RECIPIENT, NO_RECIPIENT, SWEEP_LIMIT, sweepFlow } from './_daily-sweep.js';
+import { must, ref } from './_values.js';
 
 /**
  * F12 `renewal_notice` — the renewal window, and the action that acts on it
@@ -118,7 +120,7 @@ const computeWindow: FlowNode = {
   label: 'Inside The Notice Window?',
   config: {
     function: 'clm_renewal_window',
-    inputs: { endDate: '{expiring.end_date}', noticeDays: '{expiring.renewal_notice_days}' },
+    inputs: { endDate: ref('expiring.end_date'), noticeDays: ref('expiring.renewal_notice_days') },
     outputVariable: 'window',
   },
 };
@@ -162,7 +164,7 @@ export const RenewalNoticeFlow: Flow = sweepFlow({
             label: 'Flag Expiring',
             config: {
               objectName: 'clm_contract',
-              filter: { id: '{expiring.id}' },
+              filter: { id: must('expiring.id') },
               // §12 gap #7's declared v1 degradation, and the only thing this
               // job stamps: a boolean §03 already carries. NOT a duration.
               fields: { is_expiring: true },
@@ -174,7 +176,7 @@ export const RenewalNoticeFlow: Flow = sweepFlow({
             label: 'Who To Tell',
             config: {
               function: 'clm_notify_recipients',
-              inputs: { primary: '{expiring.owner_id}', also: '{expiring.legal_owner}' },
+              inputs: { primary: ref('expiring.owner_id'), also: ref('expiring.legal_owner') },
               outputVariable: 'recipients',
             },
           },
@@ -184,14 +186,14 @@ export const RenewalNoticeFlow: Flow = sweepFlow({
             type: 'notify',
             label: 'Notify',
             config: {
-              recipients: '{recipients.userIds}',
+              recipients: ref('recipients.userIds'),
               channels: ['inbox', 'email'],
               severity: 'warning',
               topic: 'clm_renewal_notice_due',
               sourceObject: 'clm_contract',
-              sourceId: '{expiring.id}',
-              title: 'Renewal decision due: {expiring.title}',
-              message: 'Contract {expiring.contract_number} ends on {expiring.end_date}, and notice of non-renewal is owed by {window.deadline} ({window.noticeDays} days before). Start a renewal from the contract page, or give notice.',
+              sourceId: ref('expiring.id'),
+              title: 'Renewal decision due: {{ expiring.title }}',
+              message: 'Contract {{ expiring.contract_number }} ends on {{ expiring.end_date }}, and notice of non-renewal is owed by {{ window.deadline }} ({{ window.noticeDays }} days before). Start a renewal from the contract page, or give notice.',
             },
           },
           { id: 'notice_done', type: 'assignment', label: 'Row Done' },
@@ -243,7 +245,7 @@ export const RenewalStartFlow: Flow = {
       label: 'Load Source Contract',
       config: {
         objectName: 'clm_contract',
-        filter: { id: '{recordId}' },
+        filter: { id: must('recordId') },
         fields: ['id', 'title', 'contract_type', 'party', 'our_entity', 'department', 'owner_id', 'legal_owner', 'amount', 'currency_code', 'payment_terms', 'governing_law', 'jurisdiction', 'contract_language', 'confidentiality_term_months', 'auto_renew', 'renewal_notice_days', 'term_months', 'end_date', 'parent_contract'],
         outputVariable: 'source',
       },
@@ -254,7 +256,7 @@ export const RenewalStartFlow: Flow = {
       label: 'Renewal Already Started?',
       config: {
         objectName: 'clm_contract',
-        filter: { renewed_from: '{recordId}' },
+        filter: { renewed_from: must('recordId') },
         fields: ['id', 'contract_number', 'status'],
         outputVariable: 'existingRenewal',
       },
@@ -278,7 +280,11 @@ export const RenewalStartFlow: Flow = {
         // `contract_intake` already uses, so that is what both flows use.
         function: 'clm_backfill_refuse',
         inputs: {
-          message: 'This contract already has a renewal draft ({existingRenewal.contract_number}). Open that one instead of starting a second.',
+          // A value slot, so the sentence is a CEL string: no `{{ }}` hole
+          // here. This branch runs only once `existingRenewal` matched a row.
+          message: expression(
+            '"This contract already has a renewal draft (" + string(existingRenewal.contract_number) + "). Open that one instead of starting a second."',
+          ),
           code: 'INVALID_STATE',
         },
       },
@@ -289,7 +295,7 @@ export const RenewalStartFlow: Flow = {
       label: 'Compute The Draft',
       config: {
         function: 'clm_renewal_draft',
-        inputs: { title: '{source.title}', endDate: '{source.end_date}', termMonths: '{source.term_months}' },
+        inputs: { title: ref('source.title'), endDate: ref('source.end_date'), termMonths: ref('source.term_months') },
         outputVariable: 'draft',
       },
     },
@@ -300,26 +306,26 @@ export const RenewalStartFlow: Flow = {
       config: {
         objectName: 'clm_contract',
         fields: {
-          title: '{draft.title}',
-          contract_type: '{source.contract_type}',
-          party: '{source.party}',
-          our_entity: '{source.our_entity}',
-          department: '{source.department}',
-          amount: '{source.amount}',
-          currency_code: '{source.currency_code}',
-          payment_terms: '{source.payment_terms}',
-          governing_law: '{source.governing_law}',
-          jurisdiction: '{source.jurisdiction}',
-          contract_language: '{source.contract_language}',
-          confidentiality_term_months: '{source.confidentiality_term_months}',
-          auto_renew: '{source.auto_renew}',
-          renewal_notice_days: '{source.renewal_notice_days}',
-          term_months: '{draft.termMonths}',
-          start_date: '{draft.startDate}',
-          end_date: '{draft.endDate}',
-          parent_contract: '{source.parent_contract}',
+          title: ref('draft.title'),
+          contract_type: ref('source.contract_type'),
+          party: ref('source.party'),
+          our_entity: ref('source.our_entity'),
+          department: ref('source.department'),
+          amount: ref('source.amount'),
+          currency_code: ref('source.currency_code'),
+          payment_terms: ref('source.payment_terms'),
+          governing_law: ref('source.governing_law'),
+          jurisdiction: ref('source.jurisdiction'),
+          contract_language: ref('source.contract_language'),
+          confidentiality_term_months: ref('source.confidentiality_term_months'),
+          auto_renew: ref('source.auto_renew'),
+          renewal_notice_days: ref('source.renewal_notice_days'),
+          term_months: ref('draft.termMonths'),
+          start_date: ref('draft.startDate'),
+          end_date: ref('draft.endDate'),
+          parent_contract: ref('source.parent_contract'),
           // The link that makes this a renewal rather than a copy (§03).
-          renewed_from: '{source.id}',
+          renewed_from: ref('source.id'),
           // `status` is left to its `draft` default on purpose: the type stamp
           // hook refuses a contract born in any other state, and a renewal
           // earns its way through the machine like any other contract.
@@ -351,31 +357,31 @@ export const RenewalStartFlow: Flow = {
 
 /** The auto-renew draft F13 creates without a button — same field map, one caller over. */
 export const RENEWAL_DRAFT_FIELDS = {
-  title: '{draft.title}',
-  contract_type: '{expired.contract_type}',
-  party: '{expired.party}',
-  our_entity: '{expired.our_entity}',
-  department: '{expired.department}',
-  amount: '{expired.amount}',
-  currency_code: '{expired.currency_code}',
-  payment_terms: '{expired.payment_terms}',
-  governing_law: '{expired.governing_law}',
-  jurisdiction: '{expired.jurisdiction}',
-  contract_language: '{expired.contract_language}',
-  confidentiality_term_months: '{expired.confidentiality_term_months}',
-  auto_renew: '{expired.auto_renew}',
-  renewal_notice_days: '{expired.renewal_notice_days}',
-  term_months: '{draft.termMonths}',
-  start_date: '{draft.startDate}',
-  end_date: '{draft.endDate}',
-  parent_contract: '{expired.parent_contract}',
-  renewed_from: '{expired.id}',
+  title: ref('draft.title'),
+  contract_type: ref('expired.contract_type'),
+  party: ref('expired.party'),
+  our_entity: ref('expired.our_entity'),
+  department: ref('expired.department'),
+  amount: ref('expired.amount'),
+  currency_code: ref('expired.currency_code'),
+  payment_terms: ref('expired.payment_terms'),
+  governing_law: ref('expired.governing_law'),
+  jurisdiction: ref('expired.jurisdiction'),
+  contract_language: ref('expired.contract_language'),
+  confidentiality_term_months: ref('expired.confidentiality_term_months'),
+  auto_renew: ref('expired.auto_renew'),
+  renewal_notice_days: ref('expired.renewal_notice_days'),
+  term_months: ref('draft.termMonths'),
+  start_date: ref('draft.startDate'),
+  end_date: ref('draft.endDate'),
+  parent_contract: ref('expired.parent_contract'),
+  renewed_from: ref('expired.id'),
   // The sweep runs `runAs: 'system'`, and a system insert is exactly the case
   // the security middleware stands aside for ("if (opCtx.context?.isSystem)
   // return next()"), so `owner_id` would be left EMPTY unless it is carried
   // over. An unowned renewal draft is one nobody's 我的合同 list shows.
-  owner_id: '{expired.owner_id}',
-  legal_owner: '{expired.legal_owner}',
+  owner_id: ref('expired.owner_id'),
+  legal_owner: ref('expired.legal_owner'),
 } as const;
 
 /** Rows read per stage, re-exported so F13's cap and F12's stay one number. */

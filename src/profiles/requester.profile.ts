@@ -21,7 +21,7 @@ import { CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, hidden, inList, r
  * the default is DISTRIBUTED, not implicit:
  *
  *  - every one of the seven positions is bound to this set as well as to its
- *    own (`src/security/bind-position-sets.ts`), so legal, finance, records,
+ *    own (`permissionSets` in `src/sharing/positions.ts`), so legal, finance, records,
  *    admin and the two leadership rungs are all requesters too — which is also
  *    the only way an executive holds an object-level read on `clm_contract`
  *    for the rows `contract_executive_routed` shares with them;

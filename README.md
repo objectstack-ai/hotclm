@@ -199,7 +199,7 @@ POST /api/v1/data/sys_user_position
 ```
 
 A name-spelled row grants that position's own permission set **and** `clm_requester`, because every
-position binds that set too (`src/security/bind-position-sets.ts`) — a lawyer holds `clm_legal` and
+position names that set too (`permissionSets` in `src/sharing/positions.ts`) — a lawyer holds `clm_legal` and
 `clm_requester` both. To read back what an account actually ended up with:
 
 ```http

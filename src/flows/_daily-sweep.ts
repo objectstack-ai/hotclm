@@ -1,4 +1,6 @@
+import type { EvaluatedExpression } from '@objectstack/spec';
 import type { Flow, FlowNode, FlowEdge } from '@objectstack/spec/automation';
+import { must, ref } from './_values.js';
 
 /**
  * The shape the six daily jobs of DESIGN.md §06 share — F3, F4, F10, F11, F12
@@ -142,7 +144,7 @@ export function sweepFlow(spec: {
       type: 'loop',
       label: stage.label,
       config: {
-        collection: `{${stage.id}Rows}`,
+        collection: must(`${stage.id}Rows`),
         iteratorVariable: stage.item,
         maxIterations: SWEEP_LIMIT,
         body: {
@@ -203,10 +205,10 @@ export function sweepFlow(spec: {
  * legal owner, transcribed rather than shared because a flow function and a
  * lowered hook body cannot import each other.
  *
- * Returns a LIST. A notify node's `recipients` interpolates a single `{var}`
- * token to the value itself, so `recipients: '{holders.userIds}'` fans out
- * correctly for any number of holders — whereas an ARRAY of templates would
- * stringify a nested list into one bogus comma-joined recipient.
+ * Returns a LIST. A notify node's `recipients` is a value slot, so one CEL
+ * read of the list — `recipients: ref('holders.userIds')` — fans out
+ * correctly for any number of holders, where an ARRAY of reads would nest the
+ * list inside another.
  */
 export function positionHolders({ input }: { input: Record<string, unknown> }): {
   userIds: string[];
@@ -302,7 +304,7 @@ export function holdersPrelude(position: string, variable: string): FlowNode[] {
       label: `${position} — user ids`,
       config: {
         function: 'clm_position_holders',
-        inputs: { rows: `{${variable}Rows}` },
+        inputs: { rows: ref(`${variable}Rows`) },
         outputVariable: variable,
       },
     },
@@ -316,7 +318,7 @@ export interface RowNotice {
   readonly title: string;
   readonly message: string;
   readonly sourceObject: string;
-  readonly sourceId: string;
+  readonly sourceId: EvaluatedExpression;
   readonly channels?: readonly string[];
 }
 
@@ -340,7 +342,7 @@ export interface RowNotice {
 export function rowBody(spec: {
   readonly id: string;
   readonly lead?: readonly FlowNode[];
-  readonly recipients?: { readonly primary?: string; readonly also?: string; readonly copy?: string };
+  readonly recipients?: { readonly primary?: EvaluatedExpression; readonly also?: EvaluatedExpression; readonly copy?: EvaluatedExpression };
   readonly notice?: RowNotice;
 }): { nodes: FlowNode[]; edges: FlowEdge[] } {
   const nodes: FlowNode[] = [...(spec.lead ?? [])];
@@ -388,10 +390,9 @@ export function rowBody(spec: {
       type: 'notify',
       label: 'Notify',
       config: {
-        // ONE template resolving to the whole list. An array of templates
-        // would stringify a nested list into a single comma-joined recipient;
-        // a single `{var}` token interpolates to the value itself.
-        recipients: '{recipients.userIds}',
+        // ONE read resolving to the whole list. An array of reads would nest
+        // the list inside another instead of handing over its ids.
+        recipients: ref('recipients.userIds'),
         channels: [...(spec.notice.channels ?? ['inbox', 'email'])],
         severity: spec.notice.severity,
         topic: spec.notice.topic,

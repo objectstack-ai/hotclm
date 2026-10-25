@@ -1,5 +1,6 @@
 import type { Flow, FlowNode } from '@objectstack/spec/automation';
 import { rowBody, sweepFlow } from './_daily-sweep.js';
+import { must, ref } from './_values.js';
 
 /**
  * F10 `obligation_due` — the obligation reminder and the arrears sweep
@@ -47,7 +48,7 @@ const flagOverdue: FlowNode = {
   label: 'Mark Overdue',
   config: {
     objectName: 'clm_obligation',
-    filter: { id: '{obligation.id}' },
+    filter: { id: must('obligation.id') },
     // The ONE writer of this value. `obligation_state_machine` refuses
     // `overdue` from any non-system write on both the insert and the update
     // path, so this job is the only thing in the product that can set it —
@@ -73,14 +74,14 @@ export const ObligationDueFlow: Flow = sweepFlow({
       item: 'obligation',
       body: rowBody({
         id: 'week',
-        recipients: { primary: '{obligation.owner}' },
+        recipients: { primary: ref('obligation.owner') },
         notice: {
           topic: 'clm_obligation_due_soon',
           severity: 'info',
           sourceObject: 'clm_obligation',
-          sourceId: '{obligation.id}',
-          title: 'Due in 7 days: {obligation.title}',
-          message: 'This contract obligation is due on {obligation.due_date}. Record progress, or mark it done once it is performed.',
+          sourceId: ref('obligation.id'),
+          title: 'Due in 7 days: {{ obligation.title }}',
+          message: 'This contract obligation is due on {{ obligation.due_date }}. Record progress, or mark it done once it is performed.',
         },
       }),
     },
@@ -96,14 +97,14 @@ export const ObligationDueFlow: Flow = sweepFlow({
       item: 'obligation',
       body: rowBody({
         id: 'today',
-        recipients: { primary: '{obligation.owner}' },
+        recipients: { primary: ref('obligation.owner') },
         notice: {
           topic: 'clm_obligation_due_today',
           severity: 'warning',
           sourceObject: 'clm_obligation',
-          sourceId: '{obligation.id}',
-          title: 'Due today: {obligation.title}',
-          message: 'This contract obligation is due today ({obligation.due_date}). It moves into overdue tomorrow if it is not done or waived.',
+          sourceId: ref('obligation.id'),
+          title: 'Due today: {{ obligation.title }}',
+          message: 'This contract obligation is due today ({{ obligation.due_date }}). It moves into overdue tomorrow if it is not done or waived.',
         },
       }),
     },
@@ -122,14 +123,14 @@ export const ObligationDueFlow: Flow = sweepFlow({
       body: rowBody({
         id: 'arrears',
         lead: [flagOverdue],
-        recipients: { primary: '{obligation.owner}' },
+        recipients: { primary: ref('obligation.owner') },
         notice: {
           topic: 'clm_obligation_overdue',
           severity: 'critical',
           sourceObject: 'clm_obligation',
-          sourceId: '{obligation.id}',
-          title: 'Overdue: {obligation.title}',
-          message: 'This contract obligation was due on {obligation.due_date} and is now overdue. Perform it and mark it done, or ask legal to waive it.',
+          sourceId: ref('obligation.id'),
+          title: 'Overdue: {{ obligation.title }}',
+          message: 'This contract obligation was due on {{ obligation.due_date }} and is now overdue. Perform it and mark it done, or ask legal to waive it.',
         },
       }),
     },

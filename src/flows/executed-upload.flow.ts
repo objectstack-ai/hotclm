@@ -1,4 +1,5 @@
 import type { Flow } from '@objectstack/spec/automation';
+import { must, ref } from './_values.js';
 
 /**
  * F16 `executed_upload` — backfilling a contract that was signed before this
@@ -167,7 +168,7 @@ export const ExecutedUploadFlow: Flow = {
       id: 'check_date',
       type: 'script',
       label: 'Check The Signing Date',
-      config: { function: 'clm_backfill_stamps', inputs: { signedDate: '{signed_date}' }, outputVariable: 'stamps' },
+      config: { function: 'clm_backfill_stamps', inputs: { signedDate: ref('signed_date') }, outputVariable: 'stamps' },
     },
     { id: 'decide_date', type: 'decision', label: 'Signing Date Usable?' },
     {
@@ -176,7 +177,7 @@ export const ExecutedUploadFlow: Flow = {
       label: 'Refuse — Signing Date',
       // The message `check_date` computed, handed back to the caller. See
       // `refuseBackfill` for why this is a throwing script and not an `end`.
-      config: { function: 'clm_backfill_refuse', inputs: { message: '{stamps.problem}', code: 'VALIDATION_FAILED' } },
+      config: { function: 'clm_backfill_refuse', inputs: { message: ref('stamps.problem'), code: 'VALIDATION_FAILED' } },
     },
 
     {
@@ -185,7 +186,7 @@ export const ExecutedUploadFlow: Flow = {
       label: 'Load Counterparty',
       config: {
         objectName: 'clm_party',
-        filter: { id: '{party}' },
+        filter: { id: must('party') },
         fields: ['id', 'name', 'risk_flag'],
         outputVariable: 'partyRecord',
       },
@@ -214,21 +215,21 @@ export const ExecutedUploadFlow: Flow = {
       config: {
         objectName: 'clm_contract',
         fields: {
-          title: '{title}',
-          contract_type: '{contract_type}',
-          party: '{party}',
-          our_entity: '{our_entity}',
-          department: '{department}',
-          amount: '{amount}',
-          currency_code: '{currency_code}',
-          start_date: '{start_date}',
-          end_date: '{end_date}',
-          term_months: '{term_months}',
-          auto_renew: '{auto_renew}',
-          renewal_notice_days: '{renewal_notice_days}',
-          governing_law: '{governing_law}',
-          summary: '{summary}',
-          archive_no: '{archive_no}',
+          title: ref('title'),
+          contract_type: ref('contract_type'),
+          party: ref('party'),
+          our_entity: ref('our_entity'),
+          department: ref('department'),
+          amount: ref('amount'),
+          currency_code: ref('currency_code'),
+          start_date: ref('start_date'),
+          end_date: ref('end_date'),
+          term_months: ref('term_months'),
+          auto_renew: ref('auto_renew'),
+          renewal_notice_days: ref('renewal_notice_days'),
+          governing_law: ref('governing_law'),
+          summary: ref('summary'),
+          archive_no: ref('archive_no'),
           // The two facts a backfill IS.
           status: 'active',
           is_backfilled: true,
@@ -245,9 +246,9 @@ export const ExecutedUploadFlow: Flow = {
           //
           // It is the SIGNING date, not now: a backfilled contract came into
           // force when it was executed, not when somebody typed it in.
-          signed_at: '{stamps.signedAt}',
-          executed_at: '{stamps.signedAt}',
-          activated_at: '{stamps.signedAt}',
+          signed_at: ref('stamps.signedAt'),
+          executed_at: ref('stamps.signedAt'),
+          activated_at: ref('stamps.signedAt'),
         },
         outputVariable: 'contractRecord',
       },
@@ -259,14 +260,14 @@ export const ExecutedUploadFlow: Flow = {
       config: {
         objectName: 'clm_contract_version',
         fields: {
-          contract: '{contractRecord.id}',
+          contract: ref('contractRecord.id'),
           version_no: 1,
           kind: 'final_signed',
           turn: 'internal',
           // WRITTEN as the id: a file field READS as `{ id, name, size, … }`
           // and card 05 measured the object form refused with "expected
           // string, received object".
-          file: '{executed_file}',
+          file: ref('executed_file'),
           is_current: true,
           notes: 'Executed copy supplied with the backfill.',
         },

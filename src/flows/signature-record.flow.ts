@@ -1,6 +1,7 @@
 import { P, expression } from '@objectstack/spec';
 import type { Flow } from '@objectstack/spec/automation';
 import { Signature } from '../objects/signature.object.js';
+import { must, ref } from './_values.js';
 
 /**
  * F7 `signature_record` — the execution-formalities check (DESIGN.md §06 F7,
@@ -238,13 +239,13 @@ export const SignatureRecordFlow: Flow = {
       // Re-read rather than trusting the trigger snapshot: `formalities_done`
       // is the value being compared, and the flow may also be entered from the
       // insert leg where the snapshot is the input payload.
-      config: { objectName: 'clm_signature', filter: { id: '{record.id}' }, outputVariable: 'signatureRecord' },
+      config: { objectName: 'clm_signature', filter: { id: must('record.id') }, outputVariable: 'signatureRecord' },
     },
     {
       id: 'get_contract',
       type: 'get_record',
       label: 'Get Contract',
-      config: { objectName: 'clm_contract', filter: { id: '{signatureRecord.contract}' }, outputVariable: 'contractRecord' },
+      config: { objectName: 'clm_contract', filter: { id: must('signatureRecord.contract') }, outputVariable: 'contractRecord' },
     },
     {
       id: 'compare_formalities',
@@ -253,11 +254,11 @@ export const SignatureRecordFlow: Flow = {
       config: {
         function: 'clm_signature_execution',
         inputs: {
-          required: '{contractRecord.execution_formalities}',
-          done: '{signatureRecord.formalities_done}',
-          versionCount: '{contractRecord.version_count}',
-          legalOwner: '{contractRecord.legal_owner}',
-          contractOwner: '{contractRecord.owner_id}',
+          required: ref('contractRecord.execution_formalities'),
+          done: ref('signatureRecord.formalities_done'),
+          versionCount: ref('contractRecord.version_count'),
+          legalOwner: ref('contractRecord.legal_owner'),
+          contractOwner: ref('contractRecord.owner_id'),
         },
         outputVariable: 'execution',
       },
@@ -271,13 +272,13 @@ export const SignatureRecordFlow: Flow = {
       label: 'Stamp Executed At',
       config: {
         objectName: 'clm_contract',
-        filter: { id: '{contractRecord.id}' },
+        filter: { id: must('contractRecord.id') },
         // `signed_at` is NOT written here. DESIGN.md §03 gives it to the
         // `signing → active` guard (which stamps both from the completed
         // round) and to F8's e-signature callback; F7's own sentence is
         // "盖合同 executed_at". Two writers for one column is the thing the
         // routing note in contract.hook.ts warns about.
-        fields: { executed_at: '{signatureRecord.completed_at}' },
+        fields: { executed_at: ref('signatureRecord.completed_at') },
       },
     },
     {
@@ -289,7 +290,7 @@ export const SignatureRecordFlow: Flow = {
       // guarded rather than only `has()`-guarded.
       config: {
         objectName: 'clm_contract_version',
-        filter: { contract: '{contractRecord.id}', kind: 'final_signed' },
+        filter: { contract: must('contractRecord.id'), kind: 'final_signed' },
         fields: ['id', 'version_no'],
         outputVariable: 'existingFinal',
       },
@@ -302,8 +303,8 @@ export const SignatureRecordFlow: Flow = {
       config: {
         objectName: 'clm_contract_version',
         fields: {
-          contract: '{contractRecord.id}',
-          version_no: '{execution.nextVersionNo}',
+          contract: ref('contractRecord.id'),
+          version_no: ref('execution.nextVersionNo'),
           kind: 'final_signed',
           turn: 'internal',
           // `is_current` is deliberately left at its `false` default. The
@@ -316,7 +317,7 @@ export const SignatureRecordFlow: Flow = {
           // A file field READS as `{ id, name, size, mimeType, url }` and is
           // WRITTEN as the id (card 05 measured the object form refused with
           // "expected string, received object").
-          file: '{signatureRecord.executed_file.id}',
+          file: ref('signatureRecord.executed_file.id'),
           notes: 'Executed copy filed from the completed signature round.',
         },
         outputVariable: 'finalVersion',
@@ -327,14 +328,14 @@ export const SignatureRecordFlow: Flow = {
       type: 'notify',
       label: 'Notify — Executed Copy Missing',
       config: {
-        recipients: '{execution.recipient}',
+        recipients: ref('execution.recipient'),
         channels: ['inbox', 'email'],
         severity: 'warning',
         topic: 'clm_execution_copy_missing',
-        title: 'Executed copy missing: {contractRecord.title}',
+        title: 'Executed copy missing: {{ contractRecord.title }}',
         message: 'Every execution formality is done on the completed signing round, but no executed copy is attached, so no final signed version could be filed. Upload the executed document on the signature record.',
         sourceObject: 'clm_signature',
-        sourceId: '{signatureRecord.id}',
+        sourceId: ref('signatureRecord.id'),
       },
     },
 
@@ -345,17 +346,17 @@ export const SignatureRecordFlow: Flow = {
       type: 'notify',
       label: 'Notify — Formalities Missing',
       config: {
-        recipients: '{execution.recipient}',
+        recipients: ref('execution.recipient'),
         channels: ['inbox', 'email'],
         severity: 'warning',
         topic: 'clm_execution_formalities_missing',
-        title: 'Execution formalities outstanding: {contractRecord.title}',
+        title: 'Execution formalities outstanding: {{ contractRecord.title }}',
         // The whole point of F7's short branch is naming WHICH one — a
         // notification that says "something is missing" sends the reader back
         // to the same comparison the flow just did.
-        message: 'The signing round completed, but this contract cannot be activated until these execution formalities are recorded on the signature round: {execution.missingText}.',
+        message: 'The signing round completed, but this contract cannot be activated until these execution formalities are recorded on the signature round: {{ execution.missingText }}.',
         sourceObject: 'clm_signature',
-        sourceId: '{signatureRecord.id}',
+        sourceId: ref('signatureRecord.id'),
       },
     },
 
