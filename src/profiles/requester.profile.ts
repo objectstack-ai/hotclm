@@ -74,7 +74,16 @@ export const RequesterSet = definePermissionSet({
     clm_obligation:       { allowCreate: false, allowRead: true, allowEdit: true,  allowDelete: false },
     clm_payment_plan:     { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     // Configuration objects are public_read: everyone reads every row.
-    clm_party:            { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
+    //
+    // A requester may CREATE a counterparty, because the intake flow (§06 F1
+    // "相对方查找或新建") offers every launcher the inline branch and runs its
+    // writes as the launching user (#133, ruling A). Editing stays legal's
+    // (§04 RCU), so a requester cannot change a party once it exists, theirs
+    // included. The risk and screening fields and the bank are read-only
+    // below, so a new party is born unflagged and unscreened whatever the
+    // caller sends. Create is not high-privilege (ADR-0090 D5), so the
+    // `everyone` anchor binding stands.
+    clm_party:            { allowCreate: true,  allowRead: true, allowEdit: false, allowDelete: false },
     clm_contract_type:    { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     clm_clause:           { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     clm_approval_rule:    { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
@@ -146,6 +155,10 @@ export const RequesterSet = definePermissionSet({
     ...hidden(Review, ['internal_note']),
     // Payment and contact details are the easiest to leak (§04 FLS table).
     ...hidden(Party, ['bank_account', 'contact_phone']),
+    // Assessed by legal, or stamped by the screening connector (§08), never
+    // by the person who adds the party (#133, ruling A). The ruling's
+    // `verified_at` is `screening_status` since the global-first revision.
+    ...readOnly(Party, ['risk_flag', 'risk_note', 'screening_status', 'is_active', 'bank_name']),
   },
   rowLevelSecurity: [
     {
