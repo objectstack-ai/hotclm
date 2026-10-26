@@ -136,7 +136,8 @@ export const ContractDetailPage: Page = {
     },
 
     /**
-     * §05: highlights 编号 · 相对方 · 金额 · 到期日 · 当前轮次, then the path.
+     * §05: highlights 编号 · 相对方 · 金额 · 到期日 · 当前轮次, plus 状态 second,
+     * then the path.
      *
      * Both components in one slot array because §05 puts both above the body
      * and the slot menu has no `path` member. Order matters: the strip reads
@@ -147,16 +148,33 @@ export const ContractDetailPage: Page = {
      * deliberately absent: a path is the forward road, and the object's status
      * field carries all eleven values for the places that need them (the kanban
      * board, the status column). A contract in a terminal state lights no step,
-     * which is the honest reading of "this contract has left the road" — and is
-     * why the highlights strip beside it carries `status`-adjacent facts rather
-     * than relying on the path alone.
+     * which is the honest reading of "this contract has left the road" — and so
+     * the path alone cannot say WHICH road-off it took. The strip carries the
+     * status itself for that: without it, a rejected or cancelled contract's
+     * first screen showed number, counterparty, amount and turn over a path
+     * with no step lit, and read exactly like one that had not started.
+     *
+     * `status` sits SECOND, right after the number, because the strip is read
+     * left to right and below `sm` the renderer stacks one chip per line: any
+     * later position puts the one fact a terminal contract is opened for under
+     * the fold on a phone. It is the bare field name, the same spelling the
+     * object's own `highlightFields` carries — the chip then draws the select's
+     * own option colour and the bundle's label (已驳回 / 已作废), and it stays as
+     * editable as the object says it is, rather than declaring a second,
+     * UI-only policy beside the state machine in `contract.hook.ts`.
+     *
+     * NOTHING gives way for it, measured rather than assumed:
+     * `RecordHighlightsProps.fields` allows `min(1).max(7)` and this is the
+     * sixth; the renderer wraps rather than truncates and drops a chip whose
+     * value is empty (a draft has no `end_date`, so it shows five); and all six
+     * chips sat on one line at 1440×900 in both locales.
      */
     highlights: [
       {
         type: 'record:highlights',
         id: 'contract_highlights',
         properties: {
-          fields: ['contract_number', 'party', 'amount', 'end_date', 'current_turn'],
+          fields: ['contract_number', 'status', 'party', 'amount', 'end_date', 'current_turn'],
         },
       },
       {
