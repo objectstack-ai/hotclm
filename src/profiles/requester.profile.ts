@@ -106,7 +106,20 @@ export const RequesterSet = definePermissionSet({
     // names no contract answers nothing beyond the caller's own participation.
     // The read is object-level only: approve, reject and the rest keep
     // authorizing on the approver slate (#86, ruling A).
+    //
+    // `sys_comment_reaction` is the same tab: an emoji reaction is its
+    // reactor's own row, and the panel reads every comment's reactions in one
+    // batch. Without it the tab answered `403` on that read and offered no way
+    // to react (issue #135). The platform scopes it like the comments: a
+    // reaction is read only when its comment is, and creating one requires
+    // reading the comment and stamps `user_id` from the session.
+    //
+    // No `allowDelete`, so nobody here can take a reaction back. The console
+    // gates "remove" on delete, and delete is high-privilege, which a set
+    // bound to the `everyone` anchor may not carry (ADR-0090 D5). Whether
+    // members get it through another set is an open question on #135.
     sys_comment:          { allowCreate: true,  allowRead: true, allowEdit: false, allowDelete: false },
+    sys_comment_reaction: { allowCreate: true,  allowRead: true, allowEdit: false, allowDelete: false },
     sys_activity:         { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     sys_attachment:       { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     sys_approval_request: { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
