@@ -713,4 +713,20 @@ export const Contract = ObjectSchema.create({
     // (participants only). The object grant it filters is `clm_requester`'s.
     approvalsVisibleToReaders: true,
   },
+
+  // No generic "New" for a contract, for anyone (#136). A contract is born
+  // through one of three doors: Launch Contract (F1, the intake wizard that
+  // also files version 1 and routes it), Start Renewal (F12) and Backfill
+  // Executed Contract (F16) — DESIGN.md §06. The platform's raw create form
+  // (the list header's New, the Renewals related list's New, a lookup's
+  // "Create new") skips everything F1 does and offers status and legal-owned
+  // fields the server then refuses, so it is switched off here. Legal and the
+  // CLM admin launch through the wizard too; F16 is the backfill door.
+  //
+  // This is the UI affordance only. The data API and the permission matrix
+  // (DESIGN.md §04: requester and legal hold C on clm_contract) are unchanged,
+  // which is also what the three doors write through.
+  userActions: {
+    create: false,
+  },
 });
