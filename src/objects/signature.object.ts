@@ -94,16 +94,17 @@ export const Signature = ObjectSchema.create({
       // email, order, status, signed_at }]`, one row per signer in signing
       // order (DESIGN.md §03).
       //
-      // Hidden from the forms (hotclm#138): on 18.1.0 a `json` field renders
-      // as a raw JSON text box, so the manual round form asked a lawyer to
-      // type an array. The platform's row editor belongs to the `repeater`
-      // field type, not to `json`, and §03 declares this column `json`; until
-      // that is decided the column stays as declared — the data API and the
-      // F8 connector still read and write it — and neither the forms nor the
-      // record page draw it. An edit-form save leaves the stored rows intact
-      // (the form patches only what it shows).
-      hidden: true,
-      description: 'Who signs this round, on our side and the counterparty\'s, and in which order. Leave it empty for a wet-ink round.',
+      // Not typed by hand (hotclm#138): on 18.1.0 a `json` field renders as a
+      // raw JSON text box, and the platform's row editor belongs to the
+      // `repeater` type, not to `json` (§03 declares this column `json`). So
+      // it is `readonly` — the e-signature connector writes it. Measured on
+      // 18.1.0: the create and edit forms then draw no signers control at
+      // all, and the record page shows the stored rows as read-only text. A
+      // field `visibleWhen` (method == esign) was tried and is not honoured on
+      // the record page — a wet-ink round still drew the row — so it is not
+      // declared.
+      readonly: true,
+      description: 'Who signs this round, on our side and the counterparty\'s, and in which order. Filled in by the e-signature service.',
     }),
     status: Field.select({
       label: 'Status',

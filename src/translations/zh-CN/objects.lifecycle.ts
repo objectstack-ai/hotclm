@@ -171,7 +171,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       signers: {
         label: '签署人',
-        help: '本轮由谁签署（我方和相对方）、按什么顺序签。湿签轮次留空即可。',
+        help: '本轮由谁签署（我方和相对方）、按什么顺序签，由电子签服务填入。',
       },
       status: {
         label: '状态',

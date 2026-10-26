@@ -171,7 +171,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       signers: {
         label: 'Signers',
-        help: 'Who signs this round, on our side and the counterparty\'s, and in which order. Leave it empty for a wet-ink round.',
+        help: 'Who signs this round, on our side and the counterparty\'s, and in which order. Filled in by the e-signature service.',
       },
       status: {
         label: 'Status',
