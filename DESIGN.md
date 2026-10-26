@@ -197,6 +197,7 @@ R 读 · C 建 · U 改 · D 删；括号内为行级作用域。
 | `contract_records_execution` | clm_contract | `status in [approved, signing, active, expired, terminated]` | position `clm_records_manager` — `approved` 只读，`signing` 及之后 edit（FLS 限执行与归档字段；持有 `execute_contract` 者须读到待发起签署的合同，#100 裁决 A） |
 | `contract_executive_routed` | clm_contract | `route_executive == true` | position `clm_executive` — read |
 | `contract_gm_routed` | clm_contract | `route_gm == true` | position `clm_general_manager` — read |
+| `contract_finance_routed` | clm_contract | `route_finance == true` | position `clm_finance_controller` — read（审批中只读；编辑仍自 approved 起，§13 Q1） |
 | `contract_manager_reports` | clm_contract | — | `writeScope: 'own_and_reports'`（企业版 `hierarchy-security`，开源版退化为 owner-only） |
 
 RLS 谓词不能跨对象（ADR-0055），所以「同部门可见」无法用 `current_user` 的部门表达 —— `department` 是合同上的冗余标量，部门内共享按客户以 team 规则覆盖（§13 Q2）。
