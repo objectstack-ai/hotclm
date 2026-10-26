@@ -88,11 +88,16 @@ import { must, ref } from './_values.js';
  *    version were already committed, orphaning both. WHERE the intake-captured
  *    arrangement F9 reads should be stored is a design gap, raised as its own
  *    decision card rather than guessed at here.
- *  - `clm_party`: refused for a requester the same way, granted to legal
- *    (§04 gives the requester R, legal RCU). The inline-create branch stays
- *    because DESIGN.md §06 F1 names it ("相对方查找或新建") and legal and
- *    admin do launch contracts; it fails ATOMICALLY — `create_party` runs
- *    before any other write, so a refused requester leaves nothing behind.
+ *  - `clm_party`: created (201) by a requester as well as by legal (#133,
+ *    ruling A: the requester may create a counterparty but not edit one, and
+ *    holds the risk, screening and bank-name fields read-only). That is why
+ *    `create_party` writes only the identity and contact fields the screen
+ *    asks for: naming a locked field would refuse the whole write with 403
+ *    "Field write denied". A new party is therefore born unflagged and
+ *    unscreened, and legal maintains those fields afterwards (on a party
+ *    legal does not own, writes are owner-scoped today, see #152). Should the
+ *    create still be refused, it fails ATOMICALLY: `create_party` runs before
+ *    any other write, so the run leaves nothing behind.
  *
  * Flow copy is English-only (the source language, DESIGN.md §01); a flow has
  * no entry in the translation bundles.

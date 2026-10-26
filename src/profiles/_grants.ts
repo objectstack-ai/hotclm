@@ -151,3 +151,19 @@ export const CONTRACT_STAMPED_FIELDS = fieldsInGroups(Contract, ['routing', 'lif
  * `liability_cap`).
  */
 export const CONTRACT_LEGAL_FIELDS = [...fieldsInGroups(Contract, ['legal']), 'risk_level', 'liability_cap'];
+
+/**
+ * The counterparty fields legal assesses, or the screening connector (§08)
+ * stamps: never the person who adds the party (#133, ruling A). `clm_requester`
+ * may create a counterparty, and it holds these read-only, so a new party is
+ * born unflagged and unscreened whatever the caller sends. The ruling's
+ * `verified_at` has been `screening_status` since the global-first revision.
+ *
+ * Every member holds `clm_requester`, and only the sets that DECLARE a field
+ * vote on it ({@link open}). So the sets that maintain these fields, `clm_legal`
+ * and `clm_admin`, open the same list, and `clm_finance` opens the banking
+ * pair. Without that, the requester's lock would bind them too: measured on
+ * 18.1.0, Legal Counsel 1 was refused `risk_flag` on her own party (403
+ * "Field write denied") until legal declared it.
+ */
+export const PARTY_ASSESSED_FIELDS = ['risk_flag', 'risk_note', 'screening_status', 'is_active', 'bank_name'] as const;
