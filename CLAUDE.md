@@ -5,9 +5,8 @@ Three rules there must never be missed:
 
 ## ⛔ Gate every metadata change
 
-`pnpm validate && pnpm lint && pnpm typecheck && pnpm lint:i18n-gate` must all pass before a change
-is reported as done. Metadata mistakes fail silently at runtime; the gates are the only place they
-surface early.
+`pnpm verify` must pass before a change is reported as done. Metadata mistakes fail silently at
+runtime; the gates are the only place they surface early.
 
 ## ⛔ Worktree-first, never `git stash`
 
