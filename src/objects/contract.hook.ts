@@ -49,7 +49,9 @@ import type { HookApi } from './_hook-api.js';
  *   a person is refused on BOTH write paths rather than hidden in the form.
  *   `signature_state_machine` also stamps `completed_at` on BOTH write paths
  *   (a round created as completed included); its transition table is
- *   update-only.
+ *   update-only. Which status a round may be CREATED in is the declarative
+ *   `signature_initial_status` rule on `clm_signature`; the hook's insert leg
+ *   adds the one method-dependent half (only wet ink is created completed).
  *
  * ## Why every helper lives INSIDE its handler
  *
@@ -958,7 +960,7 @@ const signatureStateMachine: Hook = {
   object: 'clm_signature',
   events: ['beforeInsert', 'beforeUpdate'],
   priority: 200,
-  description: 'Signature round transitions: draft → sent / completed / voided, sent → completed / declined / voided, declined → draft; wet ink may complete straight from draft. Stamp completed_at when a round is completed, on create as well as on update.',
+  description: 'Signature round transitions: draft → sent / completed / voided, sent → completed / declined / voided, declined → draft; wet ink may complete straight from draft, and only wet ink is created completed. Stamp completed_at when a round is completed, on create as well as on update.',
   handler: async (ctx: HookContext) => {
     function refuse(message: string, code: string, status: number): Error {
       const err = new Error(message) as Error & { code: string; status: number };
@@ -971,16 +973,31 @@ const signatureStateMachine: Hook = {
     const to = input.status;
     if (typeof to !== 'string') return;
 
-    // The insert leg stamps `completed_at` and nothing else. A round can be
-    // CREATED as completed — the wet-ink round a lawyer registers from the
-    // contract's signing tab, an import, a provider callback — and F7 reads
-    // `completed_at` from that row for the contract's `executed_at` (and the
-    // `signing → active` guard for `signed_at`). Before this leg the field
-    // stayed empty on that path, and both contract stamps fell back to the
-    // activation moment. The transition table below is NOT applied on
-    // insert: a new row has no `from`, and a provider callback may land a
-    // round straight as completed.
+    // The insert leg. Which status a round may be created in — draft, sent or
+    // completed, never declined or voided — is the `signature_initial_status`
+    // rule on `clm_signature` (signature.object.ts), declarative so that its
+    // refusal is translated and so that seed replay skips it (#147). The
+    // method half of the entry is here, because a `state_machine` rule cannot
+    // read a second field: like the `draft → completed` edge below, only a
+    // wet-ink round is created completed. An e-signature round completes
+    // when its envelope does, from `sent`. A system write is exempt — seed
+    // replay (24 e-signature rounds are seeded completed), a historical
+    // import, a provider callback running as system — the same exemption
+    // `contract_type_stamp` gives a contract born past draft.
+    //
+    // Then `completed_at`: a round created as completed (the wet-ink round a
+    // lawyer registers from the contract's signing tab) gets it here, and F7
+    // reads it for the contract's `executed_at` (and the `signing → active`
+    // guard for `signed_at`). Before this stamp the field stayed empty on that
+    // path, and both contract stamps fell back to the activation moment.
     if (event === 'beforeInsert') {
+      if (to === 'completed' && input.method !== 'wet_ink' && ctx.session?.isSystem !== true) {
+        throw refuse(
+          'An e-signature round is not created as completed: it completes from sent, when its envelope does. Create it as draft or sent; only a wet-ink round is created completed.',
+          'INVALID_STATE',
+          422,
+        );
+      }
       if (to === 'completed' && (input.completed_at === undefined || input.completed_at === null || input.completed_at === '')) {
         input.completed_at = new Date().toISOString();
       }
