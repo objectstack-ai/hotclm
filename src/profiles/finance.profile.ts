@@ -3,7 +3,7 @@ import { Contract } from '../objects/contract.object.js';
 import { Party } from '../objects/party.object.js';
 import { Review } from '../objects/review.object.js';
 import { POST_APPROVAL_STATUSES } from '../sharing/_lifecycle.js';
-import { CONTRACT_LEGAL_FIELDS, CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, editableOnly, hidden, inList, readOnly } from './_grants.js';
+import { CONTRACT_LEGAL_FIELDS, CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, editableOnly, hidden, inList, open, readOnly } from './_grants.js';
 
 /**
  * `clm_finance` — the finance controller (DESIGN.md §04).
@@ -48,6 +48,12 @@ export const FinanceSet = definePermissionSet({
     ...readOnly(Contract, [...CONTRACT_LEGAL_FIELDS, 'status', CONTRACT_TERMINATION_REASON]),
     ...hidden(Review, ['internal_note']),
     ...editableOnly(Party, ['bank_name', 'bank_account']),
+    // editableOnly declares only the fields it locks, so the banking pair has
+    // to be opened here: clm_requester, which every member holds, hides
+    // `bank_account` and locks `bank_name`, and a set that says nothing does
+    // not out-vote it (`_grants.ts`, open). Without this line finance could
+    // neither read nor write the bank account (#133).
+    ...open(Party, ['bank_name', 'bank_account']),
   },
   rowLevelSecurity: [
     {

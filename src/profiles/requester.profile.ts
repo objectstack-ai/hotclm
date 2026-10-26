@@ -3,7 +3,7 @@ import { Contract } from '../objects/contract.object.js';
 import { Party } from '../objects/party.object.js';
 import { Review } from '../objects/review.object.js';
 import { REQUESTER_EDITABLE_STATUSES } from '../sharing/_lifecycle.js';
-import { CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, hidden, inList, readOnly } from './_grants.js';
+import { CONTRACT_STAMPED_FIELDS, CONTRACT_TERMINATION_REASON, PARTY_ASSESSED_FIELDS, hidden, inList, readOnly } from './_grants.js';
 
 /**
  * `clm_requester` — every employee (DESIGN.md §04 "所有员工默认").
@@ -156,9 +156,9 @@ export const RequesterSet = definePermissionSet({
     // Payment and contact details are the easiest to leak (§04 FLS table).
     ...hidden(Party, ['bank_account', 'contact_phone']),
     // Assessed by legal, or stamped by the screening connector (§08), never
-    // by the person who adds the party (#133, ruling A). The ruling's
-    // `verified_at` is `screening_status` since the global-first revision.
-    ...readOnly(Party, ['risk_flag', 'risk_note', 'screening_status', 'is_active', 'bank_name']),
+    // by the person who adds the party (#133, ruling A). Legal, admin and
+    // finance open what they maintain of this list in their own sets.
+    ...readOnly(Party, PARTY_ASSESSED_FIELDS),
   },
   rowLevelSecurity: [
     {

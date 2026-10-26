@@ -4,7 +4,7 @@ import { Party } from '../objects/party.object.js';
 import { Review } from '../objects/review.object.js';
 import { Signature } from '../objects/signature.object.js';
 import { CONTRACT_STATUSES, OBLIGATION_STATUSES, REVIEW_STAGES } from '../sharing/_lifecycle.js';
-import { CONTRACT_STAMPED_FIELDS, inList, openAllExcept, open, readOnly } from './_grants.js';
+import { CONTRACT_STAMPED_FIELDS, PARTY_ASSESSED_FIELDS, inList, openAllExcept, open, readOnly } from './_grants.js';
 
 /**
  * `clm_legal` — legal counsel and the head of legal (DESIGN.md §04).
@@ -70,6 +70,8 @@ export const LegalSet = definePermissionSet({
     ...openAllExcept(Signature, []),
     ...open(Review, ['internal_note']),
     ...open(Party, ['bank_account', 'contact_phone']),
+    // Read-only for clm_requester, which every member holds (#133).
+    ...open(Party, PARTY_ASSESSED_FIELDS),
   },
   rowLevelSecurity: [
     {
