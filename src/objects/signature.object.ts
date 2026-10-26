@@ -89,7 +89,22 @@ export const Signature = ObjectSchema.create({
       // the clean version, and the callback that writes each signer's status
       // back) is scheduled on hotclm#83 with objectstack-ai/objectstack#25747
       // (issue #38, ruling group 1).
-      description: 'Array of { side: our | counterparty, name, email, order, status, signed_at } — one row per signer, in signing order.',
+      //
+      // Row shape, for that consumer: `[{ side: our | counterparty, name,
+      // email, order, status, signed_at }]`, one row per signer in signing
+      // order (DESIGN.md §03).
+      //
+      // Not typed by hand (hotclm#138): on 18.1.0 a `json` field renders as a
+      // raw JSON text box, and the platform's row editor belongs to the
+      // `repeater` type, not to `json` (§03 declares this column `json`). So
+      // it is `readonly` — the e-signature connector writes it. Measured on
+      // 18.1.0: the create and edit forms then draw no signers control at
+      // all, and the record page shows the stored rows as read-only text. A
+      // field `visibleWhen` (method == esign) was tried and is not honoured on
+      // the record page — a wet-ink round still drew the row — so it is not
+      // declared.
+      readonly: true,
+      description: 'Who signs this round, on our side and the counterparty\'s, and in which order. Filled in by the e-signature service.',
     }),
     status: Field.select({
       label: 'Status',
@@ -128,7 +143,9 @@ export const Signature = ObjectSchema.create({
     completed_at: Field.datetime({
       label: 'Completed At',
       group: 'execution',
-      description: 'Stamped when the round completes, unless set explicitly (a wet-ink round records the actual signing date).',
+      // Stamped by `signature_state_machine` (contract.hook.ts) on create and
+      // on update; an explicit value is kept.
+      description: 'Filled in automatically when the round is saved as completed. For a wet-ink round signed earlier, enter the actual signing time instead.',
     }),
   },
 

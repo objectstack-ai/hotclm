@@ -171,7 +171,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       signers: {
         label: '签署人',
-        help: '由 { side: our | counterparty, name, email, order, status, signed_at } 组成的数组，按签署顺序一人一行。',
+        help: '本轮由谁签署（我方和相对方）、按什么顺序签，由电子签服务填入。',
       },
       status: {
         label: '状态',
@@ -199,7 +199,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       completed_at: {
         label: '完成时间',
-        help: '本轮完成时自动写入，除非显式指定；湿签需要登记实际签署日期。',
+        help: '本轮保存为「已完成」时自动填入。湿签如果实际签署得更早，请填写实际签署时间。',
       },
     },
     _sections: {
