@@ -202,6 +202,11 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
         help: 'Filled in automatically when the round is saved as completed. For a wet-ink round signed earlier, enter the actual signing time instead.',
       },
     },
+    _validations: {
+      signature_initial_status: {
+        message: 'A signature round is created as Draft or Sent, or as Completed for a wet-ink round that is already signed. Declined and Voided record what happened to a round that was sent: create the round first, then change its status.',
+      },
+    },
     _sections: {
       round: {
         label: 'Signing Round',

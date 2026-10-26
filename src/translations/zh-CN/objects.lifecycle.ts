@@ -202,6 +202,11 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
         help: '本轮保存为「已完成」时自动填入。湿签如果实际签署得更早，请填写实际签署时间。',
       },
     },
+    _validations: {
+      signature_initial_status: {
+        message: '签署记录只能以「草稿」或「已发出」状态新建；已经签好的湿签轮次可以直接以「已完成」新建。「已拒签」和「已作废」记录的是已发出轮次的结果：请先新建这一轮，再修改它的状态。',
+      },
+    },
     _sections: {
       round: {
         label: '签署轮次',
