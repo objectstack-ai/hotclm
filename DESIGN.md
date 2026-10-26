@@ -185,7 +185,7 @@ R 读 · C 建 · U 改 · D 删；括号内为行级作用域。
 | clm_signature | R（本人合同） | RCU | R | RU（执行形式、执行副本） | RCUD |
 | clm_obligation | RU（本人负责） | RCU | R | R | RCUD |
 | clm_payment_plan | R（本人合同） | RC | RCU | R | RCUD |
-| clm_party | R（不含银行与电话） | RCU | RU（银行信息） | R | RCUD |
+| clm_party | RC（不含银行账号与电话；风险标记、风险说明、筛查结果、启用状态与开户行只读） | RCU | RU（银行信息） | R | RCUD |
 | clm_contract_type · clm_clause · clm_approval_rule | R | R（clause RCU） | R | R | RCUD |
 
 ### 共享规则
@@ -207,6 +207,7 @@ RLS 谓词不能跨对象（ADR-0055），所以「同部门可见」无法用 `
 | 字段 | 对谁遮蔽 | 理由 |
 |---|---|---|
 | `clm_party.bank_account` · `contact_phone` | clm_requester · clm_records | 付款与联系信息最易外泄；读取落审计 |
+| `clm_party.risk_flag` · `risk_note` · `screening_status` · `is_active` · `bank_name` | clm_requester 只读 | 由法务评定或由筛查连接器写入；发起人新建的相对方生来未标记、未筛查 |
 | `clm_review.internal_note` | clm_requester · clm_finance | 法务内部意见；对发起人的结论走 `comments` |
 | `clm_contract.risk_level` · `liability_cap` | clm_requester 只读 | 由法务评定 |
 | `clm_contract.route_*` · `approval_status` · 阶段时间戳 | 所有岗位只读 | 只由 hook 与审批流写 |
