@@ -9,7 +9,8 @@ import { CLM_POSITION } from './positions.js';
  * `private`; the five children are `controlled_by_parent` and follow it).
  *
  * §04 lists six rows. Five are criteria rules and live here (as seven rows —
- * see the shapes below). The sixth,
+ * see the shapes below), and ruling A on #134 adds an eighth,
+ * `contract_finance_routed`. The sixth,
  * `contract_manager_reports`, is not a rule at all: it is the
  * `own_and_reports` DEPTH scope on the `clm_requester` grant
  * (`src/profiles/requester.profile.ts`), exactly as the §04 table spells it.
@@ -106,6 +107,27 @@ export const ContractRecordsApprovedReadSharingRule = defineSharingRule({
   sharedWith: { type: 'position', value: CLM_POSITION.recordsManager },
 });
 
+/**
+ * Ruling A on #134: the finance controller is the `route_finance` rung of the
+ * approval ladder (F5's legal-plus-finance co-sign), so it reads the contracts
+ * the matrix routed to it, as the executive and general-manager rungs do below.
+ * Same shape as those two — no status window: the flag is stamped at
+ * submission and re-evaluated on every resubmission (F2), so it names exactly
+ * the contracts finance approves. Read only: finance's edit window stays
+ * `contract_finance_post_approval` above and the `clm_finance` update row
+ * policy, both from `approved` onward.
+ */
+export const ContractFinanceRoutedSharingRule = defineSharingRule({
+  name: 'contract_finance_routed',
+  label: 'Contracts — Finance (routed)',
+  description: 'The finance controller reads the contracts the approval matrix routed to the finance rung.',
+  object: 'clm_contract',
+  type: 'criteria',
+  condition: P`record.route_finance == true`,
+  accessLevel: 'read',
+  sharedWith: { type: 'position', value: CLM_POSITION.financeController },
+});
+
 export const ContractExecutiveRoutedSharingRule = defineSharingRule({
   name: 'contract_executive_routed',
   label: 'Contracts — Executive (routed)',
@@ -135,6 +157,7 @@ export const ClmSharingRules = [
   ContractFinancePostApprovalSharingRule,
   ContractRecordsExecutionSharingRule,
   ContractRecordsApprovedReadSharingRule,
+  ContractFinanceRoutedSharingRule,
   ContractExecutiveRoutedSharingRule,
   ContractGmRoutedSharingRule,
 ];

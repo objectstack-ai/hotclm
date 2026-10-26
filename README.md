@@ -85,7 +85,7 @@ requester a manager ([below](#rung-1-of-the-approval-ladder-is-a-manager)):
 |---|---|---|
 | `clm_legal_counsel` | 2 | Receives contracts on submission (round-robin by open load) and owns review. **Name these two exactly** — see below |
 | `clm_legal_head` | 1 | Rung 2 of the approval ladder whenever `route_legal_head` is stamped |
-| `clm_finance_controller` | 1 | Rung 2/3, and the only position that may edit bank details |
+| `clm_finance_controller` | 1 | Rung 2/3, reads every contract with `route_finance`, and the only position that may edit bank details |
 | `clm_executive` | 1 | Rung 4, and reads every contract with `route_executive` |
 | `clm_general_manager` | 1 | Rung 5, and reads every contract with `route_gm` |
 | `clm_records_manager` | 1 | Execution formalities, the executed copy and the archive number |
@@ -189,6 +189,18 @@ no email. They see it waiting in the Console: the bell counts the approvals
 waiting on them and **我的合同 › Waiting on Me** lists them. A reminder sent on
 a request does arrive as a message; the missing one on opening is the
 platform's, not this app's.
+
+**On the open edition the rung-1 manager decides from the request alone.**
+The approval request shows the contract's fields, but its record link reads
+「无法打开此记录」: being the owner's manager grants no read. The read that
+would (`own_and_reports`, DESIGN.md §04 `contract_manager_reports`) is an
+enterprise-edition hierarchy scope that the open edition resolves to
+owner-only, and a sharing rule cannot name "the owner's manager". Unless the
+manager's own position already reaches the contract — the executive on a
+contract stamped `route_executive`, say — its page, versions and reviews stay
+closed to them until the platform lets an approver read the record a step
+waits on (upstream `objectstack-ai/objectstack#26180`). The rungs after it are
+positions, and each reads the contracts it approves.
 
 ### Assigning a position from a script
 
