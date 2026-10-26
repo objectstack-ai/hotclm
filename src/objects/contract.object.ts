@@ -723,10 +723,17 @@ export const Contract = ObjectSchema.create({
   // fields the server then refuses, so it is switched off here. Legal and the
   // CLM admin launch through the wizard too; F16 is the backfill door.
   //
+  // No CSV import either, for anyone (#148), for the same reason: the list
+  // header's Import is a bulk write door that skips F1 just as New does, and
+  // the contract hook would only let it produce version-less drafts. Contracts
+  // come in through F1, F12 and F16. An existing register of signed contracts
+  // comes in through F16, or through a seed or migration an administrator runs.
+  //
   // This is the UI affordance only. The data API and the permission matrix
   // (DESIGN.md §04: requester and legal hold C on clm_contract) are unchanged,
   // which is also what the three doors write through.
   userActions: {
     create: false,
+    import: false,
   },
 });
