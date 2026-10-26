@@ -99,7 +99,9 @@ export const Signature = ObjectSchema.create({
       // type an array. The platform's row editor belongs to the `repeater`
       // field type, not to `json`, and §03 declares this column `json`; until
       // that is decided the column stays as declared — the data API and the
-      // F8 connector still read and write it — and no form offers it.
+      // F8 connector still read and write it — and neither the forms nor the
+      // record page draw it. An edit-form save leaves the stored rows intact
+      // (the form patches only what it shows).
       hidden: true,
       description: 'Who signs this round, on our side and the counterparty\'s, and in which order. Leave it empty for a wet-ink round.',
     }),
