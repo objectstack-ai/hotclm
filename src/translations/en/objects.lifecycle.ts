@@ -171,7 +171,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       signers: {
         label: 'Signers',
-        help: 'Array of { side: our | counterparty, name, email, order, status, signed_at } — one row per signer, in signing order.',
+        help: 'Who signs this round, on our side and the counterparty\'s, and in which order. Leave it empty for a wet-ink round.',
       },
       status: {
         label: 'Status',
@@ -199,7 +199,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       completed_at: {
         label: 'Completed At',
-        help: 'Stamped when the round completes, unless set explicitly (a wet-ink round records the actual signing date).',
+        help: 'Filled in automatically when the round is saved as completed. For a wet-ink round signed earlier, enter the actual signing time instead.',
       },
     },
     _sections: {

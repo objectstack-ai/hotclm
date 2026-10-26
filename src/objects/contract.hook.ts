@@ -47,6 +47,9 @@ import type { HookApi } from './_hook-api.js';
  *   machines. The last two also hold the `overdue` reservation — that state
  *   has exactly one writer, the daily job of card 09, and a write to it from
  *   a person is refused on BOTH write paths rather than hidden in the form.
+ *   `signature_state_machine` also stamps `completed_at` on BOTH write paths
+ *   (a round created as completed included); its transition table is
+ *   update-only.
  *
  * ## Why every helper lives INSIDE its handler
  *
@@ -953,9 +956,9 @@ const deviationGate: Hook = {
 const signatureStateMachine: Hook = {
   name: 'signature_state_machine',
   object: 'clm_signature',
-  events: ['beforeUpdate'],
+  events: ['beforeInsert', 'beforeUpdate'],
   priority: 200,
-  description: 'Signature round transitions: draft → sent / completed / voided, sent → completed / declined / voided, declined → draft; wet ink may complete straight from draft.',
+  description: 'Signature round transitions: draft → sent / completed / voided, sent → completed / declined / voided, declined → draft; wet ink may complete straight from draft. Stamp completed_at when a round is completed, on create as well as on update.',
   handler: async (ctx: HookContext) => {
     function refuse(message: string, code: string, status: number): Error {
       const err = new Error(message) as Error & { code: string; status: number };
@@ -963,10 +966,27 @@ const signatureStateMachine: Hook = {
       err.status = status;
       return err;
     }
-    const { input } = ctx;
+    const { event, input } = ctx;
     const previous = ctx.previous ?? {};
     const to = input.status;
     if (typeof to !== 'string') return;
+
+    // The insert leg stamps `completed_at` and nothing else. A round can be
+    // CREATED as completed — the wet-ink round a lawyer registers from the
+    // contract's signing tab, an import, a provider callback — and F7 reads
+    // `completed_at` from that row for the contract's `executed_at` (and the
+    // `signing → active` guard for `signed_at`). Before this leg the field
+    // stayed empty on that path, and both contract stamps fell back to the
+    // activation moment. The transition table below is NOT applied on
+    // insert: a new row has no `from`, and a provider callback may land a
+    // round straight as completed.
+    if (event === 'beforeInsert') {
+      if (to === 'completed' && (input.completed_at === undefined || input.completed_at === null || input.completed_at === '')) {
+        input.completed_at = new Date().toISOString();
+      }
+      return;
+    }
+
     const from = typeof previous.status === 'string' ? previous.status : 'draft';
     if (to === from) return;
     const TRANSITIONS: Record<string, string[]> = {

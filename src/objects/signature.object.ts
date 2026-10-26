@@ -89,7 +89,19 @@ export const Signature = ObjectSchema.create({
       // the clean version, and the callback that writes each signer's status
       // back) is scheduled on hotclm#83 with objectstack-ai/objectstack#25747
       // (issue #38, ruling group 1).
-      description: 'Array of { side: our | counterparty, name, email, order, status, signed_at } — one row per signer, in signing order.',
+      //
+      // Row shape, for that consumer: `[{ side: our | counterparty, name,
+      // email, order, status, signed_at }]`, one row per signer in signing
+      // order (DESIGN.md §03).
+      //
+      // Hidden from the forms (hotclm#138): on 18.1.0 a `json` field renders
+      // as a raw JSON text box, so the manual round form asked a lawyer to
+      // type an array. The platform's row editor belongs to the `repeater`
+      // field type, not to `json`, and §03 declares this column `json`; until
+      // that is decided the column stays as declared — the data API and the
+      // F8 connector still read and write it — and no form offers it.
+      hidden: true,
+      description: 'Who signs this round, on our side and the counterparty\'s, and in which order. Leave it empty for a wet-ink round.',
     }),
     status: Field.select({
       label: 'Status',
@@ -128,7 +140,9 @@ export const Signature = ObjectSchema.create({
     completed_at: Field.datetime({
       label: 'Completed At',
       group: 'execution',
-      description: 'Stamped when the round completes, unless set explicitly (a wet-ink round records the actual signing date).',
+      // Stamped by `signature_state_machine` (contract.hook.ts) on create and
+      // on update; an explicit value is kept.
+      description: 'Filled in automatically when the round is saved as completed. For a wet-ink round signed earlier, enter the actual signing time instead.',
     }),
   },
 
