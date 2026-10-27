@@ -336,7 +336,7 @@ Dataset（语义层）：
 | clm_obligation | 200 | 未来 30 天内到期 40 条，逾期 10 条 |
 | clm_payment_plan | 300 | 本月到期 30 条，逾期 12 条 |
 
-用户不可种子；各岗位账号在 Setup 建用户后分配 position（法务经办 ×2、法务负责人、财务负责人、分管领导、总经理、档案与记录管理员、CLM 管理员）；业务承办 ×3 不是 position，`clm_requester` 是全员默认集，在 Setup 直接授予。
+用户不可种子：fixture 里没有 sys_user 行。演示账号由应用在 `objectstack.config.ts` 的 `demoStaff` 里声明，由平台在本地开发启动时创建（只随 `pnpm demo` 的 `CLM_DEMO_SEED` 开关、幂等、`os build` 不写进产物）。名单为：业务承办 ×3（Business Requester 1–3）；法务经办 ×2（Legal Counsel 1–2）；法务负责人、财务负责人、分管领导、总经理、档案与记录管理员、CLM 管理员各一。业务承办不是 position，`clm_requester` 是全员默认集（isDefault），不需授予。直属经理（`manager_id`）`demoStaff` 无法声明（objectstack#26616），仍在 Setup → Users → Set Manager 手动设置。
 
 ## 11 仓库与里程碑
 
