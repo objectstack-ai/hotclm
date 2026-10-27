@@ -7,6 +7,7 @@ import { flowSurface } from './en/flows.js';
 import { catalog } from './en/objects.catalog.js';
 import { contract } from './en/objects.contract.js';
 import { lifecycle } from './en/objects.lifecycle.js';
+import { securitySurface } from './en/security.js';
 
 /**
  * English (`en`) — the DEFAULT and SOURCE locale.
@@ -36,4 +37,5 @@ export const en: TranslationData = {
   },
   ...appSurface,
   ...flowSurface,
+  ...securitySurface,
 };
