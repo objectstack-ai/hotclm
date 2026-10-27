@@ -293,6 +293,18 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: 'Open Deviations',
         help: 'How many clause deviations are still open. Used for listing and sorting; sending for approval checks the deviations themselves, not this number.',
       },
+      approved_legal_review_count: {
+        label: 'Approved Legal Reviews',
+        help: 'How many legal-stage reviews are approved. Sending for approval needs at least one; the check itself reads the reviews, not this number.',
+      },
+      current_clean_version_count: {
+        label: 'Current Clean Versions',
+        help: 'Whether the current version is a clean copy (1) or not (0). Starting signing needs one; the check itself reads the versions, not this number.',
+      },
+      final_signed_version_count: {
+        label: 'Final Signed Versions',
+        help: 'How many final signed versions are filed. Activation needs at least one; the check itself reads the versions, not this number.',
+      },
       overdue_obligation_count: {
         label: 'Overdue Obligations',
         help: 'How many obligations are overdue. Only the daily check marks an obligation overdue.',
@@ -428,12 +440,12 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       send_for_approval: {
         label: 'Send for Approval',
-        description: 'Close legal review and start approval. Not possible while any deviation is still open.',
+        description: 'Close legal review and start approval. Possible once a legal review is approved and no deviation is still open.',
         successMessage: 'Sent for approval.',
       },
       start_signing: {
         label: 'Start Signing',
-        description: 'Move an approved contract into signing.',
+        description: 'Move an approved contract into signing. Possible once the current version is a clean copy.',
         successMessage: 'Signing started.',
       },
       submit_contract: {
