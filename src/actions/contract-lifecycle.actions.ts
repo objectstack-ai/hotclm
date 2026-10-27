@@ -61,6 +61,7 @@ const transition = (
   from: string,
   to: string,
   description: string,
+  successMessage: string,
   requiredPermissions?: readonly string[],
   options?: {
     /** Offer the button only to the contract's owner (`owner_id`), on top of the status test. */
@@ -74,6 +75,13 @@ const transition = (
   objectName: 'clm_contract',
   icon,
   description,
+  // What the toast says once the write has landed. Without it the console
+  // falls back to its generic 「操作已成功完成」 / "Action completed
+  // successfully", which leaves the user reading the status chip to learn
+  // whether the right thing happened (issue #158). One fixed sentence per
+  // transition, no `{{ record.* }}` hole: the toast shows on the contract's
+  // own page, under a header that already names it.
+  successMessage,
   // An L2 sandboxed body, NOT the declarative `operation: 'update'` / `patch`
   // pair. That pair was written first and measured second: `pnpm validate`
   // answers "sets `operation` but this action property is planned — declared,
@@ -160,6 +168,7 @@ export const SubmitContractAction: Action = transition(
   'submit_contract', 'Submit', 'send',
   'draft', 'submitted',
   'Hand the draft over. Its approval route is worked out, and it is either assigned to a lawyer for review or, for a type without legal review, sent straight to approval.',
+  'Contract submitted.',
 );
 
 /**
@@ -189,6 +198,7 @@ export const WithdrawContractAction: Action = transition(
   'withdraw_contract', 'Withdraw', 'undo-2',
   'draft', 'cancelled',
   'Withdraw your own draft. It becomes Cancelled, which is final.',
+  'Draft withdrawn. The contract is cancelled.',
   undefined,
   {
     ownerOnly: true,
@@ -202,6 +212,7 @@ export const AcceptContractAction: Action = transition(
   'accept_contract', 'Accept for Review', 'file-search',
   'submitted', 'in_review',
   'Take a submitted contract into legal review.',
+  'Accepted into legal review.',
   ['clm_legal.access'],
 );
 
@@ -211,6 +222,7 @@ export const SendForApprovalAction: Action = transition(
   'send_for_approval', 'Send for Approval', 'git-branch',
   'in_review', 'in_approval',
   'Close legal review and start approval. Not possible while any deviation is still open.',
+  'Sent for approval.',
   ['clm_legal.access'],
 );
 
@@ -219,6 +231,7 @@ export const StartSigningAction: Action = transition(
   'start_signing', 'Start Signing', 'pen-line',
   'approved', 'signing',
   'Move an approved contract into signing.',
+  'Signing started.',
   ['execute_contract'],
 );
 
@@ -236,6 +249,7 @@ export const ActivateContractAction: Action = transition(
   'activate_contract', 'Activate', 'circle-check',
   'signing', 'active',
   'Bring a signed contract into force. Its activation date is recorded and, if it has an end date, a renewal reminder is set up.',
+  'Contract activated.',
   ['execute_contract'],
 );
 
@@ -279,6 +293,7 @@ export const TerminateContractAction: Action = {
   locations: ['record_header'],
   visible: P`record.status == 'active'`,
   requiredPermissions: ['terminate_contract'],
+  successMessage: 'Contract terminated.',
   params: [
     {
       field: 'termination_reason',

@@ -310,10 +310,12 @@ export const contract: Record<string, ObjectTranslationData> = {
       accept_contract: {
         label: '受理审查',
         description: '把一份已提交的合同接进法务审查。',
+        successMessage: '已受理，进入法务审查。',
       },
       activate_contract: {
         label: '生效',
         description: '让已签署的合同正式生效。系统会写入生效时间，并在有到期日时设好续约提醒。',
+        successMessage: '合同已生效。',
       },
       executed_upload: {
         label: '补录已签合同',
@@ -427,14 +429,17 @@ export const contract: Record<string, ObjectTranslationData> = {
       send_for_approval: {
         label: '送审',
         description: '结束法务审查并开启审批。只要还有未决偏离，送审会被拒绝。',
+        successMessage: '已送审，进入审批。',
       },
       start_signing: {
         label: '发起签署',
         description: '把已批准的合同推进到签署中。',
+        successMessage: '已进入签署。',
       },
       submit_contract: {
         label: '提交',
         description: '把草稿交出去。系统会定好它的审批路线，并指派一位法务审查；不需要法务审查的类型则直接送审。',
+        successMessage: '合同已提交。',
       },
       start_renewal: {
         label: '发起续签',
@@ -444,6 +449,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       terminate_contract: {
         label: '终止',
         description: '确定终止这份合同吗？终止是终态——合同不能再恢复生效，只能另行续签。终止原因必填，会记录在合同上。',
+        successMessage: '合同已终止。',
         params: {
           termination_reason: {
             helpText: '为什么提前结束：对方违约、不再需要、双方协商一致。法务与审计第一个问的就是这个。',
@@ -453,6 +459,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       withdraw_contract: {
         label: '撤回',
         description: '撤回你自己的草稿。撤回后合同变为「已作废」，这是终态。',
+        successMessage: '草稿已撤回，合同已作废。',
         confirmText: '确定撤回这份草稿吗？撤回后合同变为「已作废」，这是终态：不能再提交，也不能重新打开。之后如还要推进，请重新发起一份合同。',
       },
     },
