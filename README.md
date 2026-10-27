@@ -36,7 +36,10 @@ pnpm demo:zh      # the same rows, in Chinese
 else's contract book into a fresh deployment. `pnpm demo` is the opposite
 intention — a fictional multi-entity group, six months of negotiation and a
 book of contracts already in force, so every list has something on its first
-screen. Sign in with `admin@objectos.ai` / `admin123`.
+screen. Sign in with `admin@objectos.ai` / `admin123`, or as one of the
+[demo staff](#the-demo-staff--created-for-you) with the same password: a
+business requester such as `requester1@example.com` is an account whose 我的合同
+the demo fills.
 
 `pnpm demo` also turns on the platform's scheduled work, which is off by
 default, so the daily reminder sweeps run on the demo book; a deployment that
@@ -74,51 +77,61 @@ rounds, obligations and payment instalments.
 Every date is relative to boot, so ten contracts always expire within the next
 thirty days and the arrears lists are always in arrears.
 
-### Users are not seeded — create them, then assign these positions
+### The demo staff — created for you
 
-A seed cannot create a user, so `pnpm demo` produces exactly one account. To see
-the permission model of [DESIGN.md](./DESIGN.md) §04 do anything, create
-accounts in **Setup → Users**, assign the seven positions, and give every business
-requester a manager ([below](#rung-1-of-the-approval-ladder-is-a-manager)):
+The people the demo book is dealt to are declared in `objectstack.config.ts`
+(`demoStaff`), and the platform creates them on the demo boot — after the dev
+admin, before the seed runs — so every seeded row that names a person reaches
+them on the first `pnpm demo`, with no step of yours. They are the persona mix
+of [DESIGN.md](./DESIGN.md) §10: three business requesters and one account per
+position of §04, two for legal counsel.
 
-| Position | How many | What it changes |
-|---|---|---|
-| `clm_legal_counsel` | 2 | Receives contracts on submission (round-robin by open load) and owns review. **Name these two exactly** — see below |
-| `clm_legal_head` | 1 | Rung 2 of the approval ladder whenever `route_legal_head` is stamped |
-| `clm_finance_controller` | 1 | Rung 2/3, reads every contract with `route_finance`, and the only position that may edit bank details |
-| `clm_executive` | 1 | Rung 4, and reads every contract with `route_executive` |
-| `clm_general_manager` | 1 | Rung 5, and reads every contract with `route_gm` |
-| `clm_records_manager` | 1 | Execution formalities, the executed copy and the archive number |
-| `clm_admin` | 1 | Maintains the configuration objects and holds full reach over every CLM object: the only position that may write `clm_contract_type` and `clm_approval_rule`, and the only one the app's **Administration** group is served to |
+Every one signs in with the development seed password, the dev admin's:
+`admin123` (or whatever `OS_SEED_ADMIN_PASSWORD` says when it is set). The
+console does not list them; this table is where they are named.
 
-**Three more accounts are business requesters, which is not a position.**
-Every member of the organization holds `clm_requester` by default
-([DESIGN.md](./DESIGN.md) §04): it is the app's default permission set, bound
-to the platform's `everyone` anchor, so a requester needs no position and no
-grant — creating the account is the whole of it. They launch contracts and see
-their own. The seven positions above hold the same set the same way, on top of
-their own.
+| Account | Sign in as | Position | What it holds in the demo |
+|---|---|---|---|
+| `Business Requester 1` · `2` · `3` | `requester1@example.com` · `requester2@example.com` · `requester3@example.com` | none — every member holds `clm_requester` | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 |
+| `Legal Counsel 1` · `2` | `counsel1@example.com` · `counsel2@example.com` | `clm_legal_counsel` | receives contracts on submission (round-robin by open load) and owns review · the `legal_owner` of every contract legal has accepted — 34 / 34 · all 56 compliance obligations — 29 / 27 · the `decided_by` of all 17 decided deviations — 10 / 7 |
+| `Head of Legal` | `legal.head@example.com` | `clm_legal_head` | rung 2 of the approval ladder whenever `route_legal_head` is stamped |
+| `Finance Controller` | `finance@example.com` | `clm_finance_controller` | rung 2/3, reads every contract with `route_finance`, and the only position that may edit bank details |
+| `Executive` | `executive@example.com` | `clm_executive` | rung 4, and reads every contract with `route_executive` |
+| `General Manager` | `gm@example.com` | `clm_general_manager` | rung 5, and reads every contract with `route_gm` |
+| `Records Manager` | `records@example.com` | `clm_records_manager` | execution formalities, the executed copy and the archive number |
+| `CLM Administrator` | `clm.admin@example.com` | `clm_admin` | maintains the configuration objects and holds full reach over every CLM object: the only position that may write `clm_contract_type` and `clm_approval_rule`, and the only one the app's **Administration** group is served to |
 
-**Five of the accounts above have to be named exactly**, because the fixture
-references them by name:
+A business requester is not a position. Every member of the organization holds
+`clm_requester` by default ([DESIGN.md](./DESIGN.md) §04): it is the app's
+default permission set, bound to the platform's `everyone` anchor, so a
+requester needs no position and no grant. They launch contracts and see their
+own. The seven positions hold the same set the same way, on top of their own.
 
-| Name it exactly | Give it | It receives |
-|---|---|---|
-| `Business Requester 1` · `Business Requester 2` · `Business Requester 3` | nothing — every member already holds `clm_requester` | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 |
-| `Legal Counsel 1` · `Legal Counsel 2` | the `clm_legal_counsel` position | the `legal_owner` of every contract legal has accepted — 34 / 34 · all 56 compliance obligations, by the same counterparty relationship — 29 / 27 · and the `decided_by` of all 17 decided deviations — 10 / 7 |
+Signed in, each requester lands on **我的合同 › 我发起的** (Launched by Me) with
+their contracts, and finds their obligations under **我负责的履约** (My
+Obligations); each lawyer lands on **法务工作台** and finds their contracts under
+**我的审查** (My Reviews); finance lands on **财务**, records on **执行与档案** and
+the CLM administrator on **管理**. A decided deviation's **Decided By** shows its
+lawyer on the contract page's Deviations grid.
 
-Each requester's **我的合同 › Launched by Me** and **› My Obligations**, and each
-lawyer's **法务工作台 › 审查中** and their own **My Obligations**, fill the moment
-the account exists; a decided deviation's **Decided By** shows its lawyer on the
-contract page's Deviations grid. All four columns are optional references, so
-naming an account that is not there yet costs nothing and no row: it simply
-stays empty.
-Every dataset is an upsert, so **create the accounts and run `pnpm demo` again**
-and their contracts and obligations are handed over. Get a name wrong by one
-character and the column stays empty with no error — that is the one thing to
-double-check in the names.
+Three things about where these accounts exist:
 
-**Do that re-run before the daily jobs have run on the database.** Only a clean
+- **On a local development boot only.** `os dev` creates them; a production
+  boot, a migration run or a server whose auth base URL is not a loopback
+  address creates none and logs why. `os build` leaves the declaration out of
+  the artifact, so no deployment boots with them. They are not seeded users:
+  no fixture carries a `sys_user` row, and §10's 「用户不可种子」 stands.
+- **With the demo only.** The declaration is gated on `CLM_DEMO_SEED`, the
+  switch that loads the dataset, so `pnpm dev` stays empty of people as well as
+  of contracts: it signs in the dev admin and nobody else.
+- **Once.** Running `pnpm demo` again finds every address already there and
+  leaves that account exactly as it is — name, password, manager — adding only
+  a position it is missing. No account is duplicated.
+
+Every dataset is an upsert, so `pnpm demo` also runs again on a database that
+already holds the demo, sliding every boot-relative date forward.
+
+**Run it again only before the daily jobs have run on the database.** Only a clean
 database is guaranteed to come back as the known corpus: the fixture re-asserts
 every column it declares, the job-written ones included, so once rows have
 moved on — the jobs' work above all — a re-run does one of two things to each.
@@ -143,9 +156,6 @@ to tell" edge when there is none — the demo keeps exactly one unowned row, due
 seven days after boot, so that edge stays exercised. `src/data/plan-children.ts`
 proves it reachable and says why one is both the minimum and the maximum.
 
-The other six positions are named however you like; they are reached through
-the position, not by name.
-
 The dev admin is deliberately none of them. Like every member it holds
 `clm_requester`, so it sees 我的合同 and 分析 (`GET /api/v1/meta/app/clm` serves
 it exactly those two groups), but it holds no position and no other `clm_*` set:
@@ -156,10 +166,10 @@ the dev admin cannot open, and as a business owner or an obligation's owner it
 fills the setup account's 我的合同 instead of the requester's — and its
 reminders go to somebody who is not going to act on them.
 
-`clm_review.reviewer` is the one reference that still **has to** name the dev
-admin: it is `required: true`, so a name that resolves to nothing takes the row
-with it, and the dev admin is the only account that exists while the seed runs.
-Reassign it once the real accounts are there.
+`clm_review.reviewer` is the one reference that still names the dev admin. It is
+`required: true`, so a name that resolves to nothing takes the row with it, and
+the fixture names the account `pnpm demo` makes sure of before anything is
+seeded. Reassign it if you want the reviews on a lawyer's desk.
 
 ### Rung 1 of the approval ladder is a manager
 
@@ -167,13 +177,16 @@ Every contract sent for approval opens on rung 1: the direct manager of the
 contract's **owner** — the business requester who launched it, not the lawyer
 who pressed **Send for Approval** — read from that account's
 `sys_user.manager_id`. No seed, position or permission set fills that column,
-so on an install set up from the tables above alone, no contract gets past
-rung 1.
+and neither do the demo staff: a `demoStaff` entry carries a position and
+permission sets and nothing else, so it cannot name a manager. On a fresh
+`pnpm demo` no requester has one, and no contract gets past rung 1 until you
+set it — the one step of the demo that is still yours.
 
 Set it in **Setup → Users → the user → ⋯ → Set Manager**, for each of the three
 business requesters and for anyone else who launches contracts. Any other
 account in the organization will do — the persona mix has no line managers of
-its own, so point all three at one of the accounts above (the executive, say).
+its own, so point all three at one of the demo staff (`Executive`, say). A
+second `pnpm demo` leaves the manager you set where it is.
 The manager needs nothing more: `approve_contract`, the gate a rung acts
 through, is in `clm_requester`, which every account holds.
 
@@ -216,7 +229,8 @@ it approves.
 
 ### Assigning a position from a script
 
-Clicking through Setup → Users needs nothing more than the table above. Automating it does: the
+The demo staff get their positions from the platform. Staffing an organization of your own goes
+through Setup → Users, and automating that needs one more fact: the
 assignment binds by the position's **name**, not by its id. Read that off the declaration, not off
 the field name — `sys_user_position.position` is declared `text`, and its own description says what
 it carries: *"Position machine name (references `sys_position.name`)."* The field name tells you
