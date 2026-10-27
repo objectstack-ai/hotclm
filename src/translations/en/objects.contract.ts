@@ -310,10 +310,12 @@ export const contract: Record<string, ObjectTranslationData> = {
       accept_contract: {
         label: 'Accept for Review',
         description: 'Take a submitted contract into legal review.',
+        successMessage: 'Accepted into legal review.',
       },
       activate_contract: {
         label: 'Activate',
         description: 'Bring a signed contract into force. Its activation date is recorded and, if it has an end date, a renewal reminder is set up.',
+        successMessage: 'Contract activated.',
       },
       executed_upload: {
         label: 'Backfill Executed Contract',
@@ -427,14 +429,17 @@ export const contract: Record<string, ObjectTranslationData> = {
       send_for_approval: {
         label: 'Send for Approval',
         description: 'Close legal review and start approval. Not possible while any deviation is still open.',
+        successMessage: 'Sent for approval.',
       },
       start_signing: {
         label: 'Start Signing',
         description: 'Move an approved contract into signing.',
+        successMessage: 'Signing started.',
       },
       submit_contract: {
         label: 'Submit',
         description: 'Hand the draft over. Its approval route is worked out, and it is either assigned to a lawyer for review or, for a type without legal review, sent straight to approval.',
+        successMessage: 'Contract submitted.',
       },
       start_renewal: {
         label: 'Start Renewal',
@@ -444,6 +449,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       terminate_contract: {
         label: 'Terminate',
         description: 'Terminate this contract? It is a terminal state — the contract cannot be reactivated, only renewed as a new one. The reason is required and is recorded on the contract.',
+        successMessage: 'Contract terminated.',
         params: {
           termination_reason: {
             helpText: 'Why the contract is ending early — counterparty breach, no longer needed, agreed between the parties. Legal and audit ask this first.',
@@ -453,6 +459,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       withdraw_contract: {
         label: 'Withdraw',
         description: 'Withdraw your own draft. It becomes Cancelled, which is final.',
+        successMessage: 'Draft withdrawn. The contract is cancelled.',
         confirmText: 'Withdraw this draft? It becomes Cancelled, which is final: it cannot be submitted or reopened. To go ahead later, launch a new contract.',
       },
     },
