@@ -87,6 +87,25 @@ export function renewalWindow({ input }: { input: Record<string, unknown> }): {
  * The new term starts the day after the old one ends and runs for the same
  * number of months, falling back to twelve when the source carries none —
  * a starting point a person edits, not a commitment.
+ *
+ * ## The title carries no words, because a stored title has one language
+ *
+ * The draft's title is the source title followed by the new term's years —
+ * `Supplier Agreement — Acme (2027–2028)`, or `(2027)` when the term sits in
+ * one calendar year. It used to be prefixed `Renewal — `, and a zh-CN reader
+ * read that English word in the list, the record header and every lookup.
+ * `title` is a stored column (it is the `nameField` and it is searchable), so
+ * whatever word went in would be one language for every reader; a name that
+ * follows the reader's locale is objectstack-ai/objectstack#26608, and this
+ * function does not pretend otherwise by guessing a locale at write time. The
+ * years read the same in every language, and they say what is actually new
+ * about this contract. That it IS a renewal is `renewed_from`, which every
+ * reader sees labelled in their own language.
+ *
+ * Renewing a renewal replaces the earlier term tag rather than stacking a
+ * second one, so a yearly auto-renewal stays `… (2028–2029)`, not
+ * `… (2027–2028) (2028–2029)`. A source with no end date has no new term to
+ * name; its draft keeps the source title as it is.
  */
 export function renewalDraft({ input }: { input: Record<string, unknown> }): {
   title: string;
@@ -94,7 +113,9 @@ export function renewalDraft({ input }: { input: Record<string, unknown> }): {
   endDate: string | null;
   termMonths: number;
 } {
-  const sourceTitle = typeof input.title === 'string' && input.title ? input.title : 'contract';
+  // `title` is required and NOT NULL on `clm_contract`, so a source without
+  // one does not exist; the empty string is only the type-safe reading.
+  const sourceTitle = typeof input.title === 'string' ? input.title.trim() : '';
   const endMs = at(input.endDate);
   const rawTerm = input.termMonths;
   const termMonths = typeof rawTerm === 'number' && Number.isFinite(rawTerm) && rawTerm > 0 ? Math.floor(rawTerm) : 12;
@@ -107,9 +128,25 @@ export function renewalDraft({ input }: { input: Record<string, unknown> }): {
     end.setUTCMonth(end.getUTCMonth() + termMonths);
     endDate = isoDay(end.getTime() - DAY_MS);
   }
-  // `title` is `maxLength: 200`; a 200-character source title would otherwise
-  // fail the write rather than the reminder.
-  return { title: `Renewal — ${sourceTitle}`.slice(0, 200), startDate, endDate, termMonths };
+  return { title: renewalTitle(sourceTitle, startDate, endDate), startDate, endDate, termMonths };
+}
+
+/** `title` is `maxLength: 200` on `clm_contract`. */
+const TITLE_MAX = 200;
+
+/** A trailing term tag — `(2027)` or `(2027–2028)` — as this function writes it, or with a plain hyphen. */
+const TERM_TAG = /\s*\(\d{4}(?:\s*[–-]\s*\d{4})?\)$/;
+
+/** The source title with the new term's years in place of any earlier term tag. */
+function renewalTitle(sourceTitle: string, startDate: string | null, endDate: string | null): string {
+  if (!startDate || !endDate) return sourceTitle.slice(0, TITLE_MAX);
+  const from = startDate.slice(0, 4);
+  const to = endDate.slice(0, 4);
+  const tag = from === to ? `(${from})` : `(${from}–${to})`;
+  // Shorten the source rather than the tag: a 200-character source title
+  // would otherwise lose the years, or fail the write.
+  const base = sourceTitle.replace(TERM_TAG, '').slice(0, TITLE_MAX - tag.length - 1).trimEnd();
+  return base ? `${base} ${tag}` : tag;
 }
 
 /** The window computation, as the first node of the sweep's per-row region. */
