@@ -39,7 +39,7 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
             payment_terms: { label: '付款条件', options: contractOptions('payment_terms') },
             confidentiality_term_months: { label: '保密期限（月）' },
             auto_renew: { label: '自动续约' },
-            parent_contract: { label: '主合同（记录 ID）', placeholder: '本合同所属的框架合同或主合同' },
+            parent_contract: { label: '主合同', inlineHelpText: '本合同所属的框架合同或主合同。' },
           },
         },
         screen_party: {
@@ -55,24 +55,24 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         },
         screen_document: {
           title: '首个版本',
-          description: '这份合同的起点文件。默认在下一步上传。',
+          description: '上传这份合同的起点文件，它会成为第 1 版。',
           fields: {
             templateAvailable: { label: '有模板' },
             draft_from_template: {
               label: '从模板起草',
               inlineHelpText: '这类合同带有模板。勾选后，模板会作为第 1 版附上，不用再上传文件。',
             },
+            first_version_file: { label: '文件' },
           },
-        },
-        screen_upload: {
-          title: '上传首个版本',
-          description: '这份合同的起点文件，它会成为第 1 版。',
         },
         screen_schedule: {
           title: '提交合同',
-          description: '选择是否现在提交。提交后，合同按类型的设置进入法务审查或审批。',
+          description: '选择现在就提交，按合同类型的设置进入法务审查或审批；还是先保存为草稿，之后再提交。',
           fields: {
-            submit_now: { label: '立即提交' },
+            submit_now: {
+              label: '提交方式',
+              options: { true: '现在提交给法务 / 审批', false: '先保存为草稿' },
+            },
           },
         },
       },

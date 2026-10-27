@@ -39,7 +39,7 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
             payment_terms: { label: 'Payment terms', options: contractOptions('payment_terms') },
             confidentiality_term_months: { label: 'Confidentiality term (months)' },
             auto_renew: { label: 'Auto-renews' },
-            parent_contract: { label: 'Parent contract (record id)', placeholder: 'The framework or main contract this one sits under' },
+            parent_contract: { label: 'Parent contract', inlineHelpText: 'The framework or main contract this one sits under.' },
           },
         },
         screen_party: {
@@ -55,24 +55,24 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         },
         screen_document: {
           title: 'First version',
-          description: 'The document this contract starts from. By default you upload it on the next step.',
+          description: 'Upload the document this contract starts from. It becomes version 1.',
           fields: {
             templateAvailable: { label: 'Template available' },
             draft_from_template: {
               label: 'Draft from template',
               inlineHelpText: 'This contract type carries a template. Tick to attach it as version 1 instead of uploading a file.',
             },
+            first_version_file: { label: 'Document' },
           },
-        },
-        screen_upload: {
-          title: 'Upload the first version',
-          description: 'The document this contract starts from. It becomes version 1.',
         },
         screen_schedule: {
           title: 'Submit the contract',
-          description: 'Choose whether to submit now. Submitting routes the contract to legal review or to approval, as its type decides.',
+          description: 'Choose whether this contract goes to legal review or approval now, as its type decides, or stays a draft you can submit later.',
           fields: {
-            submit_now: { label: 'Submit now' },
+            submit_now: {
+              label: 'Submission',
+              options: { true: 'Submit to legal / approval now', false: 'Save as a draft for now' },
+            },
           },
         },
       },
