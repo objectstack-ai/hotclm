@@ -57,6 +57,12 @@ const flagOverdue: FlowNode = {
   },
 };
 
+/** What all three notices of this flow fill their bundle's holes with (src/email-templates/obligation-due.email-template.ts). */
+const OBLIGATION_DATA = {
+  title: ref('obligation.title'),
+  due_date: ref('obligation.due_date'),
+};
+
 export const ObligationDueFlow: Flow = sweepFlow({
   name: 'obligation_due',
   label: 'Obligations Due And Overdue',
@@ -80,8 +86,8 @@ export const ObligationDueFlow: Flow = sweepFlow({
           severity: 'info',
           sourceObject: 'clm_obligation',
           sourceId: ref('obligation.id'),
-          title: 'Due in 7 days: {{ obligation.title }}',
-          message: 'This contract obligation is due on {{ obligation.due_date }}. Record progress, or mark it done once it is performed.',
+          template: 'clm.obligation_due_soon',
+          templateData: OBLIGATION_DATA,
         },
       }),
     },
@@ -103,8 +109,8 @@ export const ObligationDueFlow: Flow = sweepFlow({
           severity: 'warning',
           sourceObject: 'clm_obligation',
           sourceId: ref('obligation.id'),
-          title: 'Due today: {{ obligation.title }}',
-          message: 'This contract obligation is due today ({{ obligation.due_date }}). It moves into overdue tomorrow if it is not done or waived.',
+          template: 'clm.obligation_due_today',
+          templateData: OBLIGATION_DATA,
         },
       }),
     },
@@ -129,8 +135,8 @@ export const ObligationDueFlow: Flow = sweepFlow({
           severity: 'critical',
           sourceObject: 'clm_obligation',
           sourceId: ref('obligation.id'),
-          title: 'Overdue: {{ obligation.title }}',
-          message: 'This contract obligation was due on {{ obligation.due_date }} and is now overdue. Perform it and mark it done, or ask legal to waive it.',
+          template: 'clm.obligation_overdue',
+          templateData: OBLIGATION_DATA,
         },
       }),
     },
