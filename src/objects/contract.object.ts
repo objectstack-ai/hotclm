@@ -20,14 +20,18 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  *     §07: AI proposes, a person adopts, the field is written on adoption);
  *   - `is_backfilled` — the F16 `executed_upload` action only (§13 Q8).
  *
- * The five roll-ups (`version_count`, `open_deviation_count`,
- * `overdue_obligation_count`, `planned_amount`, `actual_amount`) are a sixth
+ * The eight roll-ups (`version_count`, `open_deviation_count`,
+ * `approved_legal_review_count`, `current_clean_version_count`,
+ * `final_signed_version_count`, `overdue_obligation_count`,
+ * `planned_amount`, `actual_amount`) are a sixth
  * such family: `summary` fields the ENGINE recomputes on every child insert,
  * update and delete (`ObjectQL.recomputeSummaries`, under an elevated system
  * context, which is why `readonly: true` does not lock the engine out).
  * Deliberately NOT `formula`: a formula is derived per read and cannot be
- * filtered, sorted or listed on, and the two filtered counts here exist to be
- * filtered and sorted on.
+ * filtered, sorted or listed on; `open_deviation_count` and
+ * `overdue_obligation_count` exist to be filtered and sorted on, and the
+ * three precondition counts are read by the header actions' `disabled`
+ * predicates (contract-lifecycle.actions.ts).
  */
 export const Contract = ObjectSchema.create({
   name: 'clm_contract',
@@ -521,7 +525,7 @@ export const Contract = ObjectSchema.create({
 
     // ─── Roll-ups — recomputed by the engine on every child write ──────
     //
-    // `relationshipField` is declared on all five although the engine can
+    // `relationshipField` is declared on every one although the engine can
     // infer it: inference takes the FIRST lookup/master_detail field on the
     // child that points back here, so it is order-dependent on a key nothing
     // else about the child pins. Naming it makes the roll-up survive a field
@@ -562,6 +566,60 @@ export const Contract = ObjectSchema.create({
         function: 'count',
         field: 'id',
         filter: { status: 'open' },
+      },
+    }),
+    // The three below exist so the header can grey out a transition whose
+    // precondition is unmet (issue #169). Each is the hook guard's own count,
+    // with the same child filter, rolled up onto the contract where an action's
+    // `disabled` predicate can read it. Like `open_deviation_count` they are a
+    // convenience and not a control: the guards in contract.hook.ts read the
+    // children directly and keep refusing whatever this number says.
+    approved_legal_review_count: Field.summary({
+      label: 'Approved Legal Reviews',
+      group: 'rollup',
+      readonly: true,
+      scale: 0,
+      min: 0,
+      description: 'How many legal-stage reviews are approved. Sending for approval needs at least one; the check itself reads the reviews, not this number.',
+      summaryOperations: {
+        object: 'clm_review',
+        relationshipField: 'contract',
+        function: 'count',
+        field: 'id',
+        filter: { stage: 'legal', decision: 'approved' },
+      },
+    }),
+    current_clean_version_count: Field.summary({
+      label: 'Current Clean Versions',
+      group: 'rollup',
+      readonly: true,
+      scale: 0,
+      min: 0,
+      // `is_current` moves between versions through contract-version.hook.ts,
+      // which writes through the engine: the version losing the flag is a child
+      // update, so this count is recomputed on that write too.
+      description: 'Whether the current version is a clean copy (1) or not (0). Starting signing needs one; the check itself reads the versions, not this number.',
+      summaryOperations: {
+        object: 'clm_contract_version',
+        relationshipField: 'contract',
+        function: 'count',
+        field: 'id',
+        filter: { kind: 'clean', is_current: true },
+      },
+    }),
+    final_signed_version_count: Field.summary({
+      label: 'Final Signed Versions',
+      group: 'rollup',
+      readonly: true,
+      scale: 0,
+      min: 0,
+      description: 'How many final signed versions are filed. Activation needs at least one; the check itself reads the versions, not this number.',
+      summaryOperations: {
+        object: 'clm_contract_version',
+        relationshipField: 'contract',
+        function: 'count',
+        field: 'id',
+        filter: { kind: 'final_signed' },
       },
     }),
     overdue_obligation_count: Field.summary({

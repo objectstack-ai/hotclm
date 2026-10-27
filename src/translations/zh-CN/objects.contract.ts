@@ -293,6 +293,18 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: '未决偏离数',
         help: '仍未处理的条款偏离条数，用于列表展示和排序；送审时检查的是偏离本身，而不是这个数字。',
       },
+      approved_legal_review_count: {
+        label: '法务审查通过数',
+        help: '法务环节审查结论为「通过」的条数。送审至少要有一条；送审时检查的是审查记录本身，而不是这个数字。',
+      },
+      current_clean_version_count: {
+        label: '当前清稿数',
+        help: '当前版本是否为清稿（1 是，0 否）。发起签署需要它为 1；发起签署时检查的是版本本身，而不是这个数字。',
+      },
+      final_signed_version_count: {
+        label: '最终签署版数',
+        help: '已上传的最终签署版条数。生效至少要有一条；生效时检查的是版本本身，而不是这个数字。',
+      },
       overdue_obligation_count: {
         label: '逾期义务数',
         help: '已经逾期的履约义务条数。只有每日检查会把义务标记为逾期。',
@@ -428,12 +440,12 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       send_for_approval: {
         label: '送审',
-        description: '结束法务审查并开启审批。只要还有未决偏离，送审会被拒绝。',
+        description: '结束法务审查并开启审批。须有一条通过的法务审查，且没有未决偏离，才能送审。',
         successMessage: '已送审，进入审批。',
       },
       start_signing: {
         label: '发起签署',
-        description: '把已批准的合同推进到签署中。',
+        description: '把已批准的合同推进到签署中。当前版本须为清稿，才能发起签署。',
         successMessage: '已进入签署。',
       },
       submit_contract: {

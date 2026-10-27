@@ -68,6 +68,8 @@ const transition = (
     ownerOnly?: boolean;
     /** The one confirm question of a param-less action whose write cannot be taken back. */
     confirmText?: string;
+    /** Grey the button out while a precondition the hook will refuse is unmet (see below). */
+    disabled?: ReturnType<typeof P>;
   },
 ): Action => ({
   name,
@@ -145,6 +147,17 @@ const transition = (
     : P`record.status == ${from}`,
   ...(requiredPermissions ? { requiredPermissions: [...requiredPermissions] } : {}),
   ...(options?.confirmText ? { confirmText: options.confirmText } : {}),
+  // `disabled` keeps the button on screen but greyed out while the record says
+  // the hook would refuse the press (issue #169) — where `visible` answers
+  // "is this the right stage", `disabled` answers "can it succeed yet". It reads
+  // only roll-ups on the record itself (`*_count` summary fields the engine
+  // recomputes on every child write), each with the same child filter as the
+  // guard it mirrors. Like `visible` it is a convenience, not a control: the
+  // guards in contract.hook.ts read the children directly and keep refusing.
+  //
+  // The console shows its generic reason on hover (「对此记录不可用」 / "Not
+  // available for this record"): ActionSchema has no key for an authored one.
+  ...(options?.disabled ? { disabled: options.disabled } : {}),
   // The status this button writes is the status the header shows, and the
   // status every one of these `visible` predicates reads. The spec defaults
   // `refreshAfter` to `false` (materialized at parse), and the record page
@@ -216,27 +229,37 @@ export const AcceptContractAction: Action = transition(
   ['clm_legal.access'],
 );
 
-/** 送审 — review is done, start the approval ladder (F5). F6's deviation gate refuses
- *  this while any deviation is still `open`; the refusal comes from the hook. */
+/** 送审 — review is done, start the approval ladder (F5). The hook refuses it
+ *  while any deviation is still `open` (F6's deviation gate) or before a
+ *  legal-stage review is `approved`; the button is greyed out on both. */
 export const SendForApprovalAction: Action = transition(
   'send_for_approval', 'Send for Approval', 'git-branch',
   'in_review', 'in_approval',
-  'Close legal review and start approval. Not possible while any deviation is still open.',
+  'Close legal review and start approval. Possible once a legal review is approved and no deviation is still open.',
   'Sent for approval.',
   ['clm_legal.access'],
+  { disabled: P`record.open_deviation_count > 0 || record.approved_legal_review_count == 0` },
 );
 
-/** 发起签署 — approved, now get it signed. */
+/** 发起签署 — approved, now get it signed. The hook refuses it unless the
+ *  current version is a clean copy; the button is greyed out until it is. */
 export const StartSigningAction: Action = transition(
   'start_signing', 'Start Signing', 'pen-line',
   'approved', 'signing',
-  'Move an approved contract into signing.',
+  'Move an approved contract into signing. Possible once the current version is a clean copy.',
   'Signing started.',
   ['execute_contract'],
+  { disabled: P`record.current_clean_version_count == 0` },
 );
 
 /** 生效 — the execution formalities are complete. F9 (`contract_activate`)
  *  stamps `activated_at` and opens the renewal-reminder obligation.
+ *
+ *  Greyed out until a `final_signed` version is filed. The hook's other
+ *  activation guard — a completed signature round whose `formalities_done`
+ *  covers the contract's `execution_formalities` — is NOT mirrored here: it
+ *  compares a child's multiselect with a field on the parent, which a summary
+ *  filter cannot express, so that refusal still arrives after the press.
  *
  *  The description no longer promises a payment schedule. Decision #14 was
  *  ruled A on 2026-09-09: F9 expands NO intake-captured payment arrangement,
@@ -251,6 +274,7 @@ export const ActivateContractAction: Action = transition(
   'Bring a signed contract into force. Its activation date is recorded and, if it has an end date, a renewal reminder is set up.',
   'Contract activated.',
   ['execute_contract'],
+  { disabled: P`record.final_signed_version_count == 0` },
 );
 
 /**
