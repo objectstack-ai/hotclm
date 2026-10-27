@@ -81,11 +81,11 @@ peerDependencyRules:
 # upgrade checklist, step 1): without this block the tree resolves a mix of
 # 18.x versions. Move these with the @objectstack/* pins at every upgrade.
 overrides:
-  '@objectstack/core': '18.1.0'
-  '@objectstack/driver-memory': '18.1.0'
-  '@objectstack/driver-mongodb': '18.1.0'
-  '@objectstack/driver-sql': '18.1.0'
-  '@objectstack/driver-sqlite-wasm': '18.1.0'
-  '@objectstack/objectql': '18.1.0'
-  '@objectstack/observability': '18.1.0'
-  '@objectstack/runtime': '18.1.0'
+  '@objectstack/core': '18.2.0'
+  '@objectstack/driver-memory': '18.2.0'
+  '@objectstack/driver-mongodb': '18.2.0'
+  '@objectstack/driver-sql': '18.2.0'
+  '@objectstack/driver-sqlite-wasm': '18.2.0'
+  '@objectstack/objectql': '18.2.0'
+  '@objectstack/observability': '18.2.0'
+  '@objectstack/runtime': '18.2.0'

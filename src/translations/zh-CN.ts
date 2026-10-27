@@ -7,6 +7,7 @@ import { flowSurface } from './zh-CN/flows.js';
 import { catalog } from './zh-CN/objects.catalog.js';
 import { contract } from './zh-CN/objects.contract.js';
 import { lifecycle } from './zh-CN/objects.lifecycle.js';
+import { securitySurface } from './zh-CN/security.js';
 
 /**
  * 简体中文 (`zh-CN`) — the full second bundle (DESIGN.md §01 全球优先).
@@ -36,4 +37,5 @@ export const zhCN: TranslationData = {
   },
   ...appSurface,
   ...flowSurface,
+  ...securitySurface,
 };
