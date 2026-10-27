@@ -240,7 +240,10 @@ export const RenewalStartFlow: Flow = {
   type: 'autolaunched',
   status: 'active',
   runAs: 'user',
-  variables: [{ name: 'recordId', type: 'text', isInput: true, isOutput: false }],
+  variables: [
+    { name: 'recordId', type: 'text', isInput: true, isOutput: false },
+    { name: 'renewal', type: 'object', isOutput: true },
+  ],
   successMessage: 'Renewal draft created.',
   nodes: [
     { id: 'start', type: 'start', label: 'Start', config: { objectName: 'clm_contract' } },
