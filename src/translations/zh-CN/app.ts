@@ -176,7 +176,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     legal_workbench: {
       label: '法务工作台',
-      description: '面向法务团队的待受理队列、审查负荷、谈判停滞与各阶段合同分布。',
+      description: '面向法务团队的待受理队列、审查负荷、谈判停滞、各阶段合同分布与各段时长。',
       widgets: {
         awaiting_intake: {
           title: '待受理',
@@ -194,13 +194,29 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
           title: '等待对方',
           description: '球在对方手上，需要催办的队列',
         },
-        approval_throughput: {
-          title: '本月已批准',
-          description: '本月进入已批准的合同数，与上个月对比。这是数量，不是平均周转时长。',
+        approval_turnaround: {
+          title: '平均审批周转天数（本月）',
+          description: '本月批准的合同从提交到批准平均用了多少天，与上个月对比。',
         },
         stage_funnel: {
           title: '各阶段合同数',
           description: '合同还在流转中的六个阶段 —— 反映法务手头在办工作的快照，按数量从多到少排列，不是转化流程。已生效的合同不在此图内。',
+        },
+        days_to_review: {
+          title: '提交 → 开始审查（平均天数）',
+          description: '从提交到法务受理开始审查，平均用了多少天。',
+        },
+        days_in_review: {
+          title: '开始审查 → 批准（平均天数）',
+          description: '从法务开始审查到批准，平均用了多少天。',
+        },
+        days_to_signature: {
+          title: '批准 → 签署（平均天数）',
+          description: '从批准到合同签署，平均用了多少天。',
+        },
+        days_to_activation: {
+          title: '签署 → 生效（平均天数）',
+          description: '从签署到合同生效，平均用了多少天。',
         },
       },
     },
@@ -285,7 +301,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     contract_cycle_time: {
       label: '合同周转',
-      description: '按合同类型与法务经办人统计各阶段覆盖情况：有多少合同走到了每个生命周期阶段，以及分别在什么时候。只统计走到各阶段的合同数，不统计每个阶段用了多长时间。',
+      description: '按合同类型与法务经办人统计合同在各生命周期阶段停留的天数。每个平均值只计入两个阶段日期都已记录的合同。',
       dimensions: {
         contract_type_name: {
           label: '合同类型',
@@ -319,20 +335,20 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         contract_count: {
           label: '合同数',
         },
-        submitted_count: {
-          label: '已到提交',
+        avg_days_to_review: {
+          label: '平均天数：提交 → 开始审查',
         },
-        review_started_count: {
-          label: '已到审查',
+        avg_days_in_review: {
+          label: '平均天数：开始审查 → 批准',
         },
-        approved_count: {
-          label: '已到批准',
+        avg_days_to_signature: {
+          label: '平均天数：批准 → 签署',
         },
-        signed_count: {
-          label: '已到签署',
+        avg_days_to_activation: {
+          label: '平均天数：签署 → 生效',
         },
-        activated_count: {
-          label: '已到生效',
+        avg_days_to_approval: {
+          label: '平均天数：提交 → 批准',
         },
       },
     },

@@ -160,23 +160,22 @@ export const ExecutiveDashboard: Dashboard = {
     //
     // The average DWELL per rung that §09 listed BEFORE 2026-09-09 is not
     // deliverable, and §09 no longer asks for it: the maintainer ruling in
-    // PR #40 (`1127e52`) placed it outside the V1.0 surface, and §09 now gives
-    // these two measurements — both taken on this board — as the reasons it
-    // declines:
+    // PR #40 (`1127e52`) placed it outside the V1.0 surface, and §09 gave two
+    // reasons, both measured on this board:
     //
     //   1. There is no dwell to read. `sys_approval_request` holds 0 rows on a
     //      stock `pnpm demo` — the seed stamps `approval_status` directly and
     //      the ladder (F5) never ran — so no rung has a start or an end.
-    //   2. Even with rows, a duration is not expressible in the semantic layer:
-    //      see the measurement in `cycle-time.dataset.ts`.
+    //   2. A duration was not expressible in the semantic layer. That one no
+    //      longer holds: platform 18.2.0 added the `duration` measure
+    //      (objectstack#25778), which `contract_cycle_time` now uses for the
+    //      stage durations on the legal workbench.
     //
-    // ⚠️ Neither reads as a TODO. Fact 1 is independent of the platform and
-    // survives any upgrade; and the in-flight platform work
-    // (`objectstack-ai/objectstack#16737`) makes the wrong path ERROR rather
-    // than adding date arithmetic, so the dwell does not arrive when it closes
-    // either. ⛔ Do not re-promise the metric on the strength of that issue, and
-    // ⛔ do not stamp it from an application-side daily job — §09 forbids that
-    // route in as many words, as replicating a platform rule in the app.
+    // ⚠️ Fact 1 is independent of the platform and survives any upgrade, so the
+    // dwell still has nothing to read. ⛔ Do not re-promise the metric until
+    // approval requests exist, and ⛔ do not stamp it from an
+    // application-side daily job — §09 forbids that route in as many words, as
+    // replicating a platform rule in the app.
     //
     // What IS persisted is the routing: F2 stamps four booleans on the contract,
     // one per rung. These four tiles read them — how much traffic each rung
