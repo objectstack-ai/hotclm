@@ -126,7 +126,7 @@ export const PaymentOverdueFlow: Flow = sweepFlow({
             contract_number: ref('parentContract.contract_number'),
             planned_date: ref('instalment.planned_date'),
             planned_amount: ref('instalment.planned_amount'),
-            actual_amount: ref('instalment.actual_amount'),
+            actual_amount: { dialect: 'cel', source: `coalesce(${ref('instalment.actual_amount').source}, 0)` },
           },
         },
       }),
