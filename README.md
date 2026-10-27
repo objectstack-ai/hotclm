@@ -146,9 +146,10 @@ instalment finance has marked paid. Measured after one run of every daily job
 plus those four desk actions: the re-run refused no row and dropped none.
 
 Three limits. Any other column you edited, such as a summary or a reassigned
-legal owner, goes back to the fixture's value. A deviation or signature round
-you decided is not covered yet: the re-run puts its fixture status back, and the
-state machine may refuse that. The lifecycle columns also keep the dates they
+legal owner or a review's reviewer, goes back to the fixture's value. A
+deviation, signature round or review you decided is not covered yet: the re-run
+puts its fixture status or decision back, and for a deviation or a signature
+round the state machine may refuse that. The lifecycle columns also keep the dates they
 were stamped with, while the fixture's own dates (start, end, due and planned
 dates) move forward on each re-run. To get back to the corpus exactly as
 shipped, start from a clean database: `rm -rf .objectstack/data && pnpm demo`.

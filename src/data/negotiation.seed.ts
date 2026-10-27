@@ -77,7 +77,14 @@ export const contractVersionSeed = defineSeed(ContractVersion, {
  * (`contract.seed.ts`) it is how the book is dealt to the demo staff, so a
  * re-run re-deals it — which is also what moves the reviews of a database
  * seeded before #186 off the dev admin. `review_display_name` re-stamps the
- * `"<stage> · <reviewer>"` mirror on that write.
+ * `"<stage> · <reviewer>"` mirror on that write. Measured on 18.2.0: three
+ * reviews reassigned to the dev admin read `Legal · Legal Counsel 1`,
+ * `Finance · Finance Controller` and `Business · Business Requester 2` again
+ * after one more `pnpm demo:zh`, and the re-run refused no row.
+ *
+ * `decision` and `decided_at` are not `applyOn: 'create'` either, so a re-run
+ * puts a review someone decided back to the fixture's decision; the README
+ * says so beside the deviations and signature rounds that share the limit.
  */
 export const reviewSeed = defineSeed(Review, {
   externalId: ['contract', 'stage'],
