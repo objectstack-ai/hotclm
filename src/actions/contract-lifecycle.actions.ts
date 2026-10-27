@@ -341,6 +341,12 @@ export const TerminateContractAction: Action = {
  * covers the ordinary case (the F12 sweep flags `is_expiring` and the
  * notification points here) and `expired` covers the one that ran out before
  * anyone acted.
+ *
+ * Once the run completes, the console takes the user to the draft it made
+ * (#99 item 3; a flow action's `onSuccess`, objectstack#25800, 18.2.0):
+ * `${result.output.renewal.id}` reads the flow's `renewal` output variable,
+ * the record `create_draft` wrote. A refused run (a second press) shows its
+ * sentence and does not move.
  */
 export const StartRenewalAction: Action = {
   name: 'start_renewal',
@@ -353,5 +359,6 @@ export const StartRenewalAction: Action = {
   locations: ['record_header'],
   visible: P`record.status == 'active' || record.status == 'expired'`,
   successMessage: 'Renewal draft created.',
+  onSuccess: { navigate: '/apps/clm/clm_contract/record/${result.output.renewal.id}' },
   refreshAfter: true,
 };

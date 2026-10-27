@@ -43,14 +43,15 @@ import { CONTRACT_STAMPED_FIELDS, PARTY_ASSESSED_FIELDS, inList, openAllExcept, 
  * `manage_clauses` (clause RCU is legal's alone), `terminate_contract` (legal
  * and admin are the only sets that may write `status` on an active contract:
  * finance's is locked by §13 Q1, records' edit is limited to execution and
- * archive) and `approve_contract` (the head of legal is a ladder rung) are the
+ * archive), `approve_contract` (the head of legal is a ladder rung) and
+ * `backfill_contract` (F16, 补录已签合同: records or legal, §06) are the
  * action gates §04 assigns here.
  */
 export const LegalSet = definePermissionSet({
   name: 'clm_legal',
   label: 'Legal',
   description: 'Legal counsel and the head of legal: every contract, every review, the clause playbook.',
-  systemPermissions: ['clm_legal.access', 'approve_contract', 'terminate_contract', 'manage_clauses'],
+  systemPermissions: ['clm_legal.access', 'approve_contract', 'terminate_contract', 'manage_clauses', 'backfill_contract'],
   objects: {
     clm_contract:         { allowCreate: true,  allowRead: true, allowEdit: true,  allowDelete: false, readScope: 'own' },
     clm_contract_version: { allowCreate: true,  allowRead: true, allowEdit: true,  allowDelete: false },
