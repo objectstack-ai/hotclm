@@ -77,6 +77,11 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         },
       },
     },
+    renewal_start: {
+      refusals: {
+        refuse_existing: { message: 'This contract already has a renewal draft ({{ existingRenewal.contract_number }}). Open that one instead of starting a second.' },
+      },
+    },
     contract_approval: {
       label: 'Contract Approval Ladder',
       approvals: {

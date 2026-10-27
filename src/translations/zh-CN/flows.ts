@@ -77,6 +77,11 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         },
       },
     },
+    renewal_start: {
+      refusals: {
+        refuse_existing: { message: '这份合同已有续签草稿（{{ existingRenewal.contract_number }}）。请打开那一份，不要再发起第二份。' },
+      },
+    },
     contract_approval: {
       label: '合同审批',
       approvals: {
