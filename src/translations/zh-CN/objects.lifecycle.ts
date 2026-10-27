@@ -64,6 +64,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       decided_at: {
         label: '结论时间',
+        help: '给出结论时自动写入，除非显式指定。',
       },
     },
     _sections: {

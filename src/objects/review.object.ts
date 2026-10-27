@@ -101,6 +101,7 @@ export const Review = ObjectSchema.create({
     decided_at: Field.datetime({
       label: 'Decided At',
       group: 'outcome',
+      description: 'Stamped when the review is given a decision, unless set explicitly.',
     }),
   },
 

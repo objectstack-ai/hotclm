@@ -42,6 +42,11 @@ import type { HookApi } from './_hook-api.js';
  *   `route_legal_head` on the parent contract. The other half of F6 — no
  *   `open` deviation may enter `in_approval` — is the state machine's guard,
  *   applied on BOTH edges into `in_approval`.
+ * - `review_decision_stamp` (beforeInsert / beforeUpdate on `clm_review`):
+ *   a review given a decision — approved, changes requested or rejected — is
+ *   stamped `decided_at` on BOTH write paths, unless one is set, the way a
+ *   decided deviation is. It guards no transition: §03 gives the review's
+ *   decision no state machine.
  * - `deviation_state_machine`, `signature_state_machine`,
  *   `obligation_state_machine`, `payment_plan_state_machine`: the child
  *   machines. The last two also hold the `overdue` reservation — that state
@@ -955,6 +960,38 @@ const deviationGate: Hook = {
   },
 };
 
+const reviewDecisionStamp: Hook = {
+  name: 'review_decision_stamp',
+  object: 'clm_review',
+  events: ['beforeInsert', 'beforeUpdate'],
+  priority: 200,
+  description: 'Stamp decided_at when a review is given a decision (approved, changes requested or rejected), on create as well as on update, unless one is set explicitly.',
+  handler: async (ctx: HookContext) => {
+    // The review's counterpart of the deviation's decided_at stamp: the
+    // decision is legal's to make, the platform records WHEN. It fills an
+    // empty decided_at and never overwrites or clears one, so a time the
+    // lawyer typed — in this write or an earlier one — is kept.
+    //
+    // A review has no decided_by: its `reviewer` is the person who decides
+    // (DESIGN.md §03 lists only decided_at on clm_review).
+    //
+    // Back to `pending` is not refused — unlike a deviation, a review's
+    // decision has no transition table in §03 — and it does not clear the
+    // stamp either: the hook cannot tell a stamped time from a typed one, and
+    // the field stays editable on the same form.
+    const { event, input } = ctx;
+    const previous = event === 'beforeInsert' ? {} : (ctx.previous ?? {});
+    const to = input.decision;
+    if (typeof to !== 'string' || to === 'pending') return;
+    const from = typeof previous.decision === 'string' ? previous.decision : 'pending';
+    if (to === from) return;
+    const decidedAt = input.decided_at !== undefined ? input.decided_at : previous.decided_at;
+    if (decidedAt === undefined || decidedAt === null || decidedAt === '') {
+      input.decided_at = new Date().toISOString();
+    }
+  },
+};
+
 const signatureStateMachine: Hook = {
   name: 'signature_state_machine',
   object: 'clm_signature',
@@ -1185,6 +1222,7 @@ export default [
   contractActivate,
   deviationStateMachine,
   deviationGate,
+  reviewDecisionStamp,
   signatureStateMachine,
   obligationStateMachine,
   paymentPlanStateMachine,
