@@ -3,7 +3,7 @@ import { Contract } from '../objects/contract.object.js';
 import { Party } from '../objects/party.object.js';
 import { Signature } from '../objects/signature.object.js';
 import { EXECUTION_STATUSES } from '../sharing/_lifecycle.js';
-import { editableOnly, hidden, inList } from './_grants.js';
+import { editableOnly, hidden, inList, onRowsWhere } from './_grants.js';
 
 /**
  * `clm_records` — the records manager (DESIGN.md §04, global-first revision:
@@ -21,7 +21,9 @@ import { editableOnly, hidden, inList } from './_grants.js';
  *  - `archive_no` — the archive reference F14 stamps `archived_at` from.
  *
  * Everything else on the contract, including the stamps §04 locks for every
- * position, is readable and locked (`editableOnly`). On `clm_signature`,
+ * position, is readable and locked (`editableOnly`) on the rows of that edit
+ * window — a row condition (`onRowsWhere`), so the lock does not land on the
+ * draft a records manager launches (#127). On `clm_signature`,
  * "RU（执行形式、执行副本）": the formalities, the executed copy, the completion
  * date a wet-ink round records, and the round's status so the round can be
  * completed at all (F7's wet-ink path names this position). On `clm_party`
@@ -46,7 +48,11 @@ export const RecordsSet = definePermissionSet({
     clm_approval_rule:    { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
   },
   fields: {
-    ...editableOnly(Contract, ['status', 'archive_no']),
+    // From `signing` onward only — the rows records edits as records (#127,
+    // ruling A). Before that the entries are absent, so on the draft a records
+    // manager launches as a requester, `clm_requester` alone decides, stamps
+    // and assessed fields included.
+    ...onRowsWhere(editableOnly(Contract, ['status', 'archive_no']), inList('status', EXECUTION_STATUSES)),
     ...editableOnly(Signature, ['status', 'formalities_done', 'executed_file', 'completed_at']),
     ...hidden(Party, ['bank_account', 'contact_phone']),
   },

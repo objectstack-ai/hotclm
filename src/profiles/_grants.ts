@@ -78,6 +78,36 @@ export function open(object: ObjectLike, fields: readonly string[]): FieldSecuri
   return Object.fromEntries(fields.map((field) => [`${object.name}.${field}`, { readable: true, editable: true }]));
 }
 
+/**
+ * The same entries, voting only on the rows `condition` matches — the field
+ * permission's row condition (`when`, `@objectstack/spec` 18.2.0,
+ * objectstack-ai/objectstack#25866). On every other row the entry is ABSENT,
+ * not open: the most-permissive merge and the "only declaring sets vote" rule
+ * ({@link open}) are unchanged, so a co-held set that locks the same field —
+ * `clm_requester`'s stamps, `risk_level`, `liability_cap` — still locks it
+ * there, and a set that says nothing still lifts nothing.
+ *
+ * The write gate judges the condition on the STORED row before an update (a
+ * lock on `status in [...]` holds on an approved contract even when the write
+ * moves `status`) and on the incoming row of an insert. The condition reaches
+ * the EDIT vote only, so a {@link hidden} entry is refused here, as the spec
+ * refuses `readable: false` beside a `when`. Readers that hold no row — the
+ * record form's field projection, `/auth/me/permissions` — report a
+ * conditioned entry as its lock on every row.
+ *
+ * Use it for "this set locks these fields from a stage onward": the lock then
+ * stays off the draft a holder of the set launches as a requester.
+ */
+export function onRowsWhere(security: FieldSecurity, condition: string): FieldSecurity {
+  const unreadable = Object.entries(security).filter(([, perm]) => perm.readable === false).map(([key]) => key);
+  if (unreadable.length > 0) {
+    throw new Error(
+      `onRowsWhere: ${unreadable.join(', ')} ${unreadable.length === 1 ? 'is' : 'are'} not readable — a row condition reaches the edit vote only, so a read lock cannot carry one.`,
+    );
+  }
+  return Object.fromEntries(Object.entries(security).map(([key, perm]) => [key, { ...perm, when: condition }]));
+}
+
 /** Every authored field of the object except `except` is {@link open}. */
 export function openAllExcept(object: ObjectLike, except: readonly string[]): FieldSecurity {
   assertFields(object, except, 'openAllExcept');
