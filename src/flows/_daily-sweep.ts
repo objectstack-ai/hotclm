@@ -311,16 +311,30 @@ export function holdersPrelude(position: string, variable: string): FlowNode[] {
   ];
 }
 
-/** The notify slots a sweep row fills. `recipients` is supplied by {@link rowBody}. */
-export interface RowNotice {
+/**
+ * The notify slots a sweep row fills. `recipients` is supplied by {@link rowBody}.
+ *
+ * The words come one of two ways, never both (`NotifyConfigSchema` refuses the
+ * pair): a `template` naming an `email_template` bundle, whose member the
+ * delivery path picks per recipient's language, with `templateData` filling
+ * its holes; or inline `title` + `message`, one text for every recipient.
+ */
+interface RowNoticeBase {
   readonly topic: string;
   readonly severity: 'info' | 'warning' | 'critical';
-  readonly title: string;
-  readonly message: string;
   readonly sourceObject: string;
   readonly sourceId: EvaluatedExpression;
   readonly channels?: readonly string[];
 }
+interface RowNoticeTemplate extends RowNoticeBase {
+  readonly template: string;
+  readonly templateData: Readonly<Record<string, EvaluatedExpression>>;
+}
+interface RowNoticeInline extends RowNoticeBase {
+  readonly title: string;
+  readonly message: string;
+}
+export type RowNotice = RowNoticeTemplate | RowNoticeInline;
 
 /**
  * The per-row region every notifying stage uses: do the work, work out who to
@@ -396,8 +410,9 @@ export function rowBody(spec: {
         channels: [...(spec.notice.channels ?? ['inbox', 'email'])],
         severity: spec.notice.severity,
         topic: spec.notice.topic,
-        title: spec.notice.title,
-        message: spec.notice.message,
+        ...('template' in spec.notice
+          ? { template: spec.notice.template, templateData: { ...spec.notice.templateData } }
+          : { title: spec.notice.title, message: spec.notice.message }),
         sourceObject: spec.notice.sourceObject,
         sourceId: spec.notice.sourceId,
       },

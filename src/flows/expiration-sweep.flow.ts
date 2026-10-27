@@ -43,6 +43,13 @@ import { must, ref } from './_values.js';
 const RENEWAL_EXISTS = 'has(vars.existingRenewal) && vars.existingRenewal != null && has(vars.existingRenewal.id)';
 const NO_RENEWAL_YET = '!has(vars.existingRenewal) || vars.existingRenewal == null || !has(vars.existingRenewal.id)';
 
+/** What both notices of this flow fill their bundle's holes with (src/email-templates/expiration-sweep.email-template.ts). */
+const EXPIRED_DATA = {
+  title: ref('expired.title'),
+  contract_number: ref('expired.contract_number'),
+  end_date: ref('expired.end_date'),
+};
+
 export const ExpirationSweepFlow: Flow = sweepFlow({
   name: 'expiration_sweep',
   label: 'Contract Expiry',
@@ -83,8 +90,8 @@ export const ExpirationSweepFlow: Flow = sweepFlow({
           severity: 'warning',
           sourceObject: 'clm_contract',
           sourceId: ref('expired.id'),
-          title: 'Expired: {{ expired.title }}',
-          message: 'Contract {{ expired.contract_number }} ended on {{ expired.end_date }} and is now expired. It does not auto-renew. Start a renewal if the relationship continues, and hand it to the records desk for archiving.',
+          template: 'clm.contract_expired',
+          templateData: EXPIRED_DATA,
         },
       }),
     },
@@ -155,8 +162,8 @@ export const ExpirationSweepFlow: Flow = sweepFlow({
               topic: 'clm_contract_auto_renewed',
               sourceObject: 'clm_contract',
               sourceId: ref('renewal.id'),
-              title: 'Renewal drafted: {{ expired.title }}',
-              message: 'Contract {{ expired.contract_number }} auto-renews and its term ended on {{ expired.end_date }}, so a renewal draft has been created and linked back to it. Review the terms and submit it.',
+              template: 'clm.contract_auto_renewed',
+              templateData: EXPIRED_DATA,
             },
           },
           { id: 'auto_done', type: 'assignment', label: 'Row Done' },
