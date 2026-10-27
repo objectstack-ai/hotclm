@@ -9,7 +9,7 @@ import { Signature } from '../objects/signature.object.js';
 
 import { dayOffset, fixtureFile } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
-import { DEMO_USER, deviationDeciderOf, titleOfIndex, versionFilerOf } from './keys.js';
+import { DEMO_USER, deviationDeciderOf, reviewerOf, titleOfIndex, versionFilerOf } from './keys.js';
 import { CONTRACT_PLAN, DEVIATION_PLAN, typeOf } from './plan-contracts.js';
 import { REVIEW_PLAN, SIGNATURE_PLAN, VERSION_PLAN } from './plan-children.js';
 import { contactEmailFor } from './plan.js';
@@ -18,34 +18,16 @@ import { contactEmailFor } from './plan.js';
  * What negotiation leaves behind: 300 contract versions, 60 reviews, 25
  * deviations and 30 signature rounds (DESIGN.md §10).
  *
- * ## `clm_review.reviewer` is why `pnpm demo` boots twice
+ * ## `clm_review.reviewer` names the desk that decides the review
  *
  * `reviewer` is `required: true` and is a `user` reference the loader resolves
- * against `sys_user.name`. The declarative seed runs BEFORE the dev admin is
- * minted — measured on 17.3.0: the seed's last write lands at T, the admin
- * account is created at T+1.8s — so on a first boot the name resolves to
- * nothing, the loader defers the column, and the engine refuses the row:
- *
- *     WARN  [SeedLoader] clm_review.reviewer is `required: true`, but record #1
- *           defers it to pass 2: 'Dev Admin' names no sys_user that exists yet.
- *     ERROR [SeedLoader] Failed to write clm_review record #1: Reviewer is required
- *
- * DESIGN.md §10 forbids seeding users, so the fixture cannot supply one. What
- * it can do is arrange for the account to already exist, which is what
- * `scripts/demo.mjs` does: a quiet priming boot with the seed OFF mints the
- * dev admin and founds the organization, then the real boot seeds against a
- * database where `Dev Admin` resolves in pass 1. Measured on the same
- * database: 13 ok / 4 errors on the first boot became 14 ok / 2 errors on the
- * second, with the review row landing and its `display_name` mirror reading
- * "Finance · Dev Admin".
- *
- * Every seeded reviewer is therefore the demo account itself. That was the
- * honest choice while it was the only user in the database. Since #28
- * (PR #171) the demo staff — Legal Counsel 1 and 2 among them — exist before
- * the seed runs, so the constraint above no longer forces the dev admin; which
- * account each review STAGE should name (legal, finance, compliance,
- * business) is open and not decided here, and the README tells the evaluator
- * to reassign a review to put it on a lawyer's desk.
+ * against `sys_user.name`, so a name no account carries costs the whole row.
+ * Until #186 every review named the dev admin for that reason: it was the only
+ * account at seed time, and `scripts/demo.mjs` primed it and checked its name
+ * before the demo boot seeded anything. Since #28 (PR #171) the demo staff
+ * (`demoStaff`) are created by the platform on the demo boot before the seed
+ * runs, so each review is dealt to the person whose stage it is —
+ * {@link reviewerOf} carries the rule and where it bends.
  */
 
 /**
@@ -88,12 +70,21 @@ export const contractVersionSeed = defineSeed(ContractVersion, {
   }),
 });
 
+/**
+ * 60 reviews, matched on `(contract, stage)`.
+ *
+ * `reviewer` is NOT `applyOn: 'create'`: like `legal_owner` and `owner_id`
+ * (`contract.seed.ts`) it is how the book is dealt to the demo staff, so a
+ * re-run re-deals it — which is also what moves the reviews of a database
+ * seeded before #186 off the dev admin. `review_display_name` re-stamps the
+ * `"<stage> · <reviewer>"` mirror on that write.
+ */
 export const reviewSeed = defineSeed(Review, {
   externalId: ['contract', 'stage'],
   mode: 'upsert',
   records: REVIEW_PLAN.map((review) => ({
     contract: titleOfIndex(review.contractIndex),
-    reviewer: DEMO_USER,
+    reviewer: reviewerOf(review),
     stage: review.stage,
     decision: review.decision,
     risk_level_assessed: review.riskLevelAssessed,
