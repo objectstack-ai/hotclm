@@ -1,4 +1,3 @@
-import { expression } from '@objectstack/spec';
 import type { Flow, FlowNode } from '@objectstack/spec/automation';
 import { HAS_RECIPIENT, NO_RECIPIENT, SWEEP_LIMIT, sweepFlow } from './_daily-sweep.js';
 import { must, ref } from './_values.js';
@@ -264,29 +263,19 @@ export const RenewalStartFlow: Flow = {
     { id: 'decide_existing', type: 'decision', label: 'Already Renewed?' },
     {
       id: 'refuse_existing',
-      type: 'script',
+      type: 'end',
       label: 'Already Renewed',
+      // Not a silent completion: pressing the button twice must say what
+      // happened, and the run must not report a draft it did not make. A
+      // refused `end` is the platform's own answer to that: the run records
+      // `refused` with this sentence rendered against its variables, the
+      // action's "Renewal draft created." is suppressed, and the console shows
+      // the sentence alone (objectstack#15788; the zh-CN text is the
+      // `flows.renewal_start.refusals.refuse_existing.message` key, objectstack#22450).
+      // This branch runs only once `existingRenewal` matched a row.
       config: {
-        // Not a silent completion: pressing the button twice must say what
-        // happened, and the run must not report a draft it did not make.
-        //
-        // This was authored as an `end` node with `outcome: 'refused'` — the
-        // shape the spec declares — and MEASURED inert on the pinned 17.4.0
-        // runtime (`objectstack-ai/objectstack#15788`, open): the second press
-        // recorded `status: "completed"` and
-        // answered HTTP 200 with the action's own "Renewal draft created."
-        // while creating nothing. `refuseBackfill` carries the full reading;
-        // the working idiom on this version is the throwing `script` node
-        // `contract_intake` already uses, so that is what both flows use.
-        function: 'clm_backfill_refuse',
-        inputs: {
-          // A value slot, so the sentence is a CEL string: no `{{ }}` hole
-          // here. This branch runs only once `existingRenewal` matched a row.
-          message: expression(
-            '"This contract already has a renewal draft (" + string(existingRenewal.contract_number) + "). Open that one instead of starting a second."',
-          ),
-          code: 'INVALID_STATE',
-        },
+        outcome: 'refused',
+        message: 'This contract already has a renewal draft ({{ existingRenewal.contract_number }}). Open that one instead of starting a second.',
       },
     },
     {
@@ -349,9 +338,6 @@ export const RenewalStartFlow: Flow = {
     },
     { id: 'r6', source: 'compute_draft', target: 'create_draft', type: 'default' },
     { id: 'r7', source: 'create_draft', target: 'end', type: 'default' },
-    // Never traversed — `clm_backfill_refuse` throws. Declared so the refusal
-    // node is not a dangling one, as `contract_intake` declares its four.
-    { id: 'r8', source: 'refuse_existing', target: 'end', type: 'default' },
   ],
 };
 
