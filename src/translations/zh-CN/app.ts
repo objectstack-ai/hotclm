@@ -196,7 +196,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         approval_turnaround: {
           title: '平均审批周转天数（本月）',
-          description: '本月批准的合同从提交到批准平均用了多少天，与上个月对比。',
+          description: '本月批准的合同从提交到批准平均用了多少天，与紧挨在前、天数相同的一段时间对比。',
         },
         stage_funnel: {
           title: '各阶段合同数',

@@ -235,16 +235,28 @@ export const LegalDashboard: Dashboard = {
        * `$gte` alone comes back "compareTo needs a dated window to shift". A
        * bounded window is not a `granularity` bucket, so the duration measure
        * is served by the native-SQL strategy (a bucketed one would be refused).
+       *
+       * `previousPeriod` is the EQUAL-LENGTH window immediately before, as the
+       * platform documents it — not the previous calendar month. Measured on
+       * 2026-10-27: the October window [10-01, 10-31] was compared with
+       * [08-31, 09-30], so August 31st's approval was in the comparison. The
+       * description says "the equal-length period", not "last month", for
+       * that reason.
        */
       id: 'approval_turnaround',
       title: 'Avg Days to Approval (This Month)',
-      description: 'Average days from submission to approval, for contracts approved this month, compared with last month.',
+      description: 'Average days from submission to approval, for contracts approved this month, compared with the equal-length period just before it.',
       type: 'metric',
       dataset: 'contract_cycle_time',
       values: ['avg_days_to_approval'],
       filter: { approved_at: { $gte: '{current_month_start}', $lte: '{current_month_end}' } },
       compareTo: { kind: 'previousPeriod' },
-      colorVariant: 'success',
+      // No `colorVariant`: for a duration, a bigger number is the WORSE one,
+      // so the success green the throughput count carried would praise a
+      // slowdown. ⚠️ The delta beside it is still drawn green when it rises:
+      // the renderer colours "up" emerald for every measure and the platform
+      // has no key to say lower-is-better (measured: "↑ 23%" in green for a
+      // turnaround that got 23% longer).
       layout: { x: 0, y: 2, w: 4, h: 4 },
     },
     {

@@ -196,7 +196,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         approval_turnaround: {
           title: 'Avg Days to Approval (This Month)',
-          description: 'Average days from submission to approval, for contracts approved this month, compared with last month.',
+          description: 'Average days from submission to approval, for contracts approved this month, compared with the equal-length period just before it.',
         },
         stage_funnel: {
           title: 'Pipeline by Stage',
