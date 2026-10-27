@@ -16,6 +16,7 @@ import {
   SIGNING_ENTITIES,
   TERMINATION_REASONS,
   TITLE_QUALIFIERS,
+  VERSION_NOTES,
 } from './prose.js';
 
 /**
@@ -44,4 +45,5 @@ export const EN: DemoStrings = {
   deviationJustifications: DEVIATION_JUSTIFICATIONS,
   terminationReasons: TERMINATION_REASONS,
   jurisdictions: JURISDICTIONS,
+  versionNotes: VERSION_NOTES,
 };

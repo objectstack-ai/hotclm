@@ -1,5 +1,7 @@
 // Copyright (c) 2026 ObjectStack. Licensed under the Apache-2.0 license.
 
+import type { DemoStrings } from '../strings.js';
+
 /**
  * The English prose pools — the sentences the generators draw on so that six
  * hundred child rows read like a working contract database rather than one
@@ -160,3 +162,13 @@ export const JURISDICTIONS: readonly string[] & { length: 3 } = [
   'Courts of England and Wales, London',
   'Landgericht Frankfurt am Main',
 ] as const;
+
+/** `clm_contract_version.notes`, by kind (`../strings.ts`). */
+export const VERSION_NOTES: DemoStrings['versionNotes'] = {
+  draft: 'First draft, prepared by the requesting team.',
+  internal_redline: 'Our redline in reply, sent to the counterparty.',
+  counterparty_redline: "The counterparty's markup, received by email and filed by legal.",
+  clean: 'Clean copy with every agreed change accepted — the text that goes for signature.',
+  final_signed_round: 'Executed copy filed from the completed signature round.',
+  final_signed_backfill: 'Executed copy supplied with the backfill.',
+};

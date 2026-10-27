@@ -107,6 +107,20 @@ export interface DemoStrings {
    * while the seed reported success for everything else.
    */
   readonly terminationReasons: Strings<4>;
-  /** Version-negotiation notes, kept for the day versions can be seeded. */
+  /** Court or arbitral seat, paired with the three governing laws in `plan.ts`. */
   readonly jurisdictions: Strings<3>;
+  /**
+   * `clm_contract_version.notes`, by what the version is — "what changed in
+   * this version, for the reviewer". The two executed-copy notes say what F7
+   * (a completed signature round) and F16 (a backfill) write on the version
+   * they file, so a seeded executed copy reads like one those flows filed.
+   */
+  readonly versionNotes: {
+    readonly draft: string;
+    readonly internal_redline: string;
+    readonly counterparty_redline: string;
+    readonly clean: string;
+    readonly final_signed_round: string;
+    readonly final_signed_backfill: string;
+  };
 }

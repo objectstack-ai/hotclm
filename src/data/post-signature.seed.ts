@@ -5,7 +5,7 @@ import { defineSeed } from '@objectstack/spec/data';
 import { Obligation } from '../objects/obligation.object.js';
 import { PaymentPlan } from '../objects/payment-plan.object.js';
 
-import { assertUniqueKeys, dayOffset } from './_shared.js';
+import { assertUniqueKeys, dayOffset, fixtureFile } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
 import { obligationOwnerOf, titleOfIndex } from './keys.js';
 import { OBLIGATION_PLAN, PAYMENT_PLAN } from './plan-children.js';
@@ -39,6 +39,10 @@ const obligationRecords = OBLIGATION_PLAN.map((obligation) => ({
   owner: obligationOwnerOf(obligation),
   status: obligation.status,
   completed_at: obligation.completedAt === null ? null : dayOffset(obligation.completedAt),
+  // Proof of performance on the 90 obligations that are done, and on no
+  // other: an open obligation has nothing to prove yet, and a waived one was
+  // let go rather than performed.
+  evidence: obligation.status === 'done' ? fixtureFile('evidence', 'evidence.pdf') : null,
   notes: null,
 }));
 
@@ -69,6 +73,10 @@ assertUniqueKeys(
  * `payment_plan_state_machine` on `partial` / `paid`, in the same write as the
  * amount and invoice the finance desk records. Left `always`, a re-run would
  * blank the receipt of an instalment somebody has since paid.
+ *
+ * `evidence` is the obligation's half of that receipt: whoever marks an
+ * obligation done attaches the proof, so a re-run that wrote the fixture's
+ * empty value back would delete it.
  */
 const CREATE_ONLY = { applyOn: 'create' } as const;
 
@@ -78,6 +86,7 @@ export const obligationSeed = defineSeed(Obligation, {
   columns: {
     status: CREATE_ONLY,
     completed_at: CREATE_ONLY,
+    evidence: CREATE_ONLY,
   },
   records: obligationRecords,
 });

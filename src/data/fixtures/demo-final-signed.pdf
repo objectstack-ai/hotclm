@@ -1,0 +1,74 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 821 >>
+stream
+BT
+72 770 Td
+/F2 20 Tf
+(HotCLM demo document) Tj
+0 -18 Td
+/F1 12 Tf
+(NOT A REAL CONTRACT. This file was generated for the HotCLM demo dataset.) Tj
+0 -18 Td
+/F1 12 Tf
+0 -20 Td
+/F2 14 Tf
+(Contract version - Final signed copy) Tj
+0 -18 Td
+/F1 12 Tf
+0 -17 Td
+/F1 11 Tf
+(Stands in for the executed copy, signed by both sides. Filed as the) Tj
+0 -17 Td
+/F1 11 Tf
+(final signed version and as the executed copy of the signature round.) Tj
+0 -18 Td
+/F1 12 Tf
+0 -16 Td
+/F1 10 Tf
+(It carries no contract terms, names no party and bears no signature. Every seeded) Tj
+0 -16 Td
+/F1 10 Tf
+(row of this kind holds its own copy of this same file; the seed stores one per row.) Tj
+0 -16 Td
+/F1 10 Tf
+0 -15 Td
+/F1 9 Tf
+(Shipped in the HotCLM repository under src/data/fixtures/ \(Apache-2.0\).) Tj
+ET
+0.8 0.1 0.1 RG 2 w 54 54 504 734 re S
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+7 0 obj
+<< /Title (HotCLM demo document - Contract version - Final signed copy) /Producer (HotCLM demo fixture) >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000001123 00000 n 
+0000001220 00000 n 
+0000001322 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R /Info 7 0 R >>
+startxref
+1444
+%%EOF
