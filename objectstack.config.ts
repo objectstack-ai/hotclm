@@ -7,7 +7,7 @@ import { allEmailTemplates } from './src/email-templates/index.js';
 import * as profiles from './src/profiles/index.js';
 import { CLM_POSITION, ClmPositions, ClmSharingRules } from './src/sharing/index.js';
 import { clmSeeds, demoSeedRequested } from './src/data/index.js';
-import { CONTRACT_OWNERS, LEGAL_OWNERS } from './src/data/keys.js';
+import { CONTRACT_OWNERS, FINANCE_CONTROLLER, LEGAL_HEAD, LEGAL_OWNERS } from './src/data/keys.js';
 import * as apps from './src/apps/index.js';
 import * as datasets from './src/datasets/index.js';
 import * as dashboards from './src/dashboards/index.js';
@@ -272,15 +272,19 @@ export default defineStack({
   // password (`os dev --admin-password`, default `admin123`) — the platform
   // refuses a `password` key, so no credential is committed here.
   //
-  // - The business requesters and the two counsel are named by the SAME
-  //   constants the fixture deals rows by (`src/data/keys.ts`), so a name here
+  // - Every account the fixture deals rows to BY NAME is named here by the
+  //   SAME constant the fixture uses (`src/data/keys.ts`), so a name here
   //   cannot drift from the `owner_id` / `legal_owner` / `owner` /
-  //   `decided_by` values that resolve against it. A requester holds no
-  //   position: `clm_requester` is every member's default set (`isDefault`).
-  // - The other six positions are staffed once each, so every rung of the
+  //   `decided_by` / `reviewer` values that resolve against it: the business
+  //   requesters, the two counsel, the head of legal and the finance
+  //   controller. `reviewer` is `required`, so a drift there would not land
+  //   NULL — the loader would drop every review dealt to the account and the
+  //   seed would still report success. A requester holds no position:
+  //   `clm_requester` is every member's default set (`isDefault`).
+  // - The other positions are staffed once each, so every rung of the
   //   approval ladder and every audience group of §05 has someone to sign in
-  //   as. The fixture names none of them; they are reached through the
-  //   position, not by name.
+  //   as. The fixture names none of the remaining four; they are reached
+  //   through the position, not by name.
   //
   // ⚠️ A line manager cannot be declared: a `demoStaff` entry carries a
   // `position` and `permissionSets` and nothing else, and `sys_user.manager_id`
@@ -290,8 +294,8 @@ export default defineStack({
     ? [
         ...CONTRACT_OWNERS.map((name, i) => ({ name, email: `requester${i + 1}@example.com` })),
         ...LEGAL_OWNERS.map((name, i) => ({ name, email: `counsel${i + 1}@example.com`, position: CLM_POSITION.legalCounsel })),
-        { name: 'Head of Legal',      email: 'legal.head@example.com', position: CLM_POSITION.legalHead },
-        { name: 'Finance Controller', email: 'finance@example.com',    position: CLM_POSITION.financeController },
+        { name: LEGAL_HEAD,           email: 'legal.head@example.com', position: CLM_POSITION.legalHead },
+        { name: FINANCE_CONTROLLER,   email: 'finance@example.com',    position: CLM_POSITION.financeController },
         { name: 'Executive',          email: 'executive@example.com',  position: CLM_POSITION.executive },
         { name: 'General Manager',    email: 'gm@example.com',         position: CLM_POSITION.generalManager },
         { name: 'Records Manager',    email: 'records@example.com',    position: CLM_POSITION.recordsManager },
