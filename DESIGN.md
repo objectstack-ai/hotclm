@@ -164,13 +164,14 @@ Position 扁平，七个：`clm_legal_counsel`（法务经办）· `clm_legal_he
 Permission set 五个：`clm_requester`（所有员工默认）· `clm_legal` · `clm_finance` · `clm_records` · `clm_admin`。
 
 导航分区的门控能力由权限集 `systemPermissions` 授予：`clm_requester.access` · `clm_legal.access` · `clm_finance.access` · `clm_records.access` · `clm_admin.access`。
-动作门控同时在 UI 与服务端生效（ADR-0066 D4）：`approve_contract` · `execute_contract` · `archive_contract` · `terminate_contract` · `manage_clauses` · `manage_approval_rules`。
+动作门控同时在 UI 与服务端生效（ADR-0066 D4）：`approve_contract` · `execute_contract` · `backfill_contract` · `archive_contract` · `terminate_contract` · `manage_clauses` · `manage_approval_rules`。
 
 | 动作门控 | 持有者 |
 |---|---|
 | `manage_approval_rules` | 管理员 |
 | `manage_clauses` | 法务、管理员 |
 | `execute_contract` · `archive_contract` | 档案岗、管理员 |
+| `backfill_contract` | 档案岗、法务、管理员（F16 补录已签合同；同一清单声明在动作与流程 `executed_upload` 的 `requiredPermissions` 上） |
 | `terminate_contract` | 法务、管理员 |
 | `approve_contract` | 发起人、法务、财务、管理员（F5 第一级是直接主管，主管只持发起人权限集；持令牌只是能点按钮，能审批哪一份由审批流程指派） |
 
@@ -249,7 +250,7 @@ RLS 谓词不能跨对象（ADR-0055），所以「同部门可见」无法用 `
 | F12 | `renewal_notice` | 定时（日） | `active` 且 `end_date - renewal_notice_days <= today`：置 `is_expiring`，提醒业务承办与法务；动作「发起续签」预填新 draft |
 | F13 | `expiration_sweep` | 定时（日） | `active` 且 `end_date < today`：非自动续签置 `expired`；自动续签则建续签 draft 并提醒 |
 | F14 | `contract_archive` | hook beforeUpdate | 终态合同由档案岗填 `archive_no` 后置 `archived_at`，此后除 `summary` 外只读 |
-| F16 | `executed_upload` | 动作（补录已签合同，§13 Q8） | 档案或法务岗「补录已签合同」：一步填核心字段、相对方、执行副本与签署日期，合同直接进入 `active` 并置 `is_backfilled`，跳过审查与审批但全部留审计；仅 `clm_records.access` 与 `clm_legal.access` 可用 |
+| F16 | `executed_upload` | 动作（补录已签合同，§13 Q8） | 档案或法务岗「补录已签合同」：一步填核心字段、相对方、执行副本与签署日期，合同直接进入 `active` 并置 `is_backfilled`，跳过审查与审批但全部留审计；持有 `backfill_contract`（档案、法务、管理员）者可用；对话框必填业务承办人 `owner_id`，`legal_owner` 仍由法务在记录上指定 |
 | F15 | `crm_handoff` | record_change（`crm_contract` 进入 `in_approval`） | **仅 `CLM_COMPOSITION=with-hotcrm` 装配时注册**：建 `clm_contract`（direction `sales`，party 自 `crm_account` 查找或新建，金额期限预填，`crm_contract` 回链） |
 
 定时流与对审批结果做出反应的 record_change 流一律 `runAs: 'system'` 并注明理由（审批服务的镜像写不带用户，默认身份会被拒绝）。
