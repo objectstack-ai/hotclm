@@ -271,7 +271,7 @@ export const RenewalStartFlow: Flow = {
       // `refused` with this sentence rendered against its variables, the
       // action's "Renewal draft created." is suppressed, and the console shows
       // the sentence alone (objectstack#15788; the zh-CN text is the
-      // `flows.renewal_start.refusals.refuse_existing.message` key, #22450).
+      // `flows.renewal_start.refusals.refuse_existing.message` key, objectstack#22450).
       // This branch runs only once `existingRenewal` matched a row.
       config: {
         outcome: 'refused',

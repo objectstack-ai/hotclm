@@ -58,9 +58,11 @@ import { must, ref } from './_values.js';
  *    surface and `POST /api/v1/actions/...` are actually built from; every
  *    flow input is an `isInput` variable and a declared action param, so a
  *    caller that supplies them all completes the run with no screen.
- *  - Refusals (`clm_intake_refuse`, registered under `functions`) FAIL the run
- *    with the message: a paused "refusal screen" would leave a headless run
- *    parked forever, and the console shows a failed run's error as the toast.
+ *  - Refusals are `end` nodes declaring `outcome: 'refused'` with the sentence
+ *    the requester reads (objectstack#15788): the run ends `refused`, never
+ *    parked, so a headless caller is answered at once; the console shows the
+ *    sentence alone, with no success toast. Each one sits before any screen
+ *    and before the first write, so a refused launch leaves nothing behind.
  *  - The first version's file has two headless spellings — `draft_from_template`
  *    (the type's `template_file` becomes v1, kind `draft`) or a pre-uploaded
  *    `first_version_file` id — and one interactive one: an OBJECT-FORM screen
@@ -99,8 +101,9 @@ import { must, ref } from './_values.js';
  *    create still be refused, it fails ATOMICALLY: `create_party` runs before
  *    any other write, so the run leaves nothing behind.
  *
- * Flow copy is English-only (the source language, DESIGN.md §01); a flow has
- * no entry in the translation bundles.
+ * Flow copy is authored in English (the source language, DESIGN.md §01); the
+ * zh-CN text of each screen and each refusal is its key under
+ * `flows.contract_intake` in `src/translations/zh-CN/flows.ts`.
  */
 
 interface SelectLike {
@@ -121,27 +124,6 @@ const INTAKE_FIELD_NAMES = ['governing_law', 'payment_terms', 'confidentiality_t
 
 /** Bare CEL over the screen's own fields: shown only when the type lists the field. */
 const askedFor = (field: (typeof INTAKE_FIELD_NAMES)[number]): string => `"${field}" in intakeFields`;
-
-/**
- * The one registered function of the flow: fail the run with a structured
- * refusal that names what was refused. A `script` node is the only node that
- * can end a run with a computed message.
- */
-export function refuseIntake({ input }: { input: Record<string, unknown> }): never {
-  const kind = typeof input.kind === 'string' ? input.kind : 'invalid';
-  const name = typeof input.name === 'string' && input.name ? input.name : 'the counterparty';
-  const note = typeof input.note === 'string' && input.note.trim() ? input.note.trim() : '';
-  const MESSAGES: Record<string, string> = {
-    no_type: 'A contract type is required to launch a contract.',
-    type_unavailable: 'The chosen contract type does not exist or is inactive; pick an active type.',
-    party_missing: `Counterparty ${name} does not exist.`,
-    party_blocked: `Counterparty ${name} is blocked and cannot be put on a new contract${note ? `: ${note}` : '.'}`,
-  };
-  const err = new Error(MESSAGES[kind] ?? 'The contract cannot be launched.') as Error & { code: string; status: number };
-  err.code = kind === 'party_missing' ? 'INVALID_REFERENCE' : 'INVALID_STATE';
-  err.status = 422;
-  throw err;
-}
 
 // Decided ONCE, before any screen: a headless caller binds `title` up front,
 // a person answers it on the core screen — so after that screen the test
@@ -198,8 +180,8 @@ export const ContractIntakeFlow: Flow = {
     // ── Step 1: the type decides everything after it ─────────────────────
     { id: 'decision_type_given', type: 'decision', label: 'Type Chosen?' },
     {
-      id: 'refuse_no_type', type: 'script', label: 'Refuse: No Type',
-      config: { function: 'clm_intake_refuse', inputs: { kind: 'no_type' } },
+      id: 'refuse_no_type', type: 'end', label: 'Refuse: No Type',
+      config: { outcome: 'refused', message: 'A contract type is required to launch a contract.' },
     },
     {
       id: 'get_type', type: 'get_record', label: 'Load Contract Type',
@@ -207,8 +189,8 @@ export const ContractIntakeFlow: Flow = {
     },
     { id: 'decision_type_ok', type: 'decision', label: 'Type Active?' },
     {
-      id: 'refuse_type', type: 'script', label: 'Refuse: Type Unavailable',
-      config: { function: 'clm_intake_refuse', inputs: { kind: 'type_unavailable' } },
+      id: 'refuse_type', type: 'end', label: 'Refuse: Type Unavailable',
+      config: { outcome: 'refused', message: 'The chosen contract type does not exist or is inactive; pick an active type.' },
     },
     // Both branches bind `templateAvailable`, so no later read meets an
     // unbound variable (the house rule of the flow-variable conditions table
@@ -316,17 +298,23 @@ export const ContractIntakeFlow: Flow = {
       id: 'get_party', type: 'get_record', label: 'Load Counterparty',
       config: { objectName: 'clm_party', filter: { id: must('party') }, outputVariable: 'partyRecord' },
     },
-    // The blocked-party refusal, and its two neighbours: a party that does not
-    // resolve is refused too, and a clean one is used. The three edge
-    // predicates partition every record shape.
+    // The blocked-party refusal, and its neighbours: a party that does not
+    // resolve is refused too, and a clean one is used. A blocked party's
+    // refusal quotes legal's risk note when there is one, so it has two ends —
+    // a `{{ }}` hole cannot drop its own punctuation. The four edge predicates
+    // partition every record shape.
     { id: 'decision_party_state', type: 'decision', label: 'Counterparty Blocked?' },
     {
-      id: 'refuse_party_missing', type: 'script', label: 'Refuse: Counterparty Missing',
-      config: { function: 'clm_intake_refuse', inputs: { kind: 'party_missing', name: ref('party') } },
+      id: 'refuse_party_missing', type: 'end', label: 'Refuse: Counterparty Missing',
+      config: { outcome: 'refused', message: 'Counterparty {{ party }} does not exist.' },
     },
     {
-      id: 'refuse_blocked', type: 'script', label: 'Refuse: Counterparty Blocked',
-      config: { function: 'clm_intake_refuse', inputs: { kind: 'party_blocked', name: ref('partyRecord.name'), note: ref('partyRecord.risk_note') } },
+      id: 'refuse_blocked', type: 'end', label: 'Refuse: Counterparty Blocked',
+      config: { outcome: 'refused', message: 'Counterparty {{ partyRecord.name }} is blocked and cannot be put on a new contract: {{ partyRecord.risk_note }}' },
+    },
+    {
+      id: 'refuse_blocked_no_note', type: 'end', label: 'Refuse: Counterparty Blocked (No Note)',
+      config: { outcome: 'refused', message: 'Counterparty {{ partyRecord.name }} is blocked and cannot be put on a new contract.' },
     },
     { id: 'use_picked_party', type: 'assignment', label: 'Use Picked Counterparty', config: { assignments: { partyId: ref('partyRecord.id') } } },
 
@@ -487,7 +475,8 @@ export const ContractIntakeFlow: Flow = {
     { id: 'e18b', source: 'decision_party_precheck', target: 'decision_core_screen', type: 'default', condition: P`!has(vars.party) || vars.party == null || vars.party == ""`, label: 'Not picked' },
     { id: 'e23', source: 'get_party', target: 'decision_party_state', type: 'default' },
     { id: 'e24', source: 'decision_party_state', target: 'refuse_party_missing', type: 'default', condition: P`vars.partyRecord == null`, label: 'Missing' },
-    { id: 'e25', source: 'decision_party_state', target: 'refuse_blocked', type: 'default', condition: P`vars.partyRecord != null && has(vars.partyRecord.risk_flag) && vars.partyRecord.risk_flag == "blocked"`, label: 'Blocked' },
+    { id: 'e25', source: 'decision_party_state', target: 'refuse_blocked', type: 'default', condition: P`vars.partyRecord != null && has(vars.partyRecord.risk_flag) && vars.partyRecord.risk_flag == "blocked" && has(vars.partyRecord.risk_note) && vars.partyRecord.risk_note != null && vars.partyRecord.risk_note != ""`, label: 'Blocked, with a note' },
+    { id: 'e25b', source: 'decision_party_state', target: 'refuse_blocked_no_note', type: 'default', condition: P`vars.partyRecord != null && has(vars.partyRecord.risk_flag) && vars.partyRecord.risk_flag == "blocked" && (!has(vars.partyRecord.risk_note) || vars.partyRecord.risk_note == null || vars.partyRecord.risk_note == "")`, label: 'Blocked' },
     { id: 'e26', source: 'decision_party_state', target: 'use_picked_party', type: 'default', condition: P`vars.partyRecord != null && (!has(vars.partyRecord.risk_flag) || vars.partyRecord.risk_flag != "blocked")`, label: 'Clear' },
     { id: 'e28', source: 'use_picked_party', target: 'decision_core_screen', type: 'default' },
     { id: 'e27a', source: 'decision_core_screen', target: 'screen_core', type: 'default', condition: INTERACTIVE, label: 'Interactive' },
@@ -519,12 +508,5 @@ export const ContractIntakeFlow: Flow = {
     { id: 'e45', source: 'decision_submit', target: 'submit_contract', type: 'default', condition: P`vars.submit_now == true`, label: 'Submit' },
     { id: 'e46', source: 'decision_submit', target: 'end', type: 'default', condition: P`vars.submit_now != true`, label: 'Keep draft' },
     { id: 'e47', source: 'submit_contract', target: 'end', type: 'default' },
-    // Every refusal ends the run; a script node that throws fails it with
-    // its message, so these edges are only ever reached by a function that
-    // returned — which `clm_intake_refuse` never does.
-    { id: 'e48', source: 'refuse_no_type', target: 'end', type: 'default' },
-    { id: 'e49', source: 'refuse_type', target: 'end', type: 'default' },
-    { id: 'e50', source: 'refuse_party_missing', target: 'end', type: 'default' },
-    { id: 'e51', source: 'refuse_blocked', target: 'end', type: 'default' },
   ],
 };

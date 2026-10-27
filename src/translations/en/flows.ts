@@ -76,6 +76,21 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
           },
         },
       },
+      refusals: {
+        refuse_no_type: { message: 'A contract type is required to launch a contract.' },
+        refuse_type: { message: 'The chosen contract type does not exist or is inactive; pick an active type.' },
+        refuse_party_missing: { message: 'Counterparty {{ party }} does not exist.' },
+        refuse_blocked: { message: 'Counterparty {{ partyRecord.name }} is blocked and cannot be put on a new contract: {{ partyRecord.risk_note }}' },
+        refuse_blocked_no_note: { message: 'Counterparty {{ partyRecord.name }} is blocked and cannot be put on a new contract.' },
+      },
+    },
+    executed_upload: {
+      refusals: {
+        refuse_date_missing: { message: 'A signing date is required: a backfilled contract is one that was already executed, and the date it was executed is the fact being recorded.' },
+        refuse_date_invalid: { message: 'The signing date "{{ signed_date }}" is not a date.' },
+        refuse_date_future: { message: 'The signing date is in the future. A backfill records a contract that has already been executed.' },
+        refuse_party: { message: 'That counterparty cannot be used: it is either missing or flagged blocked. A contract with a blocked counterparty is not recorded, even retrospectively.' },
+      },
     },
     renewal_start: {
       refusals: {

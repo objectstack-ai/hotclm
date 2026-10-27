@@ -58,18 +58,34 @@ import { must, ref } from './_values.js';
  * action that collected a file and discarded it would be the "capability the
  * runtime does not deliver" AGENTS.md forbids. `version_count` then reads 1,
  * which is true.
+ *
+ * ## Refusals are refused `end` nodes
+ *
+ * A backfill the flow will not record ends at an `end` node declaring
+ * `outcome: 'refused'` with the sentence the clerk reads
+ * (objectstack#15788). The run records `refused`, not `failed`, the invoking
+ * action's "Executed contract recorded." is suppressed, and the console shows
+ * the sentence alone. Each sentence's other-language text is the
+ * `flows.executed_upload.refusals.<node_id>.message` key
+ * (objectstack#22450), which is why the signing date has three refusing ends
+ * rather than one end echoing a computed string: a sentence assembled in a
+ * function has no key to translate it. Every refusal sits before the first
+ * write, so a refused run writes nothing.
  */
+
+/** Why a signing date cannot be recorded: the decision below routes each to its own refusal. */
+export type SigningDateProblem = 'missing' | 'invalid' | 'future';
 
 /** Parse a `YYYY-MM-DD` (or ISO) signing date to a UTC instant, or null. */
 export function backfillStamps({ input }: { input: Record<string, unknown> }): {
   signedAt: string | null;
   ok: boolean;
-  problem: string | null;
+  problem: SigningDateProblem | null;
 } {
   const raw = input.signedDate;
   const text = typeof raw === 'string' ? raw.trim() : raw instanceof Date ? raw.toISOString() : '';
   if (!text) {
-    return { signedAt: null, ok: false, problem: 'A signing date is required: a backfilled contract is one that was already executed, and the date it was executed is the fact being recorded.' };
+    return { signedAt: null, ok: false, problem: 'missing' };
   }
   // A date-only value is midday UTC rather than midnight, so the calendar day
   // survives a reader in any timezone — the same trap the `date` vs `datetime`
@@ -77,52 +93,20 @@ export function backfillStamps({ input }: { input: Record<string, unknown> }): {
   const iso = /^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T12:00:00.000Z` : text;
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) {
-    return { signedAt: null, ok: false, problem: `The signing date "${text}" is not a date.` };
+    return { signedAt: null, ok: false, problem: 'invalid' };
   }
   if (ms > Date.now()) {
-    return { signedAt: null, ok: false, problem: 'The signing date is in the future. A backfill records a contract that has already been executed.' };
+    return { signedAt: null, ok: false, problem: 'future' };
   }
   return { signedAt: new Date(ms).toISOString(), ok: true, problem: null };
 }
 
-/**
- * The refusal channel, and why it is a THROWING `script` node rather than an
- * `end` node carrying `outcome: 'refused'`.
- *
- * The spec declares that refusal contract (`EndConfigSchema`) and its own text
- * says the halves land in sequence: "this contract, then the engine's `end`
- * handling (stamping the outcome, persisting the rendered message), then the
- * runner." MEASURED on the pinned 17.4.0 runtime, the second half has not
- * landed: a run that took the refusing edge recorded `status: "completed"` in
- * `GET /api/v1/automation/executed_upload/runs`, carried no `refusalMessage`,
- * and the invoking action's `successMessage` was NOT suppressed — so a
- * backfill refused for a future signing date answered HTTP 200 with
- * "Executed contract recorded." while recording nothing. The guard protected
- * the data and lied to the clerk, which is precisely the dishonest capability
- * AGENTS.md forbids.
- *
- * The engine half is `objectstack-ai/objectstack#15788` — open, "lane 2 of the
- * #14945 ruling 2′" — so this is a platform gap already on the record, not one
- * to file again and not one to patch here (AGENTS.md: report, never patch).
- * When it lands, these two nodes can go back to being `end` nodes.
- *
- * `contract_intake` (F1) already refuses this way in this very directory —
- * `clm_intake_refuse` — because a `script` node is the only node that can end
- * a run with a message the caller actually receives. Same idiom, same
- * ADR-0112 envelope (`code` + `status`), so both flows refuse alike.
- */
-export function refuseBackfill({ input }: { input: Record<string, unknown> }): never {
-  const message = typeof input.message === 'string' && input.message.trim()
-    ? input.message.trim()
-    : 'This contract cannot be backfilled.';
-  const err = new Error(message) as Error & { code: string; status: number };
-  err.code = typeof input.code === 'string' && input.code ? input.code : 'INVALID_STATE';
-  err.status = 422;
-  throw err;
-}
-
 const DATE_OK = 'has(vars.stamps) && vars.stamps.ok == true';
-const DATE_BAD = '!has(vars.stamps) || vars.stamps.ok != true';
+// The three refusals partition the unusable dates; an unbound `stamps` is read
+// as a missing date.
+const DATE_MISSING = '!has(vars.stamps) || (vars.stamps.ok != true && vars.stamps.problem != "invalid" && vars.stamps.problem != "future")';
+const DATE_INVALID = 'has(vars.stamps) && vars.stamps.ok != true && vars.stamps.problem == "invalid"';
+const DATE_FUTURE = 'has(vars.stamps) && vars.stamps.ok != true && vars.stamps.problem == "future"';
 const PARTY_OK = 'has(vars.partyRecord) && vars.partyRecord != null && has(vars.partyRecord.id) && vars.partyRecord.risk_flag != "blocked"';
 const PARTY_BAD = '!has(vars.partyRecord) || vars.partyRecord == null || !has(vars.partyRecord.id) || vars.partyRecord.risk_flag == "blocked"';
 
@@ -171,13 +155,31 @@ export const ExecutedUploadFlow: Flow = {
       config: { function: 'clm_backfill_stamps', inputs: { signedDate: ref('signed_date') }, outputVariable: 'stamps' },
     },
     { id: 'decide_date', type: 'decision', label: 'Signing Date Usable?' },
+    // The three ways a signing date is refused, each the sentence the clerk
+    // reads (see the header for why there are three).
     {
-      id: 'refuse_date',
-      type: 'script',
-      label: 'Refuse — Signing Date',
-      // The message `check_date` computed, handed back to the caller. See
-      // `refuseBackfill` for why this is a throwing script and not an `end`.
-      config: { function: 'clm_backfill_refuse', inputs: { message: ref('stamps.problem'), code: 'VALIDATION_FAILED' } },
+      id: 'refuse_date_missing',
+      type: 'end',
+      label: 'Refuse — No Signing Date',
+      config: {
+        outcome: 'refused',
+        message: 'A signing date is required: a backfilled contract is one that was already executed, and the date it was executed is the fact being recorded.',
+      },
+    },
+    {
+      id: 'refuse_date_invalid',
+      type: 'end',
+      label: 'Refuse — Signing Date Unreadable',
+      config: { outcome: 'refused', message: 'The signing date "{{ signed_date }}" is not a date.' },
+    },
+    {
+      id: 'refuse_date_future',
+      type: 'end',
+      label: 'Refuse — Signing Date In The Future',
+      config: {
+        outcome: 'refused',
+        message: 'The signing date is in the future. A backfill records a contract that has already been executed.',
+      },
     },
 
     {
@@ -194,17 +196,14 @@ export const ExecutedUploadFlow: Flow = {
     { id: 'decide_party', type: 'decision', label: 'Counterparty Usable?' },
     {
       id: 'refuse_party',
-      type: 'script',
+      type: 'end',
       label: 'Refuse — Counterparty',
+      // The same refusal `draft → submitted` makes in `contract.hook.ts`,
+      // repeated here because the backfill never passes that guard: a blocked
+      // counterparty is blocked whichever door the contract came in.
       config: {
-        // The same refusal `draft → submitted` makes in `contract.hook.ts`,
-        // repeated here because the backfill never passes that guard: a
-        // blocked counterparty is blocked whichever door the contract came in.
-        function: 'clm_backfill_refuse',
-        inputs: {
-          message: 'That counterparty cannot be used: it is either missing or flagged blocked. A contract with a blocked counterparty is not recorded, even retrospectively.',
-          code: 'INVALID_REFERENCE',
-        },
+        outcome: 'refused',
+        message: 'That counterparty cannot be used: it is either missing or flagged blocked. A contract with a blocked counterparty is not recorded, even retrospectively.',
       },
     },
 
@@ -280,18 +279,14 @@ export const ExecutedUploadFlow: Flow = {
   edges: [
     { id: 'b1', source: 'start', target: 'check_date', type: 'default' },
     { id: 'b2', source: 'check_date', target: 'decide_date', type: 'default' },
-    { id: 'b3', source: 'decide_date', target: 'refuse_date', type: 'default', label: 'Unusable', condition: DATE_BAD },
+    { id: 'b3', source: 'decide_date', target: 'refuse_date_missing', type: 'default', label: 'Missing', condition: DATE_MISSING },
+    { id: 'b3a', source: 'decide_date', target: 'refuse_date_invalid', type: 'default', label: 'Not a date', condition: DATE_INVALID },
+    { id: 'b3b', source: 'decide_date', target: 'refuse_date_future', type: 'default', label: 'In the future', condition: DATE_FUTURE },
     { id: 'b4', source: 'decide_date', target: 'get_party', type: 'default', label: 'Usable', condition: DATE_OK },
     { id: 'b5', source: 'get_party', target: 'decide_party', type: 'default' },
     { id: 'b6', source: 'decide_party', target: 'refuse_party', type: 'default', label: 'Missing or blocked', condition: PARTY_BAD },
     { id: 'b7', source: 'decide_party', target: 'create_contract', type: 'default', label: 'Usable', condition: PARTY_OK },
     { id: 'b8', source: 'create_contract', target: 'file_executed_copy', type: 'default' },
     { id: 'b9', source: 'file_executed_copy', target: 'end', type: 'default' },
-
-    // Never traversed: `clm_backfill_refuse` throws, so the run ends at the
-    // refusal. The edges exist so the graph has no dangling node, exactly as
-    // `contract_intake` wires its four refusals.
-    { id: 'b10', source: 'refuse_date', target: 'end', type: 'default' },
-    { id: 'b11', source: 'refuse_party', target: 'end', type: 'default' },
   ],
 };

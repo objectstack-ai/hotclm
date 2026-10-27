@@ -76,6 +76,21 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
           },
         },
       },
+      refusals: {
+        refuse_no_type: { message: '发起合同必须先选择合同类型。' },
+        refuse_type: { message: '所选合同类型不存在或已停用，请选择一个启用中的类型。' },
+        refuse_party_missing: { message: '相对方 {{ party }} 不存在。' },
+        refuse_blocked: { message: '相对方 {{ partyRecord.name }} 已被标记为「禁止合作」，不能用于新合同：{{ partyRecord.risk_note }}' },
+        refuse_blocked_no_note: { message: '相对方 {{ partyRecord.name }} 已被标记为「禁止合作」，不能用于新合同。' },
+      },
+    },
+    executed_upload: {
+      refusals: {
+        refuse_date_missing: { message: '必须填写签署日期：补录的是已经签署的合同，签署日期正是要登记的事实。' },
+        refuse_date_invalid: { message: '签署日期「{{ signed_date }}」不是有效日期。' },
+        refuse_date_future: { message: '签署日期在未来。补录登记的是已经签署的合同。' },
+        refuse_party: { message: '这个相对方不能使用：它不存在，或已被标记为「禁止合作」。相对方禁止合作的合同不予登记，补录也不例外。' },
+      },
     },
     renewal_start: {
       refusals: {
