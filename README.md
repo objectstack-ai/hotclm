@@ -190,17 +190,29 @@ waiting on them and **我的合同 › Waiting on Me** lists them. A reminder se
 a request does arrive as a message; the missing one on opening is the
 platform's, not this app's.
 
-**On the open edition the rung-1 manager decides from the request alone.**
-The approval request shows the contract's fields, but its record link reads
-「无法打开此记录」: being the owner's manager grants no read. The read that
-would (`own_and_reports`, DESIGN.md §04 `contract_manager_reports`) is an
+**The rung-1 manager reads the contract while the request waits on them, and
+only then.** From @objectstack 18.2.0 the platform gives every person a pending
+step waits on a read-only view of the one record the request is about
+(upstream `objectstack-ai/objectstack#26180`); this app declares nothing for
+it. So a manager who holds no position at all opens the request from
+**我的合同 › Waiting on Me** and lands on the contract page itself, with
+**通过 / 拒绝** above it. Every tab opens: the overview, **版本** (the version's
+PDF opens), **审查与偏离**, **审批记录**, **履约与收付款**, **签署与归档** and **讨论**,
+and each review, deviation, obligation, signature round and version opens on
+its own page. Nothing can be changed: the page has no **编辑**, its **⋯** menu
+offers only 添加到收藏 and 分享, and a write through the API answers
+`403 PERMISSION_DENIED`.
+
+The read ends with the step. Once the manager approves or rejects, the contract,
+its child rows and its files are closed to them again — the page they decided
+on reads 「未找到记录」 straight away, which means the step is over, not that
+the record is gone. A contract of a report's that is not waiting on them (a
+draft, or one already past rung 1) stays closed too: on the open edition
+being the owner's manager grants no read. The scope that would
+(`own_and_reports`, DESIGN.md §04 `contract_manager_reports`) is an
 enterprise-edition hierarchy scope that the open edition resolves to
-owner-only, and a sharing rule cannot name "the owner's manager". Unless the
-manager's own position already reaches the contract — the executive on a
-contract stamped `route_executive`, say — its page, versions and reviews stay
-closed to them until the platform lets an approver read the record a step
-waits on (upstream `objectstack-ai/objectstack#26180`). The rungs after it are
-positions, and each reads the contracts it approves.
+owner-only. The rungs after rung 1 are positions, and each reads the contracts
+it approves.
 
 ### Assigning a position from a script
 
