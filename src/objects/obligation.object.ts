@@ -32,6 +32,19 @@ export const Obligation = ObjectSchema.create({
   // Access derives from the contract (ADR-0055): whoever can read the
   // contract reads its obligations, whoever can edit it edits them.
   sharingModel: 'controlled_by_parent',
+  // ...with one exception: the row's platform owner may update it while only
+  // READING the contract (ADR-0055 §3 amendment, platform 18.2). An
+  // obligation exists only under a signed contract, which a requester can no
+  // longer edit, so without this nobody without contract edit could ever act
+  // on one. Only a by-id update is opened: creating, deleting, and moving an
+  // obligation to another contract still need edit on the contract.
+  //
+  // ⚠️ The platform's owner is the injected `owner_id`, NOT the `owner` field
+  // below that 我负责的履约, F10 and `obligation_requester_own` key on. All
+  // 200 demo obligations carry `owner_id` = the dev admin, and F9 inserts its
+  // renewal obligation as a system write, so on its own this admits no
+  // requester (measured on 18.2.0, issue #64).
+  sharing: { controlledByParent: { ownerMayEdit: true } },
   nameField: 'display_name',
   highlightFields: ['display_name', 'kind', 'due_date', 'owner', 'status'],
 
