@@ -315,11 +315,11 @@ export const deviationDeciderOf = (deviation: DeviationPlan): string | null =>
  * The head of legal and the finance controller, as the ACCOUNT NAMES the
  * loader resolves `clm_review.reviewer` against.
  *
- * ⚠️ These two MIRROR the `name` of their `demoStaff` entries in
- * `objectstack.config.ts`, which spells them as literals rather than from
- * here. `reviewer` is `required: true`, so a drift between the two is not a
- * NULL but a lost row: the loader refuses every review that names an account
- * nobody carries, and the seed reports success for the rest.
+ * These two are the `name` of their `demoStaff` entries in
+ * `objectstack.config.ts`, which spells them from here, so a rename moves
+ * both (issue #191). `reviewer` is `required: true`, which is why they must
+ * never drift: the loader refuses every review that names an account nobody
+ * carries, and the seed reports success for the rest.
  */
 export const LEGAL_HEAD = 'Head of Legal';
 export const FINANCE_CONTROLLER = 'Finance Controller';
