@@ -55,7 +55,7 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         },
         screen_document: {
           title: 'First version',
-          description: 'Upload the document this contract starts from. It becomes version 1.',
+          description: 'The document this contract starts from. It becomes version 1.',
           fields: {
             templateAvailable: { label: 'Template available' },
             draft_from_template: {

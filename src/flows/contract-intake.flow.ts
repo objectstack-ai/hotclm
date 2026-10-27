@@ -325,7 +325,7 @@ export const ContractIntakeFlow: Flow = {
       id: 'screen_document', type: 'screen', label: 'First Version',
       config: {
         title: 'First version',
-        description: 'Upload the document this contract starts from. It becomes version 1.',
+        description: 'The document this contract starts from. It becomes version 1.',
         fields: [
           // Carrier, as `intakeFields` on the core screen: `visibleWhen` sees
           // only this screen's own fields, so the type's answer is brought onto

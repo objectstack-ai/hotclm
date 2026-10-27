@@ -55,7 +55,7 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         },
         screen_document: {
           title: '首个版本',
-          description: '上传这份合同的起点文件，它会成为第 1 版。',
+          description: '这份合同的起点文件，它会成为第 1 版。',
           fields: {
             templateAvailable: { label: '有模板' },
             draft_from_template: {
