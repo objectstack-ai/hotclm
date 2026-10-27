@@ -38,9 +38,13 @@ import { contactEmailFor } from './plan.js';
  * second, with the review row landing and its `display_name` mirror reading
  * "Finance · Dev Admin".
  *
- * Every seeded reviewer is therefore the demo account itself. That is honest —
- * it is the only user in the database — and the README says which positions to
- * create and reassign to before the demo means anything as a permissions story.
+ * Every seeded reviewer is therefore the demo account itself. That was the
+ * honest choice while it was the only user in the database. Since #28
+ * (PR #171) the demo staff — Legal Counsel 1 and 2 among them — exist before
+ * the seed runs, so the constraint above no longer forces the dev admin; which
+ * account each review STAGE should name (legal, finance, compliance,
+ * business) is open and not decided here, and the README tells the evaluator
+ * to reassign a review to put it on a lawyer's desk.
  */
 
 export const reviewSeed = defineSeed(Review, {
