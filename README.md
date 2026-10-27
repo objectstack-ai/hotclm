@@ -129,26 +129,29 @@ Three things about where these accounts exist:
   a position it is missing. No account is duplicated.
 
 Every dataset is an upsert, so `pnpm demo` also runs again on a database that
-already holds the demo, sliding every boot-relative date forward.
+already holds the demo, after the daily jobs have run and after you have worked
+in it. A re-run slides every boot-relative date forward, puts back any demo row
+that has been deleted, and refreshes the rest of the fixture.
 
-**Run it again only before the daily jobs have run on the database.** Only a clean
-database is guaranteed to come back as the known corpus: the fixture re-asserts
-every column it declares, the job-written ones included, so once rows have
-moved on — the jobs' work above all — a re-run does one of two things to each.
+**It does not turn the clock back.** The columns the app itself writes once a
+row exists are declared `applyOn: 'create'` in the dataset (`src/data/`): the
+seed writes them when it creates the row and leaves them alone after that. They
+are `status` on contracts, obligations and payment instalments, the flag F12
+sets, the stage timestamps and routing flags, the termination reason, the
+archive number, and the receipt recorded on an instalment. So what the daily
+jobs did stays done. An instalment F11 moved to `overdue` stays overdue, a
+contract F13 expired stays expired, and F12 does not send a renewal notice
+twice. The same goes for a contract someone has terminated or archived, or an
+instalment finance has marked paid. Measured after one run of every daily job
+plus those four desk actions: the re-run refused no row and dropped none.
 
-- **Where the state machine allows the way back, it walks the job's work back,
-  silently.** The 18 part-paid instalments `payment_overdue` (F11) moved to
-  `overdue` return to `partial` — a legal edge, so they count as ordinary
-  `updated` rows with no error — and a reset `is_expiring` makes F12 send a
-  renewal notice it has already sent.
-- **Where it does not, the row is refused and dropped whole.** A contract that
-  has since expired or been terminated is not moved back to `active`: the row
-  shows as `errored` in the loader's `Seed loading completed` summary, and none
-  of its other columns are written either.
-
-The fix is the platform's — seed columns written on create only, upstream
-`objectstack-ai/objectstack#25761`, still open — and until it lands, a fresh
-database is the only way back to the corpus as shipped.
+Three limits. Any other column you edited, such as a summary or a reassigned
+legal owner, goes back to the fixture's value. A deviation or signature round
+you decided is not covered yet: the re-run puts its fixture status back, and the
+state machine may refuse that. The lifecycle columns also keep the dates they
+were stamped with, while the fixture's own dates (start, end, due and planned
+dates) move forward on each re-run. To get back to the corpus exactly as
+shipped, start from a clean database: `rm -rf .objectstack/data && pnpm demo`.
 
 **One obligation is deliberately left with no owner** and is not a name you have
 missed. F10 (`obligation_due`) reminds an obligation's owner and takes a "nobody

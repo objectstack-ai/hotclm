@@ -1,6 +1,7 @@
 import { P, expression } from '@objectstack/spec';
 import type { Flow } from '@objectstack/spec/automation';
 import { Signature } from '../objects/signature.object.js';
+import { lifecycle as zhCNLifecycle } from '../translations/zh-CN/objects.lifecycle.js';
 import { must, ref } from './_values.js';
 
 /**
@@ -77,6 +78,16 @@ const FORMALITY_LABELS: Record<string, string> = Object.fromEntries(
     .map(({ label, value }) => [String(value), label]),
 );
 
+/**
+ * The same four in the zh-CN bundle's words, so the zh-CN member of
+ * `clm.execution_formalities_missing` names them the way the zh-CN form does.
+ * A value the bundle has no word for falls back to the English label.
+ */
+const FORMALITY_LABELS_ZH_CN: Record<string, string> = {
+  ...FORMALITY_LABELS,
+  ...(zhCNLifecycle.clm_signature?.fields?.formalities_done?.options ?? {}),
+};
+
 if (Object.keys(FORMALITY_LABELS).length === 0) {
   throw new Error('clm_signature.formalities_done has no options; F7 names the missing formalities from the field.');
 }
@@ -130,6 +141,7 @@ export function signatureExecution({ input }: { input: Record<string, unknown> }
   covered: boolean;
   missing: string[];
   missingText: string;
+  missingTextZhCN: string;
   requiredCount: number;
   nextVersionNo: number;
   recipient: string | null;
@@ -142,6 +154,7 @@ export function signatureExecution({ input }: { input: Record<string, unknown> }
     covered: missing.length === 0,
     missing,
     missingText: missing.map((formality) => FORMALITY_LABELS[formality] ?? formality).join(', '),
+    missingTextZhCN: missing.map((formality) => FORMALITY_LABELS_ZH_CN[formality] ?? formality).join('、'),
     requiredCount: required.length,
     // The unique index on (contract, version_no) is what keeps this honest: a
     // roll-up that had not caught up would collide loudly rather than silently
@@ -333,8 +346,8 @@ export const SignatureRecordFlow: Flow = {
         channels: ['inbox', 'email'],
         severity: 'warning',
         topic: 'clm_execution_copy_missing',
-        title: 'Executed copy missing: {{ contractRecord.title }}',
-        message: 'Every execution formality is done on the completed signing round, but no executed copy is attached, so no final signed version could be filed. Upload the executed document on the signature record.',
+        template: 'clm.execution_copy_missing',
+        templateData: { title: ref('contractRecord.title') },
         sourceObject: 'clm_signature',
         sourceId: ref('signatureRecord.id'),
       },
@@ -351,11 +364,16 @@ export const SignatureRecordFlow: Flow = {
         channels: ['inbox', 'email'],
         severity: 'warning',
         topic: 'clm_execution_formalities_missing',
-        title: 'Execution formalities outstanding: {{ contractRecord.title }}',
+        template: 'clm.execution_formalities_missing',
         // The whole point of F7's short branch is naming WHICH one — a
         // notification that says "something is missing" sends the reader back
-        // to the same comparison the flow just did.
-        message: 'The signing round completed, but this contract cannot be activated until these execution formalities are recorded on the signature round: {{ execution.missingText }}.',
+        // to the same comparison the flow just did. The list goes over in
+        // both languages; each member of the bundle reads its own.
+        templateData: {
+          title: ref('contractRecord.title'),
+          missing: ref('execution.missingText'),
+          missing_zh_cn: ref('execution.missingTextZhCN'),
+        },
         sourceObject: 'clm_signature',
         sourceId: ref('signatureRecord.id'),
       },

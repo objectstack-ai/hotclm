@@ -388,8 +388,12 @@ export const ContractApprovalFlow: Flow = {
         recipients: ref('contractRecord.owner_id'),
         channels: ['inbox', 'email'],
         topic: 'clm_contract_approved',
-        title: 'Contract approved: {{ contractRecord.title }}',
-        message: 'Your contract {{ contractRecord.title }} has cleared every approval rung. It can now go out for signature.',
+        // The words live in the `clm.contract_approved` bundle
+        // (src/email-templates/), one member per language; the delivery path
+        // picks the owner's. Inline `title` / `message` are one text for
+        // every recipient, which is why they are not used.
+        template: 'clm.contract_approved',
+        templateData: { title: ref('contractRecord.title') },
         sourceObject: 'clm_contract',
         sourceId: ref('record.id'),
       },
@@ -415,7 +419,8 @@ export const ContractApprovalFlow: Flow = {
         channels: ['inbox', 'email'],
         severity: 'warning',
         topic: 'clm_contract_rejected',
-        title: 'Contract rejected: {{ contractRecord.title }}',
+        template: 'clm.contract_rejected',
+        templateData: { title: ref('contractRecord.title') },
         // §03's way forward is `rejected → draft` 修改重提 — but the copy does
         // NOT tell the owner to do it themselves, because measured against
         // card 04's row window they cannot: §04 lets a requester edit their
@@ -424,7 +429,6 @@ export const ContractApprovalFlow: Flow = {
         // contract. Naming the person who can act is the honest instruction;
         // whether §03 and §04 should agree here is a maintainer decision this
         // card files rather than settles.
-        message: 'Your contract {{ contractRecord.title }} was rejected in approval. The approver\'s comment is on the approval record. Ask legal to return the contract to draft if you want to rework and resubmit it.',
         sourceObject: 'clm_contract',
         sourceId: ref('record.id'),
       },
