@@ -77,7 +77,7 @@
 | Playbook | 条款的标准立场与备选立场 | `clm_clause` 标准文本 / 备选文本 / 风险级别；`clm_deviation` 记录偏离，高风险偏离触发法务负责人台阶 |
 | Repository / Properties | 结构化属性与检索 | `clm_contract` 字段 + 导入映射 + AI 抽取（S1） |
 | Signature | 电子签与执行 | 连接器集成（F8）：DocuSign、Adobe Acrobat Sign、Dropbox Sign 首发，区域提供商作区域包；每一轮签署是一条 `clm_signature` 记录，类型要求的执行形式（回签副本、公司印章、公证、见证）在记录上勾齐才能生效 |
-| Insights | 周转分析 | 阶段时间戳 → dataset → 看板：交付各阶段到达数与审批吞吐，各段时长等平台日期能力（§09） |
+| Insights | 周转分析 | 阶段时间戳 → dataset（平台 `duration` 度量）→ 看板：各段平均时长与平均审批周转；按类型的「超 SLA」等平台跨对象比较（§09） |
 | Jurist | AI 法务助手 | 四个 skill（§07），无 AI 运行时时显式降级 |
 
 ## 03 对象模型
@@ -304,18 +304,18 @@ AI 是流程里的**参与者**，不是旁边的聊天窗。三条治理原则�
 
 Dataset（语义层）：
 - `contract_metrics` — 数量与金额，按类型 / 方向 / 状态 / 部门 / 月
-- `contract_cycle_time` — 各阶段到达数（`submitted_at` / `review_started_at` / `approved_at` / `signed_at` / `activated_at` 各自的盖戳覆盖数），按类型与法务经办；不含任何时长度量
+- `contract_cycle_time` — `submitted_at → review_started_at → approved_at → signed_at → activated_at` 各段平均时长，外加提交 → 批准（平均审批周转）；单位天，平台 `duration` 度量（`objectstack-ai/objectstack#25778`，18.2.0）；按类型与法务经办。每个平均值只计入两个时间戳都已记录的合同；不出按月趋势（平台拒绝带粒度分桶的时长度量）
 - `obligation_metrics` — 到期 / 逾期，按 owner 与合同
 - `payment_metrics` — 计划与实际，按月；逾期金额
 
 看板三个：
-- **法务工作台** — 待受理数 · 审查中 · 审查超 30 天（固定阈值，写进砖的标题）· 谈判停滞 · 审批吞吐（本月 vs 上月，用平台 `compareTo`）· 各阶段合同数（横向条形图，按合同数从多到少排；只画在办的六个阶段）
+- **法务工作台** — 待受理数 · 审查中 · 审查超 30 天（固定阈值，写进砖的标题）· 谈判停滞 · 平均审批周转（提交 → 批准的平均天数，本月对比紧挨在前的等长时段，用平台 `compareTo: previousPeriod`）· 各阶段合同数（横向条形图，按合同数从多到少排；只画在办的六个阶段）· 各段时长（四块砖，每段一块，单位天）
 - **管理层** — 生效合同额 · 90 天内到期 · 高风险合同 · 各台阶路由量（四级台阶各一块砖，读 F2 盖的 `route_*` 标志；是流量，不是停留）· 按方向的合同额趋势
 - **财务** — 本月应收 / 应付 · 逾期金额 · 按相对方的未付 top 10
 
 已知限制：分析过滤器不支持公式字段（#10），所以所有看板筛选字段都是持久化字段；周期对比用平台 period-over-period。
 
-**各段时长与按类型的「超 SLA」不在 V1.0 交付面内**（维护者裁定，2026-09-09）。语义层不收 SQL 也不收表达式（ADR-0021），没有地方做时间戳减法；且 `Field.datetime` 在 SQLite 上存 ISO 文本，`AVG()` 打在其上会静默返回平均年份而不是平均日期。两项都等平台的日期能力，跟踪于 `objectstack-ai/objectstack#16737`。在那之前 §09 交付的是：周转以各阶段到达数与审批吞吐如实呈现，SLA 以固定 30 天阈值呈现且阈值写进砖的标题（九种类型的真实 SLA 是 2/3/5/10 天，30 天高于全部，标题自陈阈值就不会被误读成按类型的违约）。§09 原列的「审批瓶颈（各台阶平均停留）」同样不交付，且另有一条独立于平台的原因：审批台阶的起止无处可读——`sys_approval_request` 在标准演示数据下零行，审批阶梯（F5）从未运行——所以即使平台补上日期运算，停留时长仍要先有审批请求记录才算得出来。看板在那个位置交付的是各台阶的路由量。⛔ 不得用应用侧日任务盖戳字段把各段时长与「超 SLA」补出来 —— 那是在应用里复刻平台规则。
+**各段时长已交付；按类型的「超 SLA」仍不在交付面内**（维护者裁定 2026-09-09 1C + 2B，2026-10-25 C）。平台 18.2.0 提供两个 datetime 列之差的聚合度量（`duration: { from, to, unit }`，`objectstack-ai/objectstack#25778`），各段时长与平均审批周转都建在它上面；「`AVG()` 打在 datetime 上再相减」那条错路自 17.7.0 起在作者期与查询期都被拒绝（`objectstack-ai/objectstack#16737`）。「超 SLA」要拿 `review_started_at` 比「现在减去该合同类型的 `review_sla_days`」：18.2.0 的 `$now` 锚点（`objectstack-ai/objectstack#25808`，裁定 A）只读同一条记录上的数值列，经 `contract_type` 的点路径在查询期被拒绝（`400 INVALID_FILTER`），跟踪于 `objectstack-ai/objectstack#26601`。在那之前 SLA 以固定 30 天阈值呈现且阈值写进砖的标题（九种类型的真实 SLA 是 2/3/5/10 天，30 天高于全部）。§09 原列的「审批瓶颈（各台阶平均停留）」同样不交付，且另有一条独立于平台的原因：审批台阶的起止无处可读——`sys_approval_request` 在标准演示数据下零行，审批阶梯（F5）从未运行——所以即使平台补上日期运算，停留时长仍要先有审批请求记录才算得出来。看板在那个位置交付的是各台阶的路由量。⛔ 不得用应用侧日任务盖戳字段，也不得在合同上镜像一列 SLA 天数，把「超 SLA」补出来 —— 那是在应用里复刻平台规则。
 
 **「各阶段合同数」是横向条形图，不是漏斗，且只画在办阶段**（#48 / PR #57 换掉图形，#59 / PR #62 收窄口径，均已合并）。漏斗断言逐级单调递减，而这本合同簿不递减（§10 的分布：draft 10 · submitted 6 · in_review 12 · in_approval 8 · approved 4 · signing 6 · active 60），画成漏斗是在断言数据没说的事。收录判据是**法务在这个阶段是否还有事要做**：`draft` / `submitted` / `in_review` / `in_approval` / `approved` / `signing` 六个在办阶段入图；`active` 与 `rejected` / `expired` / `terminated` / `cancelled` 四种终态都不入图 —— 生效合同簿的规模归管理层看板（生效合同额 · 90 天内到期），不是法务工作台的队列。排序按合同数从多到少（`sortBy: 'contract_count'` / `sortOrder: 'desc'`），⛔ **不承诺可编排的阶段顺序**：console 17.4.0 只有漏斗分支读 `stageOrder`，条形图上静默丢弃，非 `en` 语言下连漏斗分支也因标签不匹配而丢，跟踪于 `objectstack-ai/objectstack#17344`。
 
@@ -380,6 +380,7 @@ docs/backlog/              派发卡片
 | 外部相对方门户 | #27 | 邮件往来 | 相对方在线红线 |
 | IM 通知通道 | #1 | inbox / email / sms / Slack | Teams；区域 IM 由区域包承担 |
 | CEL 日期算术 | #7 | 到期、逾期由日任务盖戳字段 | 公式字段 |
+| 按类型超 SLA | objectstack#25808（同记录已交付）· #26601（跨对象偏移） | 固定 30 天阈值，阈值写进砖的标题 | 按 `clm_contract_type.review_sla_days` 计数 |
 | 跨对象公式 | #36 | hook 冗余 `category` / `direction` / `execution_formalities` | 直接引用类型 |
 
 规则：平台能力受限**只上报** objectstack，不在本仓库修平台；应用侧只允许带环境闸门的临时夹具并注明平台 issue；新发现追加到 objectstack 的 `docs/PLATFORM_GAPS_FROM_TEMPLATES.md`。
