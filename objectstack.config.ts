@@ -203,7 +203,7 @@ export default defineStack({
   positions: ClmPositions,
   permissions: Object.values(profiles),
 
-  // The eleven authorization tokens the five permission sets grant in
+  // The twelve authorization tokens the five permission sets grant in
   // `systemPermissions` (ADR-0066 D1) — this app DEFINES them; it is not a
   // `requires:` service and adds no plugin. Two reasons to declare rather than
   // let the platform derive them from the sets:
@@ -232,7 +232,8 @@ export default defineStack({
     { name: 'clm_records.access',    scope: 'org', label: 'CLM: Records',          description: 'Serves the Records group of the CLM app.' },
     { name: 'clm_admin.access',      scope: 'org', label: 'CLM: Administration',   description: 'Serves the Administration group of the CLM app.' },
     { name: 'approve_contract',      scope: 'org', label: 'Approve contracts',     description: 'DESIGN.md §04 action gate for the approval ladder; which request a holder decides is the approval flow\'s assignment.' },
-    { name: 'execute_contract',      scope: 'org', label: 'Execute contracts',     description: 'DESIGN.md §04 action gate for signing, activation and backfill of executed contracts.' },
+    { name: 'execute_contract',      scope: 'org', label: 'Execute contracts',     description: 'DESIGN.md §04 action gate for signing and activation.' },
+    { name: 'backfill_contract',     scope: 'org', label: 'Backfill contracts',    description: 'DESIGN.md §04 gate for F16: recording a contract executed outside this system. Held by records, legal and admin; gates the backfill action and its flow.' },
     { name: 'archive_contract',      scope: 'org', label: 'Archive contracts',     description: 'DESIGN.md §04 action gate for archiving.' },
     { name: 'terminate_contract',    scope: 'org', label: 'Terminate contracts',   description: 'DESIGN.md §04 action gate for ending a contract in force.' },
     { name: 'manage_clauses',        scope: 'org', label: 'Manage clauses',        description: 'DESIGN.md §04 action gate for the clause playbook.' },

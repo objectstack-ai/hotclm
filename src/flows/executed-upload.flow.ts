@@ -26,7 +26,12 @@ import { must, ref } from './_values.js';
  * other contract in the product earns `active` by walking §03 from `draft`,
  * and that is the rule; a backfill is the declared exception (§13 Q8), so it
  * is taken through the one door the model already opened for it rather than by
- * weakening the guard.
+ * weakening the guard. The same system write is what lets the run set the
+ * fields §04 locks for every position — `is_backfilled` and the stage stamps
+ * `signed_at` / `executed_at` / `activated_at` — and file the version for a
+ * caller whose own grants could not (`clm_records` creates no contract, and
+ * locks every contract field but two). Under `runAs: 'user'` the first insert
+ * is refused, so the elevation stays.
  *
  * Elevation is not anonymity here. A flow launched from an action carries the
  * CALLER's `userId` and `tenantId` alongside `isSystem`, so the platform's
@@ -34,7 +39,35 @@ import { must, ref } from './_values.js';
  * backfill, the row lands inside the caller's organization, and the contract
  * number takes its org-scoped sequence. That is what "全部留审计" needs, and it
  * is why the action is a flow rather than a script body: a script body runs as
- * the caller and would be refused at the first insert.
+ * the caller and would be refused at the first insert. `owner_id` is not the
+ * caller: the dialog asks for the business owner and the insert writes it
+ * (issue #99, item 7), because the platform stamps the acting user only where
+ * `owner_id` is left empty.
+ *
+ * ## Who may start it: `type: 'screen'` + `requiredPermissions`
+ *
+ * Elevation decides what the run may write; it says nothing about who may
+ * start it. On 18.x a door that starts a flow by name (the trigger route, a
+ * `type: 'flow'` action over REST and MCP, a declared endpoint) asks two
+ * questions in order (`flowStartRefusal`, objectstack#25643):
+ *
+ *  1. Is it `runAs: 'system'` with a self-triggered type (`autolaunched`,
+ *     `record_change`, `schedule`)? Then only the system principal may start
+ *     it, and no capability opens it. This flow was `autolaunched` until
+ *     issue #43, and every member — the records manager included — was
+ *     refused "This caller may not start this flow".
+ *  2. Does the caller hold every capability in the flow's
+ *     `requiredPermissions`? Otherwise `403 PERMISSION_DENIED`, nothing run.
+ *
+ * So the type is `screen`: an entry a member starts from a button, which is
+ * what this is, elevated by the author's explicit choice. It has no screen
+ * node — the action's dialog collects every input — so a run goes straight
+ * from start to its end or a refusing end. Not `api`: that type is an
+ * HMAC-signed inbound webhook, and the engine refuses to arm one without a
+ * per-flow secret. The gate is `requiredPermissions: ['backfill_contract']`,
+ * the capability §04 grants `clm_records`, `clm_legal` and `clm_admin` (§06
+ * F16: records or legal). The action that starts it repeats the list only to
+ * hide its button (see `src/actions/contract-backfill.actions.ts`).
  *
  * ## What it does NOT do
  *
@@ -116,19 +149,26 @@ export const ExecutedUploadFlow: Flow = {
   // Creates the contract in `active` with `is_backfilled` set and files the
   // executed copy as a `final_signed` version.
   description: 'Record a contract that was signed outside this system: create it directly as active, marked as backfilled, and file the executed copy as its final signed version.',
-  type: 'autolaunched',
+  // An entry a member starts from the 补录已签合同 button. Not `autolaunched`:
+  // 18.x refuses every non-system caller at the door of an elevated
+  // self-triggered flow, whatever they hold (see the header).
+  type: 'screen',
   status: 'active',
-  // See the header: the ONE thing elevation buys is the right to insert a
-  // contract born `active`, which `contract_type_stamp` reserves for a system
-  // write (§13 Q8's declared exception). The caller's identity rides along, so
-  // the audit trail names them.
+  // See the header: elevation buys the right to insert a contract born
+  // `active`, which `contract_type_stamp` reserves for a system write (§13
+  // Q8's declared exception), and the stamps §04 locks for every position.
+  // The caller's identity rides along, so the audit trail names them.
   runAs: 'system',
+  // The gate: records, legal and admin hold it (§04, §06 F16). Checked at
+  // every door that starts this flow by name, before anything runs.
+  requiredPermissions: ['backfill_contract'],
   successMessage: 'Executed contract recorded.',
 
   variables: [
     { name: 'contract_type', type: 'text', isInput: true, isOutput: false },
     { name: 'party', type: 'text', isInput: true, isOutput: false },
     { name: 'title', type: 'text', isInput: true, isOutput: false },
+    { name: 'owner_id', type: 'text', isInput: true, isOutput: false },
     { name: 'signed_date', type: 'text', isInput: true, isOutput: false },
     { name: 'executed_file', type: 'text', isInput: true, isOutput: false },
     { name: 'our_entity', type: 'text', isInput: true, isOutput: false },
@@ -215,6 +255,9 @@ export const ExecutedUploadFlow: Flow = {
         objectName: 'clm_contract',
         fields: {
           title: ref('title'),
+          // The business owner the dialog asked for. Left unbound (a headless
+          // caller that omits it), the platform stamps the acting user.
+          owner_id: ref('owner_id'),
           contract_type: ref('contract_type'),
           party: ref('party'),
           our_entity: ref('our_entity'),

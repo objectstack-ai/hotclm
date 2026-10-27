@@ -28,12 +28,17 @@ import { editableOnly, hidden, inList, onRowsWhere } from './_grants.js';
  * date a wet-ink round records, and the round's status so the round can be
  * completed at all (F7's wet-ink path names this position). On `clm_party`
  * the banking and phone fields are withheld (§04 FLS table).
+ *
+ * `backfill_contract` opens F16 (补录已签合同), which records shares with legal
+ * and admin (§06 F16). The flow writes the backfilled contract as the system
+ * (`executed-upload.flow.ts`), so the object and field grants above do not
+ * limit it.
  */
 export const RecordsSet = definePermissionSet({
   name: 'clm_records',
   label: 'Records',
   description: 'The records manager: execution registration, archive and the contract ledger.',
-  systemPermissions: ['clm_records.access', 'execute_contract', 'archive_contract'],
+  systemPermissions: ['clm_records.access', 'execute_contract', 'archive_contract', 'backfill_contract'],
   objects: {
     clm_contract:         { allowCreate: false, allowRead: true, allowEdit: true,  allowDelete: false, readScope: 'own' },
     clm_contract_version: { allowCreate: true,  allowRead: true, allowEdit: false, allowDelete: false },
