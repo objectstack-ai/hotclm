@@ -64,6 +64,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       decided_at: {
         label: 'Decided At',
+        help: 'Stamped when the review is given a decision, unless set explicitly.',
       },
     },
     _sections: {
