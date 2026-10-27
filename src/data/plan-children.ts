@@ -15,18 +15,13 @@ import { CONTRACT_PLAN, typeOf, type ContractPlan, type ContractStatus } from '.
  * another. Here the ten overdue obligations are ten because ten roles were
  * put in the bag, and {@link assertCount} proves the bag emptied.
  *
- * `clm_contract_version` has NO plan here, and its absence is the one count in
- * §10 this card does not deliver. `clm_contract_version.file` is
- * `required: true` (DESIGN.md §03) and a `file` value is an opaque `sys_file`
- * id minted by an upload; a declarative seed cannot mint one. Measured: a
- * version row with `file` omitted is refused ("File is required"), a row whose
- * `file` is a URL is accepted but makes the platform refuse to attest its own
- * `adr-0104-file-references` migration, and a row whose `file` is an
- * id-shaped token is accepted silently and points at nothing. The third is the
- * one a seed could get away with, and it is the one AGENTS.md forbids — "a
- * capability the runtime does not deliver is hidden, not faked". So no
- * versions are seeded, `version_count` reads an honest 0, and the PR raises it
- * as a decision rather than papering over it.
+ * `clm_contract_version` is planned last ({@link VERSION_PLAN}). Its `file` is
+ * `required: true` (DESIGN.md §03) and a `file` value is the id of a stored
+ * file, which only an upload used to mint — so until @objectstack 18.2.0 the
+ * fixture seeded no versions at all. 18.2.0's `seedFile(path)`
+ * (objectstack-ai/objectstack#25779, ruled D on #19) has the platform store a
+ * file the package ships and write its id into the field, so every version now
+ * carries a real, downloadable document from `fixtures/`.
  */
 
 const isExecuted = (status: ContractStatus) => status === 'active' || status === 'expired' || status === 'terminated';
@@ -494,3 +489,156 @@ const planPayments = (): PaymentPlan[] => {
 };
 
 export const PAYMENT_PLAN: readonly PaymentPlan[] = planPayments();
+
+// ─────────────────────────────────────────────── clm_contract_version (300) ──
+
+export type VersionKind = 'draft' | 'internal_redline' | 'counterparty_redline' | 'clean' | 'final_signed';
+
+export interface VersionPlan {
+  readonly contractIndex: number;
+  readonly versionNo: number;
+  readonly kind: VersionKind;
+  readonly turn: 'internal' | 'counterparty';
+  /** Exactly one row per contract carries it (#96, ruled 1A 2A). */
+  readonly isCurrent: boolean;
+  /**
+   * Who filed it, as a role `keys.ts` resolves to an account: the requester
+   * who launched the contract, its lawyer, or nobody — the two flows that file
+   * an executed copy (F7, F16) stamp no `submitted_by`, so a seeded one does
+   * not either.
+   */
+  readonly filedBy: 'owner' | 'legal' | null;
+}
+
+/**
+ * The negotiation a contract still in review is in the middle of, by length,
+ * ending on the side whose move it now is NOT: `current_turn: 'counterparty'`
+ * means our redline is out and we are waiting, so the newest version is ours;
+ * `'internal'` means their markup has come back, so the newest is theirs.
+ * Every sequence opens on our draft and carries at least one counterparty
+ * redline (DESIGN.md §10 「含对方红线」).
+ */
+const OPEN_ENDING_OURS: Record<3 | 4 | 5, readonly VersionKind[]> = {
+  3: ['draft', 'counterparty_redline', 'internal_redline'],
+  4: ['draft', 'internal_redline', 'counterparty_redline', 'internal_redline'],
+  5: ['draft', 'counterparty_redline', 'internal_redline', 'counterparty_redline', 'internal_redline'],
+};
+const OPEN_ENDING_THEIRS: Record<3 | 4 | 5, readonly VersionKind[]> = {
+  3: ['draft', 'internal_redline', 'counterparty_redline'],
+  4: ['draft', 'counterparty_redline', 'internal_redline', 'counterparty_redline'],
+  5: ['draft', 'internal_redline', 'counterparty_redline', 'internal_redline', 'counterparty_redline'],
+};
+/**
+ * A negotiation that has closed: the counterparty's last markup was accepted
+ * into a clean copy, which is what `approved → signing` requires to be current.
+ */
+const SETTLED: Record<3 | 4 | 5, readonly VersionKind[]> = {
+  3: ['draft', 'counterparty_redline', 'clean'],
+  4: ['draft', 'counterparty_redline', 'internal_redline', 'clean'],
+  5: ['draft', 'counterparty_redline', 'internal_redline', 'counterparty_redline', 'clean'],
+};
+
+/** How many versions each kind of history gets, dealt by role bag like the families above. */
+type VersionLength = 3 | 4 | 5;
+
+/**
+ * 300 contract versions (DESIGN.md §10: 「谈判中的合同有 3 到 5 版，含对方红线」),
+ * each holding a real file the package ships (`seedFile`, `fixtures/`).
+ *
+ * The count is not padded to reach 300; it is what the book's own shape
+ * produces, and {@link assertCount} proves it lands there:
+ *
+ *  - **30 contracts in negotiation** (`in_review` 12, `in_approval` 8,
+ *    `approved` 4, `signing` 6) carry 3 to 5 versions — 6 × 3, 12 × 4,
+ *    12 × 5 = 126. Those still in review end on whichever side's paper the
+ *    contract's `current_turn` says is out; the 18 past review end on a clean
+ *    copy, because every one of them has been — or is about to be — sent for
+ *    signature, and `approved → signing` refuses without a current clean
+ *    version.
+ *  - **24 negotiated executed contracts** carry that history plus the
+ *    executed copy — 12 × 4, 12 × 5 = 108. The executed copy is
+ *    `final_signed` and NOT current: `contract_version_current` would store it
+ *    `false` anyway while other versions exist (#96, 2A), which is what F7
+ *    writes too, so the clean copy stays the current one.
+ *  - **48 backfilled contracts** carry exactly one version, the executed copy,
+ *    current — the shape F16 (`executed_upload`) files and nothing more: a
+ *    backfill claims no negotiation (`plan-contracts.ts`).
+ *  - **18 contracts not yet past intake** (`draft` 10, `submitted` 6,
+ *    `cancelled` 2) carry version 1, our draft, current. That is what makes a
+ *    seeded draft submittable: the `draft → submitted` guard wants a first
+ *    version or a type template, and before seed files existed the fixture
+ *    could give it neither (#19).
+ *
+ * 126 + 108 + 48 + 18 = 300, and every contract has exactly one current
+ * version (#96, ruled 1A 2A).
+ */
+const planVersions = (): VersionPlan[] => {
+  const negotiating = CONTRACT_PLAN.filter((c) =>
+    (['in_review', 'in_approval', 'approved', 'signing'] as ContractStatus[]).includes(c.status));
+  const executedNegotiated = CONTRACT_PLAN.filter((c) => isExecuted(c.status) && !c.backfilled);
+  const negotiatingLengths = dealRoles<VersionLength>(
+    [...repeat<VersionLength>(3, 6), ...repeat<VersionLength>(4, 12), ...repeat<VersionLength>(5, 12)],
+    0x5eed_7e,
+  );
+  const executedLengths = dealRoles<4 | 5>([...repeat<4 | 5>(4, 12), ...repeat<4 | 5>(5, 12)], 0x5eed_7f);
+  assertCount('clm_contract_version (negotiating contracts)', negotiating.length, negotiatingLengths.length);
+  assertCount('clm_contract_version (negotiated executed contracts)', executedNegotiated.length, executedLengths.length);
+
+  const kindsFor = new Map<number, readonly VersionKind[]>();
+  negotiating.forEach((contract, i) => {
+    const length = negotiatingLengths[i]!;
+    kindsFor.set(
+      contract.index,
+      contract.status !== 'in_review'
+        ? SETTLED[length]
+        : contract.currentTurn === 'counterparty' ? OPEN_ENDING_OURS[length] : OPEN_ENDING_THEIRS[length],
+    );
+  });
+  executedNegotiated.forEach((contract, i) => {
+    const length = executedLengths[i]!;
+    kindsFor.set(contract.index, [...SETTLED[(length - 1) as 3 | 4], 'final_signed']);
+  });
+
+  const plans: VersionPlan[] = [];
+  for (const contract of CONTRACT_PLAN) {
+    const kinds: readonly VersionKind[] = kindsFor.get(contract.index) ?? (contract.backfilled ? ['final_signed'] : ['draft']);
+    // The newest version is current, except that an executed copy never takes
+    // the flag from a negotiation version (#96, 2A).
+    const current = kinds.length > 1 && kinds[kinds.length - 1] === 'final_signed' ? kinds.length - 2 : kinds.length - 1;
+    kinds.forEach((kind, i) => {
+      plans.push({
+        contractIndex: contract.index,
+        versionNo: i + 1,
+        kind,
+        turn: kind === 'counterparty_redline' ? 'counterparty' : 'internal',
+        isCurrent: i === current,
+        filedBy: kind === 'final_signed' ? null : kind === 'draft' ? 'owner' : 'legal',
+      });
+    });
+  }
+
+  assertCount('clm_contract_version', plans.length, 300);
+  // Proven, not assumed from the construction: one current version per
+  // contract, a counterparty redline in every negotiation, and a current clean
+  // copy wherever a contract is at or past `approved → signing`.
+  for (const contract of CONTRACT_PLAN) {
+    const own = plans.filter((v) => v.contractIndex === contract.index);
+    const currents = own.filter((v) => v.isCurrent).length;
+    if (currents !== 1) {
+      throw new Error(`demo fixture: contract #${contract.index} has ${currents} current versions; #96 (ruled 1A 2A) allows exactly one.`);
+    }
+    if (kindsFor.has(contract.index) && !own.some((v) => v.kind === 'counterparty_redline')) {
+      throw new Error(`demo fixture: contract #${contract.index} negotiated without a counterparty redline (DESIGN.md §10).`);
+    }
+    const signable = ['signing', 'active', 'expired', 'terminated', 'approved'].includes(contract.status) && !contract.backfilled;
+    if (signable && !own.some((v) => v.kind === 'clean' && v.isCurrent)) {
+      throw new Error(`demo fixture: contract #${contract.index} is ${contract.status} with no current clean version, which approved → signing refuses.`);
+    }
+    if (isExecuted(contract.status) && !own.some((v) => v.kind === 'final_signed')) {
+      throw new Error(`demo fixture: contract #${contract.index} is ${contract.status} with no final_signed version, which signing → active refuses.`);
+    }
+  }
+  return plans;
+};
+
+export const VERSION_PLAN: readonly VersionPlan[] = planVersions();

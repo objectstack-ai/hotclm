@@ -1,5 +1,7 @@
 // Copyright (c) 2026 ObjectStack. Licensed under the Apache-2.0 license.
 
+import type { DemoStrings } from '../strings.js';
+
 /**
  * `demo-zh` 的文字池 —— 与 `../demo-en/prose.ts` 逐项对应的中文版。
  *
@@ -146,3 +148,13 @@ export const JURISDICTIONS: readonly string[] & { length: 3 } = [
   '英格兰和威尔士法院（伦敦）',
   '德国美因河畔法兰克福州法院',
 ] as const;
+
+/** `clm_contract_version.notes`, by kind (`../strings.ts`). */
+export const VERSION_NOTES: DemoStrings['versionNotes'] = {
+  draft: '初稿，由发起部门起草。',
+  internal_redline: '我方修订稿，已发给对方。',
+  counterparty_redline: '对方修订稿，经邮件收到，由法务归档。',
+  clean: '清稿：已接受全部约定修改，即送签文本。',
+  final_signed_round: '由已完成的签署轮次归档的执行副本。',
+  final_signed_backfill: '补录时一并提交的执行副本。',
+};

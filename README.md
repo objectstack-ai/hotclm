@@ -70,10 +70,10 @@ pnpm lint:i18n-gate  # every zh-CN key present — a missing one renders as Engl
 
 ## The demo dataset
 
-`pnpm demo` loads 830 rows: nine contract types, a thirty-clause playbook, a
+`pnpm demo` loads 1,130 rows: nine contract types, a thirty-clause playbook, a
 six-rule approval matrix, three signing companies and seven departments, forty
-counterparties and 120 contracts with their reviews, deviations, signature
-rounds, obligations and payment instalments.
+counterparties and 120 contracts with their 300 document versions, reviews,
+deviations, signature rounds, obligations and payment instalments.
 Every date is relative to boot, so ten contracts always expire within the next
 thirty days and the arrears lists are always in arrears.
 
@@ -294,13 +294,24 @@ consequences are worth knowing before you read a number:
   `is_backfilled: true`, which is the model's own word for a contract that
   reached `active` without review or approval (DESIGN.md §13 Q8) — they claim
   no approval history because they have none.
-- **No contract versions exist.** `clm_contract_version.file` is required and a
-  file value is an opaque `sys_file` id minted by an upload, which a
-  declarative seed cannot mint. Seeding a plausible-looking id would be a
-  download that 404s, so the dataset seeds none: `version_count` reads an
-  honest `0`. A seeded draft therefore cannot be submitted through the UI —
-  the submission guard wants a first version — so drive the intake flow with a
-  new contract of your own to see that path.
+- **Every document is a demo PDF.** The 300 contract versions, the templates
+  of six contract types, the executed copy of the 24 completed signature rounds
+  and the evidence of the 90 completed obligations each hold one of seven
+  one-page PDFs shipped in `src/data/fixtures/`. Each says on its face that it
+  is a demo document and carries no terms, party or signature. The platform
+  stores a separate copy for every row (`seedFile`, @objectstack 18.2.0), so
+  each one downloads and can be replaced or deleted on its own.
+  Every contract has exactly one current version: the newest negotiation
+  version, never an executed copy unless it is the only version. The 30
+  contracts in negotiation carry three to five versions with at least one
+  counterparty redline, the 24 negotiated executed contracts add their executed
+  copy, the 48 backfilled ones carry only the executed copy, and every draft,
+  submitted and cancelled contract carries its first draft. That first draft is
+  what lets a seeded draft be submitted. The supplier, lease and amendment types
+  ship without a template, so the launch form asks for an upload on those and
+  starts from the template on the other six. A re-run of `pnpm demo` stores no
+  file again, and it leaves alone which version is current, a template, an
+  executed copy and evidence once you have changed them.
 
 ## License
 

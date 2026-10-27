@@ -5,7 +5,7 @@ import type { Seed } from '@objectstack/spec/data';
 import { businessUnitSeed } from './business-unit.seed.js';
 import { approvalRuleSeed, clauseSeed, contractTypeSeed } from './catalog.seed.js';
 import { contractSeed } from './contract.seed.js';
-import { deviationSeed, reviewSeed, signatureSeed } from './negotiation.seed.js';
+import { contractVersionSeed, deviationSeed, reviewSeed, signatureSeed } from './negotiation.seed.js';
 import { partySeed } from './party.seed.js';
 import { obligationSeed, paymentPlanSeed } from './post-signature.seed.js';
 
@@ -32,17 +32,16 @@ import { obligationSeed, paymentPlanSeed } from './post-signature.seed.js';
  *  - **`clm_contract` comes before its five children**, all of which reference
  *    it by title through the one function in `keys.ts`.
  *
- * ── clm_contract_version is missing, and that is deliberate ───────────────
- * DESIGN.md §10 asks for 300 contract versions. `clm_contract_version.file` is
- * `required: true` (§03) and a `file` value is an opaque `sys_file` id minted
- * by an upload; a declarative seed cannot mint one, and the three spellings a
- * seed could try were measured: omitted is refused ("File is required"), a URL
- * is accepted but makes the platform refuse to attest its own
- * `adr-0104-file-references` migration, and an id-shaped token is accepted
- * silently and points at nothing. The last is the one that would have shipped
- * quietly, and it is the one AGENTS.md forbids. So no versions are seeded,
- * `version_count` reads an honest 0 on every contract, and the PR raises the
- * §03/§10 conflict as a decision rather than resolving it here.
+ * ── File fields hold real files ───────────────────────────────────────────
+ * DESIGN.md §10 asks for 300 contract versions, and `clm_contract_version.file`
+ * is `required: true` (§03). A `file` value is the id of a stored file, which
+ * only an upload used to mint, so until @objectstack 18.2.0 this dataset seeded
+ * no versions, `version_count` read 0 everywhere and a seeded draft could not
+ * be submitted. 18.2.0's `seedFile(path)` (objectstack-ai/objectstack#25779,
+ * ruled D on #19) stores a file the package ships and writes its id, so the
+ * 300 versions, six contract-type templates, 24 executed copies and 90
+ * obligations' evidence all hold one of the demo PDFs in `fixtures/` — one
+ * stored file per row. See `_shared.ts` for how the path resolves.
  *
  * ── Environment ───────────────────────────────────────────────────────────
  * Every dataset takes `Seed.env`'s default — `['prod', 'dev', 'test']` — so
@@ -68,6 +67,7 @@ export const demoSeeds: Seed[] = [
   contractSeed,
 
   // 4. The children, in the order a contract acquires them.
+  contractVersionSeed,
   reviewSeed,
   deviationSeed,
   signatureSeed,
@@ -82,7 +82,7 @@ export const demoSeeds: Seed[] = [
 //
 // This is a product decision, not a switch bolted on to route around a defect.
 // HotCLM is a sellable standard product (AGENTS.md), and a standard product
-// does not install 820 rows of a fictional group's contract book into every
+// does not install a thousand rows of a fictional group's contract book into every
 // fresh deployment. Someone evaluating HotCLM FOR THEIR OWN LEGAL TEAM wants
 // an empty app to put their own contract types into; handing them somebody
 // else's counterparties to delete first is not a neutral default, it is a

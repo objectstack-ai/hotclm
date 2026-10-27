@@ -8,7 +8,7 @@ import { ContractType } from '../objects/contract-type.object.js';
 
 import { STRINGS } from './demo-locale.js';
 import { APPROVAL_RULE_PLAN, CLAUSE_PLAN, CONTRACT_TYPE_PLAN } from './plan.js';
-import { assertUniqueKeys } from './_shared.js';
+import { assertUniqueKeys, fixtureFile } from './_shared.js';
 
 /**
  * The three configuration objects a contract runs against: the nine contract
@@ -21,11 +21,16 @@ import { assertUniqueKeys } from './_shared.js';
  * would hoist them regardless, but the barrel lists them first so the ordering
  * is legible without knowing that.
  *
- * `template_file` is NOT seeded. A `file` value
- * is an opaque `sys_file` id minted by an upload, and a seed cannot mint one —
- * the same wall `clm_contract_version` runs into, and the same answer: an
- * id-shaped placeholder would point at nothing while looking like a document
- * the type ships with.
+ * `template_file` is seeded on the six types drafted on our own paper and left
+ * empty on the three drafted on the other side's (`plan.ts`, `ContractTypePlan`'s
+ * `hasTemplate`), so the launch form's two ways to a first version — from the
+ * template, or from an upload — each have a type to show them on. The file is
+ * the demo template in `fixtures/`, stored by the platform for each type
+ * (`seedFile`, see `_shared.ts`). It is written when the seed CREATES the type
+ * and left alone after that (`applyOn: 'create'`): replacing a type's template
+ * is the CLM administrator's job (DESIGN.md §03 「换模板就是换文件」), and a
+ * re-run of `pnpm demo` that put the fixture back — or blanked a template an
+ * administrator added to a type the fixture ships without one — would undo it.
  */
 
 const typeNames = STRINGS.contractTypes.map((type) => type.name);
@@ -36,6 +41,9 @@ assertUniqueKeys('clm_approval_rule', [...STRINGS.approvalRules]);
 export const contractTypeSeed = defineSeed(ContractType, {
   externalId: 'name',
   mode: 'upsert',
+  columns: {
+    template_file: { applyOn: 'create' },
+  },
   records: CONTRACT_TYPE_PLAN.map((type, i) => ({
     name: STRINGS.contractTypes[i]!.name,
     code: type.code,
@@ -49,6 +57,7 @@ export const contractTypeSeed = defineSeed(ContractType, {
     review_sla_days: type.reviewSlaDays,
     default_term_months: type.defaultTermMonths,
     retention_years: type.retentionYears,
+    template_file: type.hasTemplate ? fixtureFile('template', `${type.code}-template.pdf`) : null,
     is_active: true,
   })),
 });

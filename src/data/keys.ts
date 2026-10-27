@@ -1,7 +1,7 @@
 // Copyright (c) 2026 ObjectStack. Licensed under the Apache-2.0 license.
 
 import { STRINGS } from './demo-locale.js';
-import type { ObligationPlan } from './plan-children.js';
+import type { ObligationPlan, VersionPlan } from './plan-children.js';
 import { CONTRACT_PLAN, type ContractPlan, type DeviationPlan } from './plan-contracts.js';
 import { assertUniqueKeys } from './_shared.js';
 
@@ -318,6 +318,30 @@ export const obligationOwnerOf = (obligation: ObligationPlan): string | null => 
  */
 export const deviationDeciderOf = (deviation: DeviationPlan): string | null =>
   deviation.status === 'open' ? null : counselFor(CONTRACT_PLAN[deviation.contractIndex]!);
+
+/**
+ * Who filed a contract version (`clm_contract_version.submitted_by`), or
+ * `null` for an executed copy.
+ *
+ * Version 1, our draft, is the launching requester's — what F1 stamps
+ * (`current_user.id`) when a requester uploads it or starts from the type's
+ * template. Every later version is legal's: there is no counterparty portal,
+ * so the other side's markup arrives by email and the contract's lawyer files
+ * it (DESIGN.md §03), along with our replies and the clean copy. A contract
+ * with no lawyer — a type that skips legal review, or the one handed back to
+ * the queue ({@link legalOwnerOf}) — has its later versions filed by the
+ * requester, who is then the only person working it.
+ *
+ * An executed copy names nobody, because neither flow that files one stamps
+ * the column: F7 (from a completed signature round) and F16 (a backfill) both
+ * leave `submitted_by` empty. A seeded executed copy claims no more than the
+ * flow that would have filed it.
+ */
+export const versionFilerOf = (version: VersionPlan): string | null => {
+  if (version.filedBy === null) return null;
+  const contract = CONTRACT_PLAN[version.contractIndex]!;
+  return version.filedBy === 'owner' ? ownerOf(contract) : (legalOwnerOf(contract) ?? ownerOf(contract));
+};
 
 /**
  * `<type> — <counterparty>`, with a qualifier when a counterparty has more

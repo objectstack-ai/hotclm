@@ -2,20 +2,21 @@
 
 import { defineSeed } from '@objectstack/spec/data';
 
+import { ContractVersion } from '../objects/contract-version.object.js';
 import { Deviation } from '../objects/deviation.object.js';
 import { Review } from '../objects/review.object.js';
 import { Signature } from '../objects/signature.object.js';
 
-import { dayOffset } from './_shared.js';
+import { dayOffset, fixtureFile } from './_shared.js';
 import { STRINGS } from './demo-locale.js';
-import { DEMO_USER, deviationDeciderOf, titleOfIndex } from './keys.js';
+import { DEMO_USER, deviationDeciderOf, titleOfIndex, versionFilerOf } from './keys.js';
 import { CONTRACT_PLAN, DEVIATION_PLAN, typeOf } from './plan-contracts.js';
-import { REVIEW_PLAN, SIGNATURE_PLAN } from './plan-children.js';
+import { REVIEW_PLAN, SIGNATURE_PLAN, VERSION_PLAN } from './plan-children.js';
 import { contactEmailFor } from './plan.js';
 
 /**
- * What negotiation leaves behind: 60 reviews, 25 deviations and 30 signature
- * rounds (DESIGN.md §10).
+ * What negotiation leaves behind: 300 contract versions, 60 reviews, 25
+ * deviations and 30 signature rounds (DESIGN.md §10).
  *
  * ## `clm_review.reviewer` is why `pnpm demo` boots twice
  *
@@ -46,6 +47,46 @@ import { contactEmailFor } from './plan.js';
  * business) is open and not decided here, and the README tells the evaluator
  * to reassign a review to put it on a lawyer's desk.
  */
+
+/**
+ * 300 contract versions, each holding a real demo document (`seedFile`, see
+ * `_shared.ts`); which contract gets how many, of what kind, and which one is
+ * current is {@link VERSION_PLAN} in `plan-children.ts`.
+ *
+ * Matched on `(contract, version_no)`, the object's own unique index.
+ *
+ * `is_current` is written when the seed CREATES a version and left alone after
+ * that (`applyOn: 'create'`, the #41 treatment). Once a version exists the
+ * flag is `contract_version_current`'s (#96): adding a version moves it onto
+ * the new one. A re-run that re-asserted the fixture's flag would move it back
+ * onto the fixture's version — and the hook would then un-mark the newer one —
+ * walking a negotiation back to where the seed left it. `file` stays `always`:
+ * the platform keeps a row's file on a re-run when the fixture is unchanged, so
+ * a re-run stores nothing new.
+ */
+export const contractVersionSeed = defineSeed(ContractVersion, {
+  externalId: ['contract', 'version_no'],
+  mode: 'upsert',
+  columns: {
+    is_current: { applyOn: 'create' },
+  },
+  records: VERSION_PLAN.map((version) => {
+    const contract = CONTRACT_PLAN[version.contractIndex]!;
+    const notes = version.kind !== 'final_signed'
+      ? STRINGS.versionNotes[version.kind]
+      : contract.backfilled ? STRINGS.versionNotes.final_signed_backfill : STRINGS.versionNotes.final_signed_round;
+    return {
+      contract: titleOfIndex(version.contractIndex),
+      version_no: version.versionNo,
+      kind: version.kind,
+      turn: version.turn,
+      is_current: version.isCurrent,
+      file: fixtureFile(version.kind, `v${version.versionNo}-${version.kind.replace(/_/g, '-')}.pdf`),
+      submitted_by: versionFilerOf(version),
+      notes,
+    };
+  }),
+});
 
 export const reviewSeed = defineSeed(Review, {
   externalId: ['contract', 'stage'],
@@ -93,14 +134,22 @@ export const deviationSeed = defineSeed(Deviation, {
 
 /**
  * 30 signature rounds. `signers` is the §03 JSON shape — one row per
- * signatory, our side first — and `executed_file` is left empty for the same
- * reason `clm_contract_version` is not seeded at all: a `file` value is a
- * `sys_file` id minted by an upload, and a seeded placeholder would be a
- * download that 404s.
+ * signatory, our side first.
+ *
+ * `executed_file` holds the demo executed copy on the 24 completed rounds —
+ * the same document their contract's `final_signed` version holds, which is
+ * the version F7 files from this column — and is empty on the six still out
+ * for signature, where nothing has come back yet. It is written when the seed
+ * CREATES the round and left alone after that (`applyOn: 'create'`, the #41
+ * treatment): the records desk attaches the executed copy to an open round, and
+ * a re-run that wrote the fixture's empty value back would delete it.
  */
 export const signatureSeed = defineSeed(Signature, {
   externalId: ['contract', 'method'],
   mode: 'upsert',
+  columns: {
+    executed_file: { applyOn: 'create' },
+  },
   records: SIGNATURE_PLAN.map((signature) => {
     const contract = CONTRACT_PLAN[signature.contractIndex]!;
     const party = STRINGS.parties[contract.partyIndex]!;
@@ -141,6 +190,7 @@ export const signatureSeed = defineSeed(Signature, {
       signers,
       status: signature.status,
       formalities_done: [...signature.formalitiesDone],
+      executed_file: signature.status === 'completed' ? fixtureFile('final_signed', 'executed-copy.pdf') : null,
       completed_at: signedAt,
     };
   }),

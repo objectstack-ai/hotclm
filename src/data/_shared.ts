@@ -1,6 +1,7 @@
 // Copyright (c) 2026 ObjectStack. Licensed under the Apache-2.0 license.
 
 import { cel } from '@objectstack/spec';
+import { seedFile } from '@objectstack/spec/data';
 
 /**
  * Helpers every `*.seed.ts` family in this directory shares.
@@ -121,3 +122,42 @@ export const assertCount = (dataset: string, actual: number, expected: number): 
     );
   }
 };
+
+/**
+ * The demo documents a seeded file field holds — `fixtures/` beside this file.
+ *
+ * Seven one-page PDFs of under 2 KB each, one per kind of document the book
+ * carries: the five version kinds, a contract type's template and an
+ * obligation's evidence. Each says on its face that it is a demo document and
+ * not a contract, and carries no terms, no party and no signature: the
+ * fixture's job is a real file that downloads, not a contract it would be
+ * dishonest to imitate (AGENTS.md, "Honest capabilities").
+ *
+ * `seedFile(path)` (@objectstack 18.2.0, objectstack-ai/objectstack#25779):
+ *  - **The path is relative to the directory holding `objectstack.config.ts`**,
+ *    not to this file — hence the `src/data/fixtures/` prefix. `os validate`
+ *    and `os build` refuse a path that names no file, so a renamed fixture
+ *    fails the gate rather than the boot.
+ *  - **`os build` bundles the bytes into the artifact** (each dataset's
+ *    `files` map), which is what `pnpm demo`'s `os dev --compile` boots from.
+ *  - **The seed loader stores one file per ROW**, owned by that row exactly as
+ *    an upload into the field would be, so two hundred rows naming the same
+ *    path are two hundred files, and deleting one row's file touches no other.
+ *    A re-run keeps a row's file when its path, bytes, name and type are
+ *    unchanged, so `pnpm demo` twice does not store it twice.
+ *
+ * `name` is what a download is saved as; every call passes one, so a person
+ * who downloads three versions of one contract gets three distinguishable files.
+ */
+export const FIXTURE = {
+  draft: 'src/data/fixtures/demo-draft.pdf',
+  internal_redline: 'src/data/fixtures/demo-internal-redline.pdf',
+  counterparty_redline: 'src/data/fixtures/demo-counterparty-redline.pdf',
+  clean: 'src/data/fixtures/demo-clean.pdf',
+  final_signed: 'src/data/fixtures/demo-final-signed.pdf',
+  template: 'src/data/fixtures/demo-template.pdf',
+  evidence: 'src/data/fixtures/demo-evidence.pdf',
+} as const;
+
+/** A fixture document as a seed value, saved under `name` when downloaded. */
+export const fixtureFile = (fixture: keyof typeof FIXTURE, name: string) => seedFile(FIXTURE[fixture], { name });
