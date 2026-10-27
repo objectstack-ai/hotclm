@@ -3,6 +3,7 @@ import * as objects from './src/objects/index.js';
 import { allHooks } from './src/objects/hooks.js';
 import * as actions from './src/actions/index.js';
 import { allFlows, flowFunctions } from './src/flows/index.js';
+import { allEmailTemplates } from './src/email-templates/index.js';
 import * as profiles from './src/profiles/index.js';
 import { CLM_POSITION, ClmPositions, ClmSharingRules } from './src/sharing/index.js';
 import { clmSeeds, demoSeedRequested } from './src/data/index.js';
@@ -191,6 +192,10 @@ export default defineStack({
   flows: allFlows,
   actions: Object.values(actions),
   functions: flowFunctions,
+  // The localized copy of every notification a flow sends: a notify node names
+  // a bundle in `template`, and the delivery path picks each recipient's
+  // language from it (src/email-templates/_bundle.ts).
+  emailTemplates: allEmailTemplates,
 
   // Security (DESIGN.md §04, card 04): seven positions, five permission sets,
   // the sharing rules. Each position names the sets it distributes in its own

@@ -50,6 +50,13 @@ import { ref } from './_values.js';
  * The bands abut on `{60_days_ago}` (`$gte` on the near band, `$lt` on the
  * far one), so they tile the timeline with no row in both and none in neither.
  */
+/** What both thresholds fill their bundle's holes with (src/email-templates/legal-review-sla.email-template.ts). */
+const REVIEW_DATA = {
+  title: ref('review.title'),
+  contract_number: ref('review.contract_number'),
+  review_started_at: ref('review.review_started_at'),
+};
+
 export const LegalReviewSlaFlow: Flow = sweepFlow({
   name: 'legal_review_sla',
   label: 'Legal Review Running Long',
@@ -77,8 +84,8 @@ export const LegalReviewSlaFlow: Flow = sweepFlow({
           severity: 'warning',
           sourceObject: 'clm_contract',
           sourceId: ref('review.id'),
-          title: 'In legal review over 30 days: {{ review.title }}',
-          message: 'Contract {{ review.contract_number }} has been in legal review since {{ review.review_started_at }} — more than 30 days. This is a fixed 30-day threshold, not this contract type\'s own review SLA. Move it on, or record what it is waiting for.',
+          template: 'clm.legal_review_over_30_days',
+          templateData: REVIEW_DATA,
         },
       }),
     },
@@ -100,8 +107,8 @@ export const LegalReviewSlaFlow: Flow = sweepFlow({
           severity: 'critical',
           sourceObject: 'clm_contract',
           sourceId: ref('review.id'),
-          title: 'In legal review over 60 days: {{ review.title }}',
-          message: 'Contract {{ review.contract_number }} has been in legal review since {{ review.review_started_at }} — more than 60 days, twice the 30-day reminder threshold, so the head of legal is copied. This is a fixed threshold, not this contract type\'s own review SLA.',
+          template: 'clm.legal_review_over_60_days',
+          templateData: REVIEW_DATA,
         },
       }),
     },
