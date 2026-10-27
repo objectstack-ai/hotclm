@@ -328,6 +328,9 @@ export const contract: Record<string, ObjectTranslationData> = {
           party: {
             helpText: 'The counterparty on the executed document.',
           },
+          owner_id: {
+            helpText: 'The requester who owns this contract on the business side. It is stored as given: the person recording the backfill is not assumed to be the owner.',
+          },
           signed_date: {
             label: 'Signed On',
             helpText: 'The date on the executed document. It is recorded as both the signed date and the execution date.',

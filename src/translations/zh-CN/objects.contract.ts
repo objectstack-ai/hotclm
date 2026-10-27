@@ -328,6 +328,9 @@ export const contract: Record<string, ObjectTranslationData> = {
           party: {
             helpText: '执行副本上的相对方。',
           },
+          owner_id: {
+            helpText: '业务侧对这份合同负责的发起人。按所选人员登记，不会默认成办理补录的人。',
+          },
           signed_date: {
             label: '签署日期',
             helpText: '执行副本上的日期，同时写入签署时间与执行完成时间。',

@@ -9,7 +9,7 @@ import { CONTRACT_STAMPED_FIELDS, PARTY_ASSESSED_FIELDS, inList, openAllExcept, 
 /**
  * `clm_admin` — the CLM administrator (DESIGN.md §04): RCUD on every object,
  * write access to the four configuration objects that every other set only
- * reads, and all six action gates.
+ * reads, and all seven action gates.
  *
  * `viewAllRecords` / `modifyAllRecords` on the private contract and its
  * children: an administrator reaches every row without a sharing rule, and
@@ -56,6 +56,7 @@ export const AdminSet = definePermissionSet({
     'clm_admin.access',
     'approve_contract',
     'execute_contract',
+    'backfill_contract',
     'archive_contract',
     'terminate_contract',
     'manage_clauses',
