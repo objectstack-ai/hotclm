@@ -198,7 +198,7 @@ R 读 · C 建 · U 改 · D 删；括号内为行级作用域。
 | `contract_executive_routed` | clm_contract | `route_executive == true` | position `clm_executive` — read |
 | `contract_gm_routed` | clm_contract | `route_gm == true` | position `clm_general_manager` — read |
 | `contract_finance_routed` | clm_contract | `route_finance == true` | position `clm_finance_controller` — read（审批中只读；编辑仍自 approved 起，§13 Q1） |
-| `contract_manager_reports` | clm_contract | — | `writeScope: 'own_and_reports'`（企业版 `hierarchy-security`，开源版退化为 owner-only） |
+| `contract_manager_reports` | clm_contract | — | `writeScope: 'own_and_reports'`（企业版 `hierarchy-security`，开源版退化为 owner-only）；待审的直属上级另由平台给出只读：@objectstack 18.2.0 起，审批步骤等待的人在该步骤待审期间只读这一条合同及其子表与文件，步骤一结束即收回（objectstack#26180），本应用不声明任何规则 |
 
 RLS 谓词不能跨对象（ADR-0055），所以「同部门可见」无法用 `current_user` 的部门表达 —— `department` 是合同上的冗余标量，部门内共享按客户以 team 规则覆盖（§13 Q2）。
 
