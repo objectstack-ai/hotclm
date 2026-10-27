@@ -51,15 +51,46 @@ assertUniqueKeys(
   OBLIGATION_PLAN.map((o) => `${o.contractIndex}::${obligationTitle(o.kind, o.titleIndex)}`),
 );
 
+/**
+ * What a re-run of `pnpm demo` leaves alone on a row it matches (issue #41):
+ * the status and what the transition into it records. Written when the seed
+ * creates the row, never again — `applyOn: 'create'`.
+ *
+ * `status` is the column the daily jobs own once the row exists: F10 moves an
+ * obligation into `overdue`, F11 an instalment into `due` and `overdue`, and
+ * nothing else may (both state machines refuse `overdue` from any non-system
+ * write). Re-asserted on a re-run, it either walked the job back along a legal
+ * edge — measured: the 18 part-paid instalments F11 had flagged went from
+ * `overdue` back to `partial`, silently — or was refused, and the refused row
+ * was dropped whole (a `paid` instalment cannot go back to `due`).
+ *
+ * The other columns move WITH the status: `completed_at` is stamped by
+ * `obligation_state_machine` on `done`, and `actual_date` by
+ * `payment_plan_state_machine` on `partial` / `paid`, in the same write as the
+ * amount and invoice the finance desk records. Left `always`, a re-run would
+ * blank the receipt of an instalment somebody has since paid.
+ */
+const CREATE_ONLY = { applyOn: 'create' } as const;
+
 export const obligationSeed = defineSeed(Obligation, {
   externalId: ['contract', 'title'],
   mode: 'upsert',
+  columns: {
+    status: CREATE_ONLY,
+    completed_at: CREATE_ONLY,
+  },
   records: obligationRecords,
 });
 
 export const paymentPlanSeed = defineSeed(PaymentPlan, {
   externalId: ['contract', 'seq'],
   mode: 'upsert',
+  columns: {
+    status: CREATE_ONLY,
+    actual_date: CREATE_ONLY,
+    actual_amount: CREATE_ONLY,
+    invoice_no: CREATE_ONLY,
+  },
   records: PAYMENT_PLAN.map((instalment) => ({
     contract: titleOfIndex(instalment.contractIndex),
     seq: instalment.seq,

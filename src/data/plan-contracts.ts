@@ -26,9 +26,11 @@ import {
  * `skipTriggers` means F5 never fires over a seeded row. Even if it did, it
  * could not complete: rung 1 is `type: 'manager'`, and at seed time there is
  * nobody for it to resolve — every contract is launched by one of the three
- * business requesters DESIGN.md §10 leaves to the OPERATOR to create
- * (`keys.ts`), so on a fresh database no owner exists to have a manager
- * (measured on 17.4.0: 120 `owner_id` references unresolved after pass 2).
+ * business requesters (`keys.ts`), and although the platform creates them
+ * before the seed runs (`demoStaff`, PR #171), a `demoStaff` entry cannot
+ * carry a manager: `sys_user.manager_id` stays the operator's one manual step
+ * (README, "Rung 1 of the approval ladder is a manager"), so on a fresh
+ * database no owner has a manager for rung 1 to resolve.
  * WHICH boot mints the dev admin is a separate fact, measured in exactly one
  * place — `scripts/demo.mjs` — and this argument does not rest on it: #21's
  * two-boot handover primes that account BEFORE the seed runs. `pnpm validate`
@@ -688,12 +690,10 @@ export const RENEWAL_DEADLINE_TODAY = 1;
  * a legal owner and an end date beyond 90 days, so neither §10's 30-day count
  * nor the 90-day tile moves; soonest-ending first.
  *
- * ⚠️ The non-renewing row is one more contract in #41's set: once F13 has
- * expired it, re-running `pnpm demo` re-asserts `active` on a terminal
- * contract — measured on this fixture: `819 ok / 1 error`, that row refused
- * by `contract_state_machine`, loudly. #41 is the open decision on exactly
- * that and covers every contract the jobs move; this row makes it reachable
- * on boot day instead of five days after it.
+ * Once F13 has expired the non-renewing row, a re-run of `pnpm demo` leaves
+ * it expired: `status` is `applyOn: 'create'` in `contract.seed.ts` (#41).
+ * Before that, the re-run re-asserted `active` on a terminal contract and
+ * `contract_state_machine` refused the row, which was then dropped whole.
  */
 export const TERM_ENDED_YESTERDAY_PER_BRANCH = 1;
 

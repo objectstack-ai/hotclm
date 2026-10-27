@@ -47,6 +47,34 @@ import { SIGNING_ENTITY_PLAN } from './plan.js';
  */
 
 /**
+ * The columns the contract's lifecycle owns once the row exists — written when
+ * the seed CREATES a contract, and left alone when a re-run of `pnpm demo`
+ * matches one (`applyOn: 'create'`, issue #41).
+ *
+ * The set is the single-writer family `contract.object.ts` names (the stage
+ * timestamps and routing flags, `approval_status`, `is_expiring`,
+ * `archived_at`, `is_backfilled`), plus the three a transition writes beside
+ * them: `status` itself, `termination_reason` (written by Terminate in the same
+ * write as `terminated`) and `archive_no` (the records desk's number, which is
+ * what stamps `archived_at`). Each has a writer after creation that is not the
+ * fixture — F12 sets `is_expiring`, F13 moves `active` to `expired`, the state
+ * machine and F2/F5/F14 stamp the rest — and the state machine refuses most of
+ * the ways back, so a re-run that re-asserted them either walked a job's work
+ * back silently or had the row refused and dropped whole.
+ *
+ * They travel as ONE set because they are one fact: a create-only `status`
+ * beside an `always` `approved_at` would let a re-run blank the stamp of a
+ * contract somebody approved since, which is a contract the write layer could
+ * never have produced. The cost is stated in the README: these columns keep
+ * the dates they were stamped with, while the fixture's own dates
+ * (`start_date`, `end_date`, …) still slide forward on every re-run.
+ *
+ * `legal_owner` and `owner_id` are NOT here: they are how the book is dealt to
+ * the demo staff, and a re-run re-dealing them is the behaviour, not a defect.
+ */
+const CREATE_ONLY = { applyOn: 'create' } as const;
+
+/**
  * Six of the fourteen contracts in a terminal state have been through the
  * records desk; the other eight are what §05's "待归档" list is for.
  */
@@ -58,6 +86,26 @@ const archived = new Set(
 export const contractSeed = defineSeed(Contract, {
   externalId: 'title',
   mode: 'upsert',
+  columns: {
+    status: CREATE_ONLY,
+    is_expiring: CREATE_ONLY,
+    is_backfilled: CREATE_ONLY,
+    route_legal_head: CREATE_ONLY,
+    route_finance: CREATE_ONLY,
+    route_executive: CREATE_ONLY,
+    route_gm: CREATE_ONLY,
+    approval_status: CREATE_ONLY,
+    submitted_at: CREATE_ONLY,
+    review_started_at: CREATE_ONLY,
+    approved_at: CREATE_ONLY,
+    signed_at: CREATE_ONLY,
+    executed_at: CREATE_ONLY,
+    activated_at: CREATE_ONLY,
+    closed_at: CREATE_ONLY,
+    termination_reason: CREATE_ONLY,
+    archive_no: CREATE_ONLY,
+    archived_at: CREATE_ONLY,
+  },
   records: CONTRACT_PLAN.map((contract) => {
     const type = typeOf(contract);
     const law = lawOf(contract);
@@ -78,8 +126,7 @@ export const contractSeed = defineSeed(Contract, {
       // `business-unit.seed.ts` upserts on `code`, as `our_entity` is.
       department: type.department,
       // `owner_id` names a user the way `legal_owner` on the next line does —
-      // a `lookup('sys_user')` resolved against `sys_user.name` by the two-boot
-      // handover `scripts/demo.mjs` sequences. It replaces two claims that
+      // a `lookup('sys_user')` resolved against `sys_user.name`. It replaces two claims that
       // stood here and were both false; each was re-measured on 17.3.0 before
       // this line was written, because a `(measured)` annotation that is not
       // one is worse than no comment at all.
@@ -94,11 +141,12 @@ export const contractSeed = defineSeed(Contract, {
       //    platform admin — under `pnpm demo` the PRIMING boot, with no
       //    contract to claim — so the demo boot left all 120 NULL. From 17.5
       //    (17.7 widened it again) it also runs whenever a seed settles
-      //    (`app:seeded`), against the existing platform admin. Measured on
-      //    17.7.0 (#82): `pnpm demo`'s second boot ends with all 120 owned by
-      //    the dev admin, and once the operator has created the requesters
-      //    the next `pnpm demo` hands them over (43 / 43 / 34). The name below
-      //    is still what decides the owner; the claim only fills the gap.
+      //    (`app:seeded`), against the existing platform admin. Since #28
+      //    (PR #171) the requesters are declared demo staff
+      //    (`objectstack.config.ts` `demoStaff`) that the platform creates on
+      //    the demo boot BEFORE the seed runs, so the name resolves on the
+      //    first `pnpm demo` (43 / 43 / 34, README). The name below is what
+      //    decides the owner; the claim only fills a name no account carries.
       //
       // Which requester owns which contract is {@link ownerOf} in `keys.ts`.
       owner_id: ownerOf(contract),

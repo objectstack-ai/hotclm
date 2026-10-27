@@ -10,7 +10,9 @@ import { assertUniqueKeys } from './_shared.js';
  *
  * Each dataset runs `mode: 'upsert'` so `pnpm demo` is re-runnable on a
  * database that already holds the demo — the second run slides every
- * boot-relative date forward instead of writing a second copy of the book. An
+ * boot-relative date forward instead of writing a second copy of the book, and
+ * leaves the columns the lifecycle owns as the jobs and the desks left them
+ * (`applyOn: 'create'` in `contract.seed.ts` and `post-signature.seed.ts`). An
  * upsert is only as good as its key, so the keys are built HERE, once, and
  * both the parent row and every child that points at it call the same
  * function. A child that spelled its parent's title itself would resolve to
@@ -28,9 +30,12 @@ import { assertUniqueKeys } from './_shared.js';
 /**
  * The account the demo is driven as — the platform's dev admin.
  *
- * The only account that exists while the seed runs, so it is what every
- * REQUIRED user reference has to name: `clm_review.reviewer` is
- * `required: true`, and a name resolving to nothing costs the whole row.
+ * `clm_review.reviewer` is `required: true`, so a name resolving to nothing
+ * costs the whole row, and the dev admin is the account `scripts/demo.mjs`
+ * verifies exists before the demo boot seeds anything. Since #28 (PR #171) the
+ * demo staff exist at seed time too (`demoStaff`, created by the platform
+ * before the seed runs); whether `reviewer` should name a lawyer instead is
+ * open and is not decided here.
  *
  * `clm_review.reviewer` is now the last REFERENCE that has to name it, and
  * the only one left that spells this constant at all.
@@ -66,21 +71,19 @@ export const DEMO_USER = 'Dev Admin';
  * gates every 我的合同 item away from it: measured on this fixture,
  * `GET /api/v1/meta/app/clm` serves that account `navigation: []`. Contracts
  * parked on it would be owned by the one account that can never open the
- * screen they are meant to fill. The accounts that CAN are the ones DESIGN.md
- * §10 has the operator create in Setup, so those are the names the deal uses.
+ * screen they are meant to fill. The accounts that CAN are DESIGN.md §10's
+ * persona mix, which the stack declares as `demoStaff` and the platform
+ * creates on the demo boot, so those are the names the deal uses.
  *
- * That is also why the OPTIONAL user references in this fixture name operator
- * accounts while the REQUIRED one names {@link DEMO_USER}, which is not an
- * inconsistency but the difference between the two kinds of reference:
+ * The two kinds of reference still differ in what a missing account costs.
  * `clm_review.reviewer` is `required: true`, so a name that resolves to
- * nothing costs the whole row and it must be an account that exists AT SEED
- * TIME — the dev admin, the only one there is. `owner_id` and
- * `clm_contract.legal_owner` are optional, so they may name accounts that do
- * not exist yet: measured on 17.3.0 for `owner_id` and re-measured on 17.4.0
- * for `legal_owner`, an unresolvable name lands NULL, silently, and never
- * refuses the row. Every dataset is an upsert, so creating the accounts and
- * running `pnpm demo` again hands their contracts over. The README says so
- * where the operator reads it.
+ * nothing costs the whole row. `owner_id` and `clm_contract.legal_owner` are
+ * optional: measured on 17.3.0 for `owner_id` and re-measured on 17.4.0 for
+ * `legal_owner`, an unresolvable name lands NULL, silently, and never refuses
+ * the row. Since #28 (PR #171) the platform creates the demo staff on the
+ * demo boot BEFORE the seed runs, so on `pnpm demo` every one of these names
+ * resolves on the first run and no account is left for the operator to
+ * create. The README names the accounts where the evaluator reads it.
  *
  * ## Why the counterparty decides
  *
@@ -119,11 +122,11 @@ export const ownerOf = (contract: ContractPlan): string =>
  * makes for `owner_id`, and it applies here for the same reason.
  *
  * `legal_owner` is `Field.user` and optional, so — like `owner_id` and unlike
- * the `required` `clm_review.reviewer` — it may name an account that does not
- * exist yet: an unresolvable name lands NULL, silently, and never refuses the
- * row. Every dataset is an upsert, so the operator creates these two accounts
- * and runs `pnpm demo` again to hand the contracts over. The README names them
- * where the operator reads it.
+ * the `required` `clm_review.reviewer` — a name no account carries lands NULL,
+ * silently, and never refuses the row. These two are declared demo staff
+ * (`demoStaff`, PR #171): the platform creates them on the demo boot before
+ * the seed runs, so the contracts reach them on the first `pnpm demo`. The
+ * README names them where the evaluator reads it.
  *
  * ## Why the counterparty decides, and what that does NOT claim
  *
@@ -194,12 +197,12 @@ export const legalOwnerOf = (contract: ContractPlan): string | null =>
  *
  * `owner` is optional (DESIGN.md §03, and the field's own description: "Empty
  * means unassigned, not the contract owner"), so like the other two optional
- * references it may name accounts that do not exist yet — an unresolvable name
- * lands NULL, silently, and never refuses the row. Every dataset is an upsert,
- * so the operator creates the accounts and runs `pnpm demo` again to hand the
- * obligations over. The README names them where the operator reads it, and it
- * names NO new account: this deal spends only the five the fixture already
- * asks for.
+ * references a name no account carries lands NULL, silently, and never
+ * refuses the row. The five accounts it names are declared demo staff
+ * (`demoStaff`, PR #171), created by the platform on the demo boot before the
+ * seed runs, so the obligations reach them on the first `pnpm demo`. The deal
+ * names NO new account: it spends only the five the fixture already deals
+ * contracts to.
  *
  * ## The rule: the desk that performs it, and the counterparty decides which
  *
@@ -309,10 +312,9 @@ export const obligationOwnerOf = (obligation: ObligationPlan): string | null => 
  * fixture already deals `owner_id`, `legal_owner` and the compliance
  * obligations by: no locale bundle is consulted and `demo-en` and `demo-zh`
  * deal identically. It spends NO new account — the same two `Legal Counsel`
- * names `README.md` already asks the operator to create, 10 / 7 across the 17.
- * Like the other optional references it may name an account that does not
- * exist yet: measured on 17.4.0, an unresolvable name lands NULL and never
- * refuses the row, and the next `pnpm demo` upsert hands the rows over.
+ * demo staff the contracts are dealt to, 10 / 7 across the 17, created by the
+ * platform before the seed runs. Like the other optional references, a name
+ * no account carries lands NULL (measured on 17.4.0) and never refuses the row.
  */
 export const deviationDeciderOf = (deviation: DeviationPlan): string | null =>
   deviation.status === 'open' ? null : counselFor(CONTRACT_PLAN[deviation.contractIndex]!);
