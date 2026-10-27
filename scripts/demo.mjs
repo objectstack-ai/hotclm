@@ -18,15 +18,18 @@
 // write landed at 2026-09-09T14:26:53.833Z and the account was created at
 // 2026-09-09T14:26:57.396Z, 3.563s later. This IS the interval — it is
 // measured here and nowhere else, so there is one place to be wrong.
-// Two things follow, and both are silent:
 //
-//   1. `clm_review.reviewer` is `required: true` and resolves against
-//      `sys_user.name`. On a first boot the name matches nothing, the loader
-//      defers the column to pass 2, and the engine refuses the row:
-//      "Failed to write clm_review record #1: Reviewer is required". All 60
-//      reviews are lost and the seed still reports success for everything else.
-//   2. Rows written before the organization exists carry `organization_id:
-//      null`, which is not what an org-scoped deployment expects of its data.
+// What follows from it now is that rows written before the organization
+// exists carry `organization_id: null`, which is not what an org-scoped
+// deployment expects of its data. Silently: the seed reports success.
+//
+// It used to be a second thing too. `clm_review.reviewer` is `required: true`
+// and resolved against the dev admin's name, which matched nothing on a first
+// boot, so all 60 reviews were refused while the seed reported success for
+// everything else. The reviews now name the demo staff (issue #186), which
+// the platform creates on the demo boot before that boot's seed runs (issue
+// #28), so no row depends on the admin's NAME any more and this script no
+// longer checks it. See `reviewerOf` in `src/data/keys.ts`.
 //
 // DESIGN.md §10 forbids seeding users, so the fixture cannot supply the
 // account itself. What this script does instead is sequence the two boots the
@@ -34,12 +37,7 @@
 // mints the admin and founds the organization, then again with it ON. The
 // first boot is quiet. The handover between them is VERIFIED — a real sign-in
 // against the priming server — because the failure being guarded against is a
-// seeded database with sixty missing reviews, which looks exactly like a
-// working one.
-//
-// Measured on the same database: 13 ok / 4 errors on the first boot became
-// 14 ok / 2 errors on the second, the difference being the review row that
-// could finally resolve its reviewer.
+// seeded database that looks exactly like a working one.
 //
 // ── Why both boots pass `--compile` ────────────────────────────────────────
 //
@@ -67,31 +65,6 @@ const SEED_LOCALE_ENV_VAR = 'OS_SEED_LOCALE';
 // since 17.5). The demo boot turns it on so the daily sweeps arm and M3's
 // reminders reach the inbox; `pnpm dev` keeps the default (issue #82, ruling C).
 const SCHEDULED_WORK_ENV_VAR = 'OS_AUTOMATION_SCHEDULED_WORK_ENABLED';
-
-/**
- * The account name the fixture's `clm_review.reviewer` resolves against.
- *
- * It is the ONLY reference this boot has to satisfy, and the reason is the
- * `required: true` on that one column: a name resolving to nothing costs the
- * whole row, so it must name an account that exists while the seed runs, and
- * on a first boot the dev admin is the only account there is.
- *
- * NOT `clm_contract.owner_id`, NOT `clm_contract.legal_owner`, NOT
- * `clm_obligation.owner` and NOT `clm_deviation.decided_by`. All four name
- * accounts of DESIGN.md §10's persona mix — three business requesters and two
- * legal counsel — which no seed may create and this script does not mint
- * either: the stack DECLARES them in `demoStaff` (objectstack.config.ts) and
- * the platform creates them on the demo boot, before that boot's seed runs
- * (issue #28, ruling D). See `src/data/keys.ts`.
- *
- * ⚠️ This MIRRORS `DEMO_USER` in `src/data/keys.ts`. They have to agree, and
- * they cannot be one constant: this file is plain `.mjs` that runs before
- * anything is compiled, and that one is TypeScript baked into the artifact.
- * The check below is what keeps a drift from being silent — a fixture pointed
- * at a name no account carries loses every row that references it, and the
- * seed reports success for the rest.
- */
-const DEMO_USER = 'Dev Admin';
 
 // The same credentials and env overrides `@objectstack/plugin-auth` itself
 // reads, so an operator who has changed them is not silently probed for an
@@ -130,8 +103,8 @@ const freePort = () =>
  * The handover check: can you actually log in yet?
  *
  * Not "did the server start" and not "did a line appear in the log" — the
- * whole point of the priming boot is a loginable account whose name the
- * fixture can resolve, so that is what is asserted. `localhost` (not
+ * whole point of the priming boot is a loginable account in a founded
+ * organization, so that is what is asserted. `localhost` (not
  * `127.0.0.1`) with a matching `Origin`: dev trusts `http://localhost:*` and
  * better-auth rejects anything else with 403 INVALID_ORIGIN.
  */
@@ -144,13 +117,10 @@ const signIn = async (port) => {
       body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
       signal: AbortSignal.timeout(5_000),
     });
-    if (response.status !== 200) return null;
-    const body = await response.json().catch(() => ({}));
-    const user = body?.user ?? {};
-    return { name: typeof user.name === 'string' ? user.name : null };
+    return response.status === 200;
   } catch {
     // Not up yet, or up and not answering. Either way: not ready.
-    return null;
+    return false;
   }
 };
 
@@ -235,27 +205,10 @@ const primeAdminAccount = async () => {
         log,
       );
     }
-    const session = await signIn(port);
-    if (session) {
+    if (await signIn(port)) {
       // Stop the priming server FIRST: it is detached and holding the
       // database, so exiting around it would orphan a server nobody can see.
       await stop();
-      if (session.name !== DEMO_USER) {
-        fail(
-          `the account you log in as is named ${JSON.stringify(session.name)}, not ${JSON.stringify(DEMO_USER)}.`,
-          [
-            `The demo fixture resolves \`clm_review.reviewer\` against a \`sys_user\` named`,
-            `${JSON.stringify(DEMO_USER)}. Against any other name that reference resolves to`,
-            'nothing, and every review row is refused while the rest of the seed reports',
-            'success — so nothing was seeded and the database is exactly as it was.',
-            '',
-            'Start over on a clean database:',
-            '',
-            '    rm -rf .objectstack/data && pnpm demo',
-          ],
-          log,
-        );
-      }
       return;
     }
     await sleep(1_000);

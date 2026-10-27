@@ -92,10 +92,10 @@ console does not list them; this table is where they are named.
 
 | Account | Sign in as | Position | What it holds in the demo |
 |---|---|---|---|
-| `Business Requester 1` · `2` · `3` | `requester1@example.com` · `requester2@example.com` · `requester3@example.com` | none — every member holds `clm_requester` | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 |
-| `Legal Counsel 1` · `2` | `counsel1@example.com` · `counsel2@example.com` | `clm_legal_counsel` | receives contracts on submission (round-robin by open load) and owns review · the `legal_owner` of every contract legal has accepted — 34 / 34 · all 56 compliance obligations — 29 / 27 · the `decided_by` of all 17 decided deviations — 10 / 7 |
-| `Head of Legal` | `legal.head@example.com` | `clm_legal_head` | rung 2 of the approval ladder whenever `route_legal_head` is stamped |
-| `Finance Controller` | `finance@example.com` | `clm_finance_controller` | rung 2/3, reads every contract with `route_finance`, and the only position that may edit bank details |
+| `Business Requester 1` · `2` · `3` | `requester1@example.com` · `requester2@example.com` · `requester3@example.com` | none — every member holds `clm_requester` | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 · the 2 business reviews — 0 / 1 / 1 |
+| `Legal Counsel 1` · `2` | `counsel1@example.com` · `counsel2@example.com` | `clm_legal_counsel` | receives contracts on submission (round-robin by open load) and owns review · the `legal_owner` of every contract legal has accepted — 34 / 34 · all 56 compliance obligations — 29 / 27 · the `decided_by` of all 17 decided deviations — 10 / 7 · the reviewer of their contracts' 34 legal reviews — 16 / 18, the 7 still pending among them — 2 / 5 |
+| `Head of Legal` | `legal.head@example.com` | `clm_legal_head` | rung 2 of the approval ladder whenever `route_legal_head` is stamped · the reviewer of 8 reviews: the legal review of the contract handed back to the queue, and the 7 finance reviews on contracts not yet approved |
+| `Finance Controller` | `finance@example.com` | `clm_finance_controller` | rung 2/3, reads every contract with `route_finance`, and the only position that may edit bank details · the reviewer of the 16 finance reviews on approved-or-later contracts |
 | `Executive` | `executive@example.com` | `clm_executive` | rung 4, and reads every contract with `route_executive` |
 | `General Manager` | `gm@example.com` | `clm_general_manager` | rung 5, and reads every contract with `route_gm` |
 | `Records Manager` | `records@example.com` | `clm_records_manager` | execution formalities, the executed copy and the archive number |
@@ -146,9 +146,10 @@ instalment finance has marked paid. Measured after one run of every daily job
 plus those four desk actions: the re-run refused no row and dropped none.
 
 Three limits. Any other column you edited, such as a summary or a reassigned
-legal owner, goes back to the fixture's value. A deviation or signature round
-you decided is not covered yet: the re-run puts its fixture status back, and the
-state machine may refuse that. The lifecycle columns also keep the dates they
+legal owner or a review's reviewer, goes back to the fixture's value. A
+deviation, signature round or review you decided is not covered yet: the re-run
+puts its fixture status or decision back, and for a deviation or a signature
+round the state machine may refuse that. The lifecycle columns also keep the dates they
 were stamped with, while the fixture's own dates (start, end, due and planned
 dates) move forward on each re-run. To get back to the corpus exactly as
 shipped, start from a clean database: `rm -rf .objectstack/data && pnpm demo`.
@@ -169,10 +170,13 @@ the dev admin cannot open, and as a business owner or an obligation's owner it
 fills the setup account's 我的合同 instead of the requester's — and its
 reminders go to somebody who is not going to act on them.
 
-`clm_review.reviewer` is the one reference that still names the dev admin. It is
-`required: true`, so a name that resolves to nothing takes the row with it, and
-the fixture names the account `pnpm demo` makes sure of before anything is
-seeded. Reassign it if you want the reviews on a lawyer's desk.
+The 60 reviews are dealt to the desk whose stage they are. A legal review is the
+contract's lawyer's, or the head of legal's on the one contract handed back to
+the queue. A finance review is the finance controller's once its contract is
+approved, and the head of legal's before that, because finance edits a contract
+(and so its reviews) only from `approved` onward. A business review is the
+requester's who launched the contract. A compliance review would be the head of
+legal's; the demo deals none. `src/data/keys.ts` (`reviewerOf`) says why each.
 
 ### Rung 1 of the approval ladder is a manager
 

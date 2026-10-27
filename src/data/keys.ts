@@ -1,7 +1,8 @@
 // Copyright (c) 2026 ObjectStack. Licensed under the Apache-2.0 license.
 
 import { STRINGS } from './demo-locale.js';
-import type { ObligationPlan, VersionPlan } from './plan-children.js';
+import { POST_APPROVAL_STATUSES } from '../sharing/_lifecycle.js';
+import type { ObligationPlan, ReviewPlan, VersionPlan } from './plan-children.js';
 import { CONTRACT_PLAN, type ContractPlan, type DeviationPlan } from './plan-contracts.js';
 import { assertUniqueKeys } from './_shared.js';
 
@@ -30,23 +31,14 @@ import { assertUniqueKeys } from './_shared.js';
 /**
  * The account the demo is driven as — the platform's dev admin.
  *
- * `clm_review.reviewer` is `required: true`, so a name resolving to nothing
- * costs the whole row, and the dev admin is the account `scripts/demo.mjs`
- * verifies exists before the demo boot seeds anything. Since #28 (PR #171) the
- * demo staff exist at seed time too (`demoStaff`, created by the platform
- * before the seed runs); whether `reviewer` should name a lawyer instead is
- * open and is not decided here.
- *
- * `clm_review.reviewer` is now the last REFERENCE that has to name it, and
- * the only one left that spells this constant at all.
- * `clm_contract.legal_owner` left for {@link LEGAL_OWNERS},
- * `clm_obligation.owner` for {@link obligationOwnerOf} and
- * `clm_deviation.decided_by` for {@link deviationDeciderOf} — all three
- * optional, so all three may name accounts that do not exist yet. Enumerated
- * rather than sampled: `grep -rn DEMO_USER src` over this tree returns the
- * declaration, this file's four cross-references, `reviewer`, and one thing
- * that is not a reference at all — the `our`-side entry of
- * `clm_signature.signers`, a JSON string that resolves against nothing.
+ * No REFERENCE names it any more. `clm_contract.legal_owner` left for
+ * {@link LEGAL_OWNERS}, `clm_obligation.owner` for {@link obligationOwnerOf},
+ * `clm_deviation.decided_by` for {@link deviationDeciderOf}, and the last one,
+ * the `required` `clm_review.reviewer`, for {@link reviewerOf} (#186).
+ * Enumerated rather than sampled: `grep -rn DEMO_USER src` over this tree
+ * returns the declaration, this file's cross-references, and one thing that is
+ * not a reference at all — the `our`-side entry of `clm_signature.signers`, a
+ * JSON string that resolves against nothing.
  */
 export const DEMO_USER = 'Dev Admin';
 
@@ -318,6 +310,91 @@ export const obligationOwnerOf = (obligation: ObligationPlan): string | null => 
  */
 export const deviationDeciderOf = (deviation: DeviationPlan): string | null =>
   deviation.status === 'open' ? null : counselFor(CONTRACT_PLAN[deviation.contractIndex]!);
+
+/**
+ * The head of legal and the finance controller, as the ACCOUNT NAMES the
+ * loader resolves `clm_review.reviewer` against.
+ *
+ * ⚠️ These two MIRROR the `name` of their `demoStaff` entries in
+ * `objectstack.config.ts`, which spells them as literals rather than from
+ * here. `reviewer` is `required: true`, so a drift between the two is not a
+ * NULL but a lost row: the loader refuses every review that names an account
+ * nobody carries, and the seed reports success for the rest.
+ */
+export const LEGAL_HEAD = 'Head of Legal';
+export const FINANCE_CONTROLLER = 'Finance Controller';
+
+/**
+ * Who a review belongs to — `clm_review.reviewer`, the person who decides it
+ * (`review_decision_stamp` in `contract.hook.ts`: a review has no
+ * `decided_by`, its reviewer IS the decider).
+ *
+ * ## Why not {@link DEMO_USER}, which is what this column held before
+ *
+ * Measured on `main` @ `37ce10c`, clean database, one `pnpm demo:zh`: **all 60
+ * reviews named the dev admin** (`display_name` `Legal · Dev Admin` ×35,
+ * `Finance · Dev Admin` ×23, `Business · Dev Admin` ×2). The column was dealt
+ * that way while the dev admin was the only account at seed time and
+ * `reviewer` is `required`, so any other name cost the row. Since #28 (PR #171)
+ * the demo staff exist before the seed runs, so the constraint is gone and
+ * the argument {@link LEGAL_OWNERS} makes for `legal_owner` applies: the dev
+ * admin holds no `clm_*` set beyond the default, so a review on its desk is a
+ * review nobody who can act on it is named for.
+ *
+ * ## The rule: the desk §04 gives the stage to
+ *
+ *  - **legal** — the contract's lawyer, {@link legalOwnerOf}: the counsel who
+ *    accepted it into review is the one who reviews it. Where F2 assigned
+ *    nobody (the contract handed back to the queue), the head of legal, who
+ *    receives that queue's escalations.
+ *  - **finance** — the finance controller, whose `clm_finance` holds
+ *    `RCU（stage=finance）` on this object.
+ *  - **compliance** — the head of legal: compliance is legal's work (the
+ *    argument {@link obligationOwnerOf} makes for compliance obligations) and
+ *    a high-risk contract's compliance sign-off is the senior lawyer's.
+ *    The plan deals no compliance review today; the rule is stated so the
+ *    first one has an owner.
+ *  - **business** — the requester who launched the contract, {@link ownerOf}:
+ *    the business review is the launching desk's own sign-off.
+ *
+ * ## Where the rule bends, measured on 18.2.0
+ *
+ * A finance review on a contract that has not reached `approved` goes to the
+ * head of legal, not the finance controller. `clm_review` is
+ * `controlled_by_parent`, so writing one needs EDIT on its contract, and
+ * finance edits contracts only from `approved` onward
+ * (`contract_finance_post_approval`); before that it READS the contracts the
+ * matrix routed to it (`contract_finance_routed`) and no more. Measured: the
+ * finance controller's `PATCH` of a finance review on an `in_review` or an
+ * `in_approval` contract answers `403 PERMISSION_DENIED` ("requires edit
+ * access to its master record"), the same write on an `active` contract `200`.
+ * So on those rows the finance controller could neither have decided the
+ * review it would be named for nor change it now; the head of legal can
+ * (`review_legal_update_any_stage`, and `contract_legal_all_head` edits every
+ * contract), and is the account the rule already falls back to. 7 of the 23
+ * finance reviews sit on such a contract.
+ *
+ * A business review stays the requester's although a requester cannot change
+ * it: `clm_requester` holds `R` on this object (§04), and both seeded business
+ * reviews are already decided. The requester sees it on their own contract.
+ *
+ * Structure only, so `demo-en` and `demo-zh` deal identically, and every name
+ * is declared demo staff (`demoStaff`), created by the platform before the
+ * seed runs.
+ */
+export const reviewerOf = (review: ReviewPlan): string => {
+  const contract = CONTRACT_PLAN[review.contractIndex]!;
+  switch (review.stage) {
+    case 'legal':
+      return legalOwnerOf(contract) ?? LEGAL_HEAD;
+    case 'finance':
+      return POST_APPROVAL_STATUSES.includes(contract.status) ? FINANCE_CONTROLLER : LEGAL_HEAD;
+    case 'compliance':
+      return LEGAL_HEAD;
+    case 'business':
+      return ownerOf(contract);
+  }
+};
 
 /**
  * Who filed a contract version (`clm_contract_version.submitted_by`), or
