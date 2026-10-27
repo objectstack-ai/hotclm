@@ -4,8 +4,9 @@ import { allHooks } from './src/objects/hooks.js';
 import * as actions from './src/actions/index.js';
 import { allFlows, flowFunctions } from './src/flows/index.js';
 import * as profiles from './src/profiles/index.js';
-import { ClmPositions, ClmSharingRules } from './src/sharing/index.js';
-import { clmSeeds } from './src/data/index.js';
+import { CLM_POSITION, ClmPositions, ClmSharingRules } from './src/sharing/index.js';
+import { clmSeeds, demoSeedRequested } from './src/data/index.js';
+import { CONTRACT_OWNERS, LEGAL_OWNERS } from './src/data/keys.js';
 import * as apps from './src/apps/index.js';
 import * as datasets from './src/datasets/index.js';
 import * as dashboards from './src/dashboards/index.js';
@@ -241,4 +242,54 @@ export default defineStack({
   // install somebody else's contract book into every fresh deployment.
   // `OS_SEED_LOCALE` chooses which language the fixture is written in.
   data: clmSeeds,
+
+  // The demo staff (DESIGN.md §10's persona mix, issue #28 ruling D): the
+  // people the demo dataset is dealt to. The app only DECLARES them; the
+  // platform creates them (`demoStaff`, @objectstack 18.2). On a local
+  // development boot `os dev` signs each one up after the dev admin, assigns
+  // its position in the Default Organization, and only then runs the seed, so
+  // `owner_id: 'Business Requester 1'` resolves on the first `pnpm demo`.
+  // Idempotent: an address that already has an account is left as it is and
+  // only its missing assignments are added.
+  //
+  // This is not a seeded user (§10 「用户不可种子」 stands). Nothing here is a
+  // `sys_user` row in `data`, and `os build` drops the key from the artifact,
+  // so no deployment ever boots with these accounts. A non-development boot
+  // creates nothing and says why.
+  //
+  // Gated on the same switch as `data`: the staff exist for the demo book, and
+  // `pnpm dev` is deliberately empty. `pnpm demo` sets `CLM_DEMO_SEED` for the
+  // boot that loads this file, so the declaration and the rows that name it
+  // always arrive together.
+  //
+  // No password: every demo account signs in with the development seed
+  // password (`os dev --admin-password`, default `admin123`) — the platform
+  // refuses a `password` key, so no credential is committed here.
+  //
+  // - The business requesters and the two counsel are named by the SAME
+  //   constants the fixture deals rows by (`src/data/keys.ts`), so a name here
+  //   cannot drift from the `owner_id` / `legal_owner` / `owner` /
+  //   `decided_by` values that resolve against it. A requester holds no
+  //   position: `clm_requester` is every member's default set (`isDefault`).
+  // - The other six positions are staffed once each, so every rung of the
+  //   approval ladder and every audience group of §05 has someone to sign in
+  //   as. The fixture names none of them; they are reached through the
+  //   position, not by name.
+  //
+  // ⚠️ A line manager cannot be declared: a `demoStaff` entry carries a
+  // `position` and `permissionSets` and nothing else, and `sys_user.manager_id`
+  // is an admin operation (README, "Rung 1 of the approval ladder is a
+  // manager"). Setting the requesters' manager stays a manual Setup step.
+  demoStaff: demoSeedRequested()
+    ? [
+        ...CONTRACT_OWNERS.map((name, i) => ({ name, email: `requester${i + 1}@example.com` })),
+        ...LEGAL_OWNERS.map((name, i) => ({ name, email: `counsel${i + 1}@example.com`, position: CLM_POSITION.legalCounsel })),
+        { name: 'Head of Legal',      email: 'legal.head@example.com', position: CLM_POSITION.legalHead },
+        { name: 'Finance Controller', email: 'finance@example.com',    position: CLM_POSITION.financeController },
+        { name: 'Executive',          email: 'executive@example.com',  position: CLM_POSITION.executive },
+        { name: 'General Manager',    email: 'gm@example.com',         position: CLM_POSITION.generalManager },
+        { name: 'Records Manager',    email: 'records@example.com',    position: CLM_POSITION.recordsManager },
+        { name: 'CLM Administrator',  email: 'clm.admin@example.com',  position: CLM_POSITION.admin },
+      ]
+    : [],
 });
