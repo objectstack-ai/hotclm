@@ -1,83 +1,70 @@
 import { defineDataset } from '@objectstack/spec/ui';
 
 /**
- * How far contracts get, and when — DESIGN.md §09's second dataset, by
- * contract type and legal owner.
+ * How long contracts take, stage by stage — DESIGN.md §09's second dataset,
+ * by contract type and legal owner.
  *
- * ## ⚠️ No duration measure — and §09 does not ask for one
+ * ## The durations are `duration` measures (platform 18.2.0)
  *
- * §09's bullet for this dataset asks for stage-reached counts and rules out any
- * duration measure, which is exactly what is declared below. 各段时长 (per-stage
- * DURATIONS) was placed outside the V1.0 delivery surface by the maintainer
- * ruling of 2026-09-09 (PR #40, `1127e52`; §09 as merged, PR #70, `30fd863`),
- * and the measurements in this comment are the ones §09 now cites as its
- * reason. They were taken here, on this dataset — which is why they are
- * recorded here, and not because this file falls short of the design.
+ * Each stage measure is the platform's duration primitive
+ * (`objectstack-ai/objectstack#25778`, shipped in `@objectstack/spec` 18.2.0):
+ * `aggregate: 'avg'` over `duration: { from, to, unit: 'days' }`, two
+ * `datetime` stamps of the same contract. The analytics service computes
+ * `to - from` per row in the database (`julianday` on SQLite, `EXTRACT(EPOCH …)`
+ * on PostgreSQL), divides by the unit, then averages. No expression and no SQL
+ * enter this file (ADR-0021).
  *
- * Measured on `@objectstack/spec` 17.3.0 + `@objectstack/service-analytics`
- * 17.3.0 + better-sqlite3 13.0.3, against the 820-row demo:
+ * What a reader of these numbers needs to know, all of it platform behaviour:
  *
- *   - `Field.datetime` persists an ISO **string**: `typeof(submitted_at)` is
- *     `'text'`, value `'2026-05-19T00:00:00.000Z'`.
- *   - So `AVG(submitted_at)` is SQLite's text→numeric coercion of that string:
- *     it answers `2025.9166666666667` — the average YEAR, to four decimals.
- *   - The dataset layer takes no SQL and no expressions (ADR-0021: a measure is
- *     `aggregate` + `field`, and the only computed form is
- *     `derived: { op, of }` over OTHER measures), so there is nowhere to write
- *     the subtraction.
- *   - `derived: { op: 'difference', of: ['avg_activated', 'avg_submitted'] }`
- *     PARSES, RUNS, and returns `-0.849999999999909`. That number is the
- *     difference of two average years. It is not a duration, it is not in days,
- *     and nothing about the tile it lands on would say so.
+ *   - **Unit: days, fractional.** `1.5` is a day and a half. The result field
+ *     carries no unit on the wire, so every title that shows one of these says
+ *     "days" itself.
+ *   - **Each average has its own population.** A contract contributes to a
+ *     stage only when BOTH of its stamps are set, so the four stage averages are
+ *     taken over four different sets of contracts and do NOT add up to the
+ *     submitted → approved turnaround. The demo shows it plainly: the in-force
+ *     book was backfilled with signature and activation dates and mostly no
+ *     intake, so signed → active is averaged over 72 contracts and
+ *     submitted → review over 35.
+ *   - **No monthly trend.** A duration measure under a time dimension bucketed
+ *     by `granularity` is refused (`400 INVALID_FIELD`, naming the measure), as
+ *     is one under a field-to-field filter. A bounded date window is fine —
+ *     that is what `compareTo` shifts on the legal workbench.
  *
- * That last one is the reason this is a comment and not a measure: the broken
- * form is the one that renders a clean, plausible number. Shipping it would be
- * exactly the "seeded number that looks computed" AGENTS.md forbids.
+ * ## ⛔ The trap this file used to document, and why it stays closed
  *
- * ⚠️ None of this changes when `objectstack-ai/objectstack#16737` closes. The
- * in-flight platform fix makes the wrong path ERROR instead of returning that
- * plausible number; it does not add date arithmetic, so a duration remains
- * uncomputable after it lands. The unlock criterion decision #31 records is
- * "this repo upgrades to a version where the wrong path actually errors" — the
- * end of a fake number, not the arrival of the metric.
+ * Until 17.7.0 the "obvious" spelling — `avg` over each stamp, then
+ * `derived: { op: 'difference' }` — parsed, ran and rendered `-0.85`: SQLite
+ * stores `Field.datetime` as ISO text, so `AVG()` coerced each stamp to its
+ * leading YEAR and the tile showed the difference of two average years.
+ * 17.7.0 refuses `avg` over a datetime (`measure-aggregate-field-type-refused`),
+ * and a `duration` measure never averages a stamp at all — it averages the
+ * per-row difference. ⛔ Do not reintroduce a `derived` difference of two
+ * stamp aggregates.
  *
- * A duration would need a PERSISTED numeric — the shape DESIGN.md §12 gives the
- * other date-arithmetic gap (#7), a daily job stamping the column, as the
- * obligation and payment sweeps do for 到期 / 逾期. ⛔ That route is closed for
- * this one, and not merely unbuilt: §09 forbids filling 各段时长 or the per-type
- * 「超 SLA」 from an application-side daily job, because it replicates a platform
- * rule inside the application.
+ * ## What it does NOT carry: the per-type「超 SLA」
  *
- * ## What it DOES carry
- *
- * Stage-reached counts. Each measure counts the contracts whose stage stamp is
- * set, so a widget can read the shape of the pipeline by type and by lawyer,
- * and window any one stage by its own date dimension. Measured on the fixture:
- * submitted 60 · review started 41 · approved 34 · signed 72 · activated 72.
- *
- * Those five are deliberately NOT read as a monotone funnel: `signed_at` (72)
- * exceeds `submitted_at` (60) because the demo's in-force book was backfilled
- * with signature dates and no intake. There is no funnel on the legal
- * workbench to contrast them with either — that board's per-stage brick is a
- * bar chart, and DESIGN.md §09 gives this same non-monotone book as the reason
- * (#48 / PR #57). These five are per-stage coverage counts: stamps that were
- * set at some point and never clear, not a conversion sequence.
+ * The review SLA is per contract TYPE (`clm_contract_type.review_sla_days`).
+ * Comparing `review_started_at` against "now minus that type's SLA" needs the
+ * `$now` anchor's offset to read a column across the `contract_type` lookup,
+ * and 18.2.0's anchor (`objectstack-ai/objectstack#25808`, ruling A) reads a
+ * numeric column of the SAME record only — a dotted path is refused. The one
+ * remaining route, a per-contract SLA column the app stamps, is the route
+ * DESIGN.md §09 forbids. The legal workbench therefore keeps its fixed 30-day
+ * tile, threshold in the title.
  */
 export const CycleTimeDataset = defineDataset({
   name: 'contract_cycle_time',
   label: 'Contract Cycle',
-  // Why there is no duration measure: the module comment above.
   description:
-    'Stage coverage by contract type and legal owner: how many contracts have reached each lifecycle stage, and when. It counts the stages reached; it does not measure how long a stage took.',
+    'How long contracts spend in each lifecycle stage, in days, by contract type and legal owner. Each average covers the contracts that have both of its stage dates.',
   object: 'clm_contract',
   include: ['contract_type'],
 
   dimensions: [
     { name: 'contract_type_name', label: 'Contract Type', field: 'contract_type.name', type: 'string' },
     // The §09 axis 法务经办. `legal_owner` is `Field.user` — a stored id, which
-    // the executor resolves to a display label. On a stock `pnpm demo` only the
-    // dev admin account exists (DESIGN.md §10 forbids seeding users), so this
-    // axis has one populated bucket and one null bucket today.
+    // the executor resolves to a display label.
     { name: 'legal_owner', label: 'Legal Owner', field: 'legal_owner', type: 'lookup' },
     { name: 'status', label: 'Status', field: 'status', type: 'string' },
     { name: 'review_sla_days', label: 'Type Review SLA (days)', field: 'contract_type.review_sla_days', type: 'number' },
@@ -91,10 +78,16 @@ export const CycleTimeDataset = defineDataset({
 
   measures: [
     { name: 'contract_count', label: 'Contracts', aggregate: 'count' },
-    { name: 'submitted_count', label: 'Reached Submitted', aggregate: 'count', filter: { submitted_at: { $ne: null } } },
-    { name: 'review_started_count', label: 'Reached Review', aggregate: 'count', filter: { review_started_at: { $ne: null } } },
-    { name: 'approved_count', label: 'Reached Approved', aggregate: 'count', filter: { approved_at: { $ne: null } } },
-    { name: 'signed_count', label: 'Reached Signed', aggregate: 'count', filter: { signed_at: { $ne: null } } },
-    { name: 'activated_count', label: 'Reached Active', aggregate: 'count', filter: { activated_at: { $ne: null } } },
+
+    // The four stages of DESIGN.md §09's chain
+    // submitted_at → review_started_at → approved_at → signed_at → activated_at.
+    { name: 'avg_days_to_review', label: 'Avg Days: Submitted → Review Started', aggregate: 'avg', duration: { from: 'submitted_at', to: 'review_started_at', unit: 'days' }, format: '0.0' },
+    { name: 'avg_days_in_review', label: 'Avg Days: Review Started → Approved', aggregate: 'avg', duration: { from: 'review_started_at', to: 'approved_at', unit: 'days' }, format: '0.0' },
+    { name: 'avg_days_to_signature', label: 'Avg Days: Approved → Signed', aggregate: 'avg', duration: { from: 'approved_at', to: 'signed_at', unit: 'days' }, format: '0.0' },
+    { name: 'avg_days_to_activation', label: 'Avg Days: Signed → Active', aggregate: 'avg', duration: { from: 'signed_at', to: 'activated_at', unit: 'days' }, format: '0.0' },
+
+    // §09's 平均周转 on the legal workbench: the part of the cycle legal owns,
+    // from submission to approval. Its own population — see the module comment.
+    { name: 'avg_days_to_approval', label: 'Avg Days: Submitted → Approved', aggregate: 'avg', duration: { from: 'submitted_at', to: 'approved_at', unit: 'days' }, format: '0.0' },
   ],
 });

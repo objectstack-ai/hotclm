@@ -26,7 +26,7 @@ import type { Dashboard } from '@objectstack/spec/ui';
  *
  * `DashboardRenderer` merges the date-range filter into EVERY widget's query,
  * and `DatasetWidget` lowers each bounded `{ $gte, $lte }` window it finds into
- * a `timeDimensions` entry. `approval_throughput` below dates its own window on
+ * a `timeDimensions` entry. `approval_turnaround` below dates its own window on
  * `approved_at` so that `compareTo` has something to shift; a second dashboard
  * window on another field would make two dated dimensions, and the executor
  * refuses that with `compareTo.dimension is ambiguous` — a widget that renders
@@ -73,15 +73,17 @@ import type { Dashboard } from '@objectstack/spec/ui';
 export const LegalDashboard: Dashboard = {
   name: 'legal_workbench',
   label: 'Legal Workbench',
-  description: 'Intake queue, review load, negotiation stalls and pipeline shape for the legal team.',
+  description: 'Intake queue, review load, negotiation stalls, pipeline shape and stage durations for the legal team.',
 
   columns: 12,
   gap: 4,
 
   // Both are persisted columns on `clm_contract` (`category` a select,
   // `department` a lookup), and every widget on this dashboard is bound to
-  // `contract_metrics` (base object `clm_contract`), so neither filter can
-  // reach a widget whose object lacks the column.
+  // `contract_metrics` or `contract_cycle_time` — both on base object
+  // `clm_contract` — so neither filter can reach a widget whose object lacks
+  // the column. Both apply a literal value, which a duration measure accepts
+  // (it refuses only a field-to-field comparison).
   globalFilters: [
     {
       name: 'category',
@@ -157,13 +159,20 @@ export const LegalDashboard: Dashboard = {
        * merged, PR #70 `30fd863`) and asks in its place for exactly this: a
        * fixed threshold, self-declared in the brick's title.
        *
-       * The measurement behind that ruling was taken here, which is why it is
-       * recorded here. The SLA is PER TYPE (`clm_contract_type.review_sla_days`:
-       * 2, 3, 5 or 10 days across the nine seeded types), and a breach is a
-       * row-wise comparison of `review_started_at` against another object's
-       * column. Analytics cannot express that: there is no formula filter
-       * (§12 gap #10), and a cross-object filter is refused outright on the
-       * strategy every bucketed query lands on.
+       * The SLA is PER TYPE (`clm_contract_type.review_sla_days`: 2, 3, 5 or
+       * 10 days across the nine seeded types), and a breach is a row-wise
+       * comparison of `review_started_at` against "now minus that type's SLA".
+       * 18.2.0 added the now-anchored comparand
+       * (`{ $now: true, addDays: { $field } }`, objectstack#25808), but its
+       * offset reads a numeric column of the SAME record only. Measured on
+       * 18.2.0 as the head of legal, `addDays: { $field:
+       * 'contract_type.review_sla_days' }` answers `400 INVALID_FILTER` — as a
+       * runtime filter "the addDays offset … is a dotted path, and SQL
+       * push-down compiles same-table column references only", and as a
+       * measure filter the same code with the reason withheld — while
+       * `os validate` passes it. The same anchor with a literal `-30` answers
+       * 200. So the per-type breach is still not expressible, and this tile
+       * stays.
        *
        * ⛔ The remaining route — a persisted `review_due_at` stamped by a daily
        * job, the §12 gap-#7 shape — is closed for this metric, and not merely
@@ -200,47 +209,54 @@ export const LegalDashboard: Dashboard = {
       layout: { x: 9, y: 0, w: 3, h: 2 },
     },
 
-    // ─── Row 2: throughput, period over period ───────────────────────────
+    // ─── Row 2: turnaround, period over period ───────────────────────────
     {
       /**
-       * §09's 审批吞吐 brick: how many contracts legal got to `approved` in the
-       * window, against the previous period — and the period comparison uses
-       * the platform primitive §09 names (`compareTo`, the one shape
-       * `DatasetSelection.compareTo` implements) rather than a hardcoded delta.
-       * This tile IS that brick; it is not a substitute for a missing one.
+       * §09's 平均周转 brick: the average number of days from submission to
+       * approval for the contracts approved in the window, against the
+       * previous period. The comparison is the platform's `compareTo`, not a
+       * hardcoded delta.
        *
-       * §09 did ask for 平均周转 — an AVERAGE TURNAROUND — until 2026-09-09,
-       * when the maintainer ruling in PR #40 (`1127e52`) placed 各段时长 outside
-       * the V1.0 delivery surface and rewrote this brick to throughput (§09 as
-       * merged: PR #70, `30fd863`). The measurement behind that ruling was
-       * taken here: a duration cannot be computed in the semantic layer on this
-       * platform version — `Field.datetime` persists ISO text, so `AVG()` over
-       * a stage stamp answers the average YEAR (2025.9166…), and the dataset
-       * layer has no expression in which to subtract two dates. The full
-       * measurement is in `cycle-time.dataset.ts`. A number that is honest and
-       * says so beats a plausible one that is not, which is the reasoning §09
-       * itself now carries.
+       * The measure is `avg_days_to_approval` on `contract_cycle_time`, a
+       * `duration` measure (platform 18.2.0, objectstack#25778): the average of
+       * `approved_at - submitted_at` per contract, in days. It replaces the
+       * 审批吞吐 count this slot carried while a duration could not be written
+       * (decision #31, 1C: the stand-in held until the platform shipped the
+       * measure). Submission → approval is the part of the cycle legal owns;
+       * signing and activation are the next four tiles' business.
        *
-       * ⚠️ This tile does not become an average turnaround when
-       * `objectstack-ai/objectstack#16737` closes. That in-flight fix makes the
-       * wrong path ERROR instead of returning a plausible fake number; it does
-       * not add date arithmetic, so the duration stays uncomputable after it
-       * lands. ⛔ Do not read the tracker as a queue this metric is waiting in.
+       * Contracts approved in the window with no `submitted_at` (the demo's
+       * backfilled in-force book) do not enter the average — a duration needs
+       * both stamps. The tile is an average of the contracts that have them.
        *
        * The window is stated HERE, on the widget, and it is bounded on both
        * ends on purpose: `DatasetWidget` lowers only a `{ $gte, $lte }` pair
        * into the `timeDimensions` entry the executor shifts. An open-ended
-       * `$gte` alone comes back "compareTo needs a dated window to shift".
+       * `$gte` alone comes back "compareTo needs a dated window to shift". A
+       * bounded window is not a `granularity` bucket, so the duration measure
+       * is served by the native-SQL strategy (a bucketed one would be refused).
+       *
+       * `previousPeriod` is the EQUAL-LENGTH window immediately before, as the
+       * platform documents it — not the previous calendar month. Measured on
+       * 2026-10-27: the October window [10-01, 10-31] was compared with
+       * [08-31, 09-30], so August 31st's approval was in the comparison. The
+       * description says "the equal-length period", not "last month", for
+       * that reason.
        */
-      id: 'approval_throughput',
-      title: 'Approved This Month',
-      description: 'Contracts approved this month, compared with last month. A count, not an average turnaround time.',
+      id: 'approval_turnaround',
+      title: 'Avg Days to Approval (This Month)',
+      description: 'Average days from submission to approval, for contracts approved this month, compared with the equal-length period just before it.',
       type: 'metric',
-      dataset: 'contract_metrics',
-      values: ['contract_count'],
+      dataset: 'contract_cycle_time',
+      values: ['avg_days_to_approval'],
       filter: { approved_at: { $gte: '{current_month_start}', $lte: '{current_month_end}' } },
       compareTo: { kind: 'previousPeriod' },
-      colorVariant: 'success',
+      // No `colorVariant`: for a duration, a bigger number is the WORSE one,
+      // so the success green the throughput count carried would praise a
+      // slowdown. ⚠️ The delta beside it is still drawn green when it rises:
+      // the renderer colours "up" emerald for every measure and the platform
+      // has no key to say lower-is-better (measured: "↑ 23%" in green for a
+      // turnaround that got 23% longer).
       layout: { x: 0, y: 2, w: 4, h: 4 },
     },
     {
@@ -262,9 +278,9 @@ export const LegalDashboard: Dashboard = {
        *
        * The criterion that does discriminate, and the one this filter now
        * states: WHETHER LEGAL HAS WORK TO DO ON THE STAGE. This is a work-queue
-       * board — the other five widgets are `awaiting_intake`, `in_review`,
-       * `review_ageing`, `negotiation_stalled` and `approval_throughput`, each
-       * one a queue or a throughput. `draft` … `signing` are contracts legal is
+       * board — its first five widgets are `awaiting_intake`, `in_review`,
+       * `review_ageing`, `negotiation_stalled` and `approval_turnaround`, each
+       * one a queue or a turnaround. `draft` … `signing` are contracts legal is
        * moving; `active`, `expired`, `terminated`, `cancelled` and `rejected`
        * are contracts legal has finished moving. Legal's work on an in-force
        * book is renewal and expiry, and that is a DATED slice of it (the 到期日历
@@ -332,7 +348,8 @@ export const LegalDashboard: Dashboard = {
        * sits, and `active` holds sixty contracts because sixty contracts are
        * in force. A real conversion funnel is a DIFFERENT widget over a
        * DIFFERENT measure (contracts entering vs leaving each stage over a
-       * window) and needs the stage-duration data #31 is blocked on.
+       * window); the stage DURATIONS are the row of tiles below, not a
+       * funnel.
        *
        * A bar over the stage dimension says exactly what the data says and
        * cannot bowtie at ANY distribution — which is the requirement, not a
@@ -394,6 +411,56 @@ export const LegalDashboard: Dashboard = {
       },
       suppressWarnings: ['chart-config-missing'],
       layout: { x: 4, y: 2, w: 8, h: 4 },
+    },
+
+    // ─── Row 3: 各段时长 — average days per stage ────────────────────────
+    //
+    // DESIGN.md §09's chain submitted → review started → approved → signed →
+    // active, one tile per stage, each a `duration` measure on
+    // `contract_cycle_time` (average days between the two stamps, over every
+    // contract that has both). FOUR TILES, not one four-measure chart, for the
+    // reason measured on the executive board's routing row: a zero-dimension
+    // dataset widget renders as a KPI card showing its FIRST measure only, so
+    // one chart over four measures would silently show one stage.
+    //
+    // Not windowed: these read the whole book the viewer can see, and the
+    // dashboard's two filters narrow them like every other tile. Each title
+    // says "days" because the result field carries no unit.
+    {
+      id: 'days_to_review',
+      title: 'Submitted → Review Started (Avg Days)',
+      description: 'Average days from submission to a lawyer accepting the contract for review.',
+      type: 'metric',
+      dataset: 'contract_cycle_time',
+      values: ['avg_days_to_review'],
+      layout: { x: 0, y: 6, w: 3, h: 2 },
+    },
+    {
+      id: 'days_in_review',
+      title: 'Review Started → Approved (Avg Days)',
+      description: 'Average days from the start of legal review to approval.',
+      type: 'metric',
+      dataset: 'contract_cycle_time',
+      values: ['avg_days_in_review'],
+      layout: { x: 3, y: 6, w: 3, h: 2 },
+    },
+    {
+      id: 'days_to_signature',
+      title: 'Approved → Signed (Avg Days)',
+      description: 'Average days from approval to the contract being signed.',
+      type: 'metric',
+      dataset: 'contract_cycle_time',
+      values: ['avg_days_to_signature'],
+      layout: { x: 6, y: 6, w: 3, h: 2 },
+    },
+    {
+      id: 'days_to_activation',
+      title: 'Signed → Active (Avg Days)',
+      description: 'Average days from signature to the contract coming into force.',
+      type: 'metric',
+      dataset: 'contract_cycle_time',
+      values: ['avg_days_to_activation'],
+      layout: { x: 9, y: 6, w: 3, h: 2 },
     },
   ],
 };

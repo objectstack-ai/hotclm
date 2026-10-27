@@ -176,7 +176,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     legal_workbench: {
       label: 'Legal Workbench',
-      description: 'Intake queue, review load, negotiation stalls and pipeline shape for the legal team.',
+      description: 'Intake queue, review load, negotiation stalls, pipeline shape and stage durations for the legal team.',
       widgets: {
         awaiting_intake: {
           title: 'Awaiting Intake',
@@ -194,13 +194,29 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
           title: 'Waiting on Counterparty',
           description: 'The ball is in their court — the queue to chase',
         },
-        approval_throughput: {
-          title: 'Approved This Month',
-          description: 'Contracts approved this month, compared with last month. A count, not an average turnaround time.',
+        approval_turnaround: {
+          title: 'Avg Days to Approval (This Month)',
+          description: 'Average days from submission to approval, for contracts approved this month, compared with the equal-length period just before it.',
         },
         stage_funnel: {
           title: 'Pipeline by Stage',
           description: 'The six stages a contract is still moving through — a snapshot of what legal has in hand, largest queue first, not a conversion sequence. Contracts already in force are not plotted.',
+        },
+        days_to_review: {
+          title: 'Submitted → Review Started (Avg Days)',
+          description: 'Average days from submission to a lawyer accepting the contract for review.',
+        },
+        days_in_review: {
+          title: 'Review Started → Approved (Avg Days)',
+          description: 'Average days from the start of legal review to approval.',
+        },
+        days_to_signature: {
+          title: 'Approved → Signed (Avg Days)',
+          description: 'Average days from approval to the contract being signed.',
+        },
+        days_to_activation: {
+          title: 'Signed → Active (Avg Days)',
+          description: 'Average days from signature to the contract coming into force.',
         },
       },
     },
@@ -285,7 +301,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     contract_cycle_time: {
       label: 'Contract Cycle',
-      description: 'Stage coverage by contract type and legal owner: how many contracts have reached each lifecycle stage, and when. It counts the stages reached; it does not measure how long a stage took.',
+      description: 'How long contracts spend in each lifecycle stage, in days, by contract type and legal owner. Each average covers the contracts that have both of its stage dates.',
       dimensions: {
         contract_type_name: {
           label: 'Contract Type',
@@ -319,20 +335,20 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         contract_count: {
           label: 'Contracts',
         },
-        submitted_count: {
-          label: 'Reached Submitted',
+        avg_days_to_review: {
+          label: 'Avg Days: Submitted → Review Started',
         },
-        review_started_count: {
-          label: 'Reached Review',
+        avg_days_in_review: {
+          label: 'Avg Days: Review Started → Approved',
         },
-        approved_count: {
-          label: 'Reached Approved',
+        avg_days_to_signature: {
+          label: 'Avg Days: Approved → Signed',
         },
-        signed_count: {
-          label: 'Reached Signed',
+        avg_days_to_activation: {
+          label: 'Avg Days: Signed → Active',
         },
-        activated_count: {
-          label: 'Reached Active',
+        avg_days_to_approval: {
+          label: 'Avg Days: Submitted → Approved',
         },
       },
     },
