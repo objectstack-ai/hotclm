@@ -11,17 +11,37 @@ import { CONTRACT_STAMPED_FIELDS, PARTY_ASSESSED_FIELDS, inList, openAllExcept, 
  * write access to the four configuration objects that every other set only
  * reads, and all seven action gates.
  *
- * `viewAllRecords` / `modifyAllRecords` on the private contract and its
- * children: an administrator reaches every row without a sharing rule, and
- * `modifyAllRecords` is what lets them reassign a contract's business owner
- * (`allowTransfer` is authored beside it so the capability is readable here
- * rather than implied).
+ * ## The contract: whole-row reach without Modify All
+ *
+ * A field lock binds only the holders of a set that does NOT carry
+ * `modifyAllRecords` on the object. Since ADR-0066's 2026-11-02 note
+ * (objectstack#29106), a set holding a super-user bit votes on every field of
+ * that object in the field-permission merge: `viewAllRecords` votes readable,
+ * `modifyAllRecords` votes readable AND editable. Field votes merge most
+ * permissively, so with `modifyAllRecords` here every stamped-field lock below
+ * would bind no administrator (lint `security-superuser-field-mask-inert`).
+ * The locks win (§04: the routing flags, the stage timestamps and the AI
+ * fields are read-only for every position; issue #196, ruling A), so the
+ * contract entry carries no `modifyAllRecords`, and the administrator's reach
+ * is spelled out bit by bit:
+ *
+ * - `viewAllRecords` — every row, past the private OWD and without a sharing
+ *   rule. It never votes an edit.
+ * - `writeScope: 'org'` — edit and delete on every row of the tenant. Beside
+ *   `viewAllRecords` it is read and honoured: the write-scope resolver
+ *   short-circuits on `modifyAllRecords` alone (`@objectstack/spec`
+ *   `permission.zod.ts`, 18.3.0).
+ * - `allowTransfer` — reassigning a contract's business owner (`owner_id`);
+ *   the platform's ownership guard refuses that write to anyone without it.
+ *
+ * The six child objects keep `viewAllRecords` / `modifyAllRecords`: this file
+ * locks none of their fields, so the bypass hides nothing there.
  *
  * ## Why this set carries "allow everything" row policies
  *
- * The super-user bits skip ownership and sharing. They do NOT skip business
- * row-level security on these objects: the platform drops RLS for a Modify
- * All Data holder only on an object whose exposure posture is
+ * Neither the contract's org write scope nor the children's super-user bits
+ * skip business row-level security on these objects: the platform drops RLS
+ * for a Modify All Data holder only on an object whose exposure posture is
  * `access.default: 'private'` (ADR-0066 D2), and the CLM objects declare an
  * OWD (`sharingModel`), not that posture. So the policies of every set an
  * administrator holds still apply and OR-combine — and the administrator
@@ -34,16 +54,19 @@ import { CONTRACT_STAMPED_FIELDS, PARTY_ASSESSED_FIELDS, inList, openAllExcept, 
  * Same pattern, same reason as the companions in `legal.profile.ts`. Each
  * policy is the whole vocabulary of the field it names, read from the object.
  *
- * The super-user bits do NOT bypass field-level security, and field masks
- * merge most permissively only among the sets that declare a field
- * (`_grants.ts`, `open`): an administrator also holds `clm_requester`, whose
- * masks would otherwise apply to them. Every field another set locks or hides
- * is opened here explicitly.
+ * ## Field locks
+ *
+ * Field masks merge most permissively among the sets that vote on a field: a
+ * set votes when it declares the field (`_grants.ts`, `open`) or holds a
+ * super-user bit on its object. An administrator also holds `clm_requester`,
+ * whose masks would otherwise apply to them, so every field another set locks
+ * or hides is opened here explicitly.
  *
  * What even the administrator may not do by hand is write the fields §04 locks
  * for every position: the routing flags, the stage timestamps and the AI
  * fields have exactly one writer each (hooks, flows and the adopt action,
- * under a system context), and a hand edit would forge an audit trail.
+ * under a system context), and a hand edit would forge an audit trail. A
+ * write that names one is refused with 403 "Field write denied".
  */
 const full = { allowCreate: true, allowRead: true, allowEdit: true, allowDelete: true, viewAllRecords: true, modifyAllRecords: true } as const;
 const config = { allowCreate: true, allowRead: true, allowEdit: true, allowDelete: true } as const;
@@ -63,7 +86,7 @@ export const AdminSet = definePermissionSet({
     'manage_approval_rules',
   ],
   objects: {
-    clm_contract:         { ...full, allowTransfer: true },
+    clm_contract:         { allowCreate: true, allowRead: true, allowEdit: true, allowDelete: true, viewAllRecords: true, writeScope: 'org', allowTransfer: true },
     clm_contract_version: full,
     clm_review:           full,
     clm_deviation:        full,
