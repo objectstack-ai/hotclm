@@ -554,15 +554,16 @@ const buildContracts = (): ContractPlan[] => {
  * `loop-node.ts` iterates with a bare `await`, so the first failing row ends
  * the whole run.
  *
- * F3 (`legal_review_sla`), over-30 stage, is the ONLY place this corpus can
+ * F3 (`legal_review_sla`), over-SLA band, is the ONLY place this corpus can
  * exercise that edge, and both halves of that sentence are load-bearing:
  *
  *  - F4 and F11 address `owner_id`, F12 and F13 address `owner_id` with the
  *    legal owner merely copied, and every contract carries an `owner_id`
  *    ({@link ../keys.ts}) — so none of them can ever go quiet.
- *  - F3's over-SIXTY stage copies `clm_legal_head`, so a row that has been in
- *    review past 60 days still has somebody to tell and takes the notify edge.
- *    Only the over-30 stage has `legal_owner` as its sole recipient.
+ *  - F3's over-DOUBLE-the-SLA band copies `clm_legal_head`, so a row in review
+ *    past twice its type's `review_sla_days` still has somebody to tell and
+ *    takes the notify edge. Only the over-SLA band has `legal_owner` as its
+ *    sole recipient.
  *
  * ⇒ Fill every `in_review` contract's legal owner and that edge is never taken
  * again by any job on this corpus; a regression in it would ship invisibly.
@@ -590,28 +591,61 @@ export const UNASSIGNED_IN_REVIEW = 1;
 
 /**
  * Hand {@link UNASSIGNED_IN_REVIEW} contracts back to the queue — and prove
- * that F3's over-30 stage, and only that stage, will select them.
+ * that F3's over-SLA band, and only that band, will select them.
  *
- * The eligible band is `(-60, -30]` days: past F3's 30-day threshold so the
- * over-30 stage selects the row, and inside 60 so it is not selected by the
- * over-60 stage instead, whose `also: {legalHeads.userIds}` would give the
- * notification a recipient and take the notify edge. Longest review first,
- * because a file nobody has owned for eight weeks is the case the nudge is for.
+ * F3 reads each contract's own type SLA (#203): a row is over SLA once its
+ * review started more than `review_sla_days` ago, and in the doubled band —
+ * whose `also: legalHeads.userIds` would give the notification a recipient and
+ * take the notify edge — once it started more than twice that ago. The dealt
+ * in-review rows all sit past twice their type's SLA (submitted 10–59 days
+ * ago, SLAs of 2–10 days), so no row is in the band as dealt: the chosen row
+ * is MOVED there, its whole timeline shifted so every stage keeps its distance
+ * (as {@link endingOn} moves a term), to `SLA + ⌈SLA / 2⌉` days in review.
+ * `review_started_at` lands on a calendar day (`dayOffset`), so the row's age
+ * is that many days plus less than one — strictly over the SLA and strictly
+ * under twice it for every SLA of 2 days or more, at any time of day.
+ *
+ * Shortest review first, so the move is the smallest the fixture can make.
  */
 const handBackInReview = (contracts: readonly ContractPlan[]): ContractPlan[] => {
+  const slaOf = (contract: ContractPlan): number => CONTRACT_TYPE_PLAN[contract.typeIndex]!.reviewSlaDays;
+  const startedAt = (contract: ContractPlan): number => contract.timeline.reviewStartedAt ?? 0;
   const eligible = contracts
     .filter((contract) =>
       contract.status === 'in_review' &&
       contract.hasLegalOwner &&
-      (contract.timeline.reviewStartedAt ?? 0) <= -30 &&
-      (contract.timeline.reviewStartedAt ?? 0) > -60)
-    .sort((a, b) => (a.timeline.reviewStartedAt ?? 0) - (b.timeline.reviewStartedAt ?? 0));
+      contract.timeline.reviewStartedAt !== null &&
+      slaOf(contract) >= 2)
+    .sort((a, b) => startedAt(b) - startedAt(a));
   if (eligible.length < UNASSIGNED_IN_REVIEW) {
-    throw new Error(`demo fixture: ${eligible.length} contracts are in review between 30 and 60 days with a legal owner, so ${UNASSIGNED_IN_REVIEW} cannot be handed back — F3's over-30 stage would select none of them and its "nobody to tell" edge would stop being exercised.`);
+    throw new Error(`demo fixture: ${eligible.length} contracts are in review with a legal owner and a type SLA of 2 days or more, so ${UNASSIGNED_IN_REVIEW} cannot be handed back — F3's over-SLA band would select none of them and its "nobody to tell" edge would stop being exercised.`);
   }
-  const indexes = new Set(eligible.slice(0, UNASSIGNED_IN_REVIEW).map((contract) => contract.index));
-  return contracts.map((contract) =>
-    indexes.has(contract.index) ? { ...contract, hasLegalOwner: false } : contract);
+  const moveTo = new Map(eligible.slice(0, UNASSIGNED_IN_REVIEW).map((contract) =>
+    [contract.index, -(slaOf(contract) + Math.ceil(slaOf(contract) / 2))] as const));
+  const handedBack = contracts.map((contract) => {
+    const target = moveTo.get(contract.index);
+    if (target === undefined) return contract;
+    const delta = target - startedAt(contract);
+    const shift = (day: number | null) => (day === null ? null : day + delta);
+    const t = contract.timeline;
+    return {
+      ...contract,
+      hasLegalOwner: false,
+      timeline: {
+        submittedAt: shift(t.submittedAt), reviewStartedAt: shift(t.reviewStartedAt),
+        approvedAt: shift(t.approvedAt), signedAt: shift(t.signedAt), executedAt: shift(t.executedAt),
+        activatedAt: shift(t.activatedAt), closedAt: shift(t.closedAt), startDate: shift(t.startDate),
+        endDate: shift(t.endDate),
+      },
+    };
+  });
+  // Re-proved on the result: every unassigned in-review row is inside (SLA, 2 × SLA) days.
+  const unassigned = handedBack.filter((c) => c.status === 'in_review' && !c.hasLegalOwner);
+  const inBand = unassigned.filter((c) => -startedAt(c) > slaOf(c) && -startedAt(c) + 1 <= 2 * slaOf(c));
+  if (unassigned.length !== UNASSIGNED_IN_REVIEW || inBand.length !== UNASSIGNED_IN_REVIEW) {
+    throw new Error(`demo fixture: ${inBand.length} of ${unassigned.length} unassigned in-review contracts are over their type's review SLA and under twice it, expected ${UNASSIGNED_IN_REVIEW} of ${UNASSIGNED_IN_REVIEW} — F3's "nobody to tell" edge would not be exercised.`);
+  }
+  return handedBack;
 };
 
 // ─────────────────────────────────────── the renewal and expiry windows ──

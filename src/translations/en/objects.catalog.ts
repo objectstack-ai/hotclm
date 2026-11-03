@@ -87,7 +87,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       review_sla_days: {
         label: 'Review SLA (days)',
-        help: 'Calendar days legal has to finish reviewing a contract of this type. The overdue reminder does not use this value: it currently fires at a fixed 30 days.',
+        help: 'Calendar days legal has to finish reviewing a contract of this type. Past it, the legal owner gets a daily reminder; past twice it, the head of legal is copied. A contract keeps the value it was last saved with.',
       },
       template_file: {
         label: 'Template',
