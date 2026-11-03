@@ -85,12 +85,12 @@
 前缀 `clm_`。11 个对象，三个域。`[MD]` = master-detail 子对象，`sharingModel: 'controlled_by_parent'`。
 
 ```
-配置域                          合同域                              签后域
-clm_contract_type [public_read] clm_contract          [private]     clm_obligation    [MD]
-clm_clause        [public_read] clm_contract_version  [MD]          clm_payment_plan  [MD]
-clm_approval_rule [public_read] clm_review            [MD]
-clm_party         [public_read] clm_deviation         [MD]
-                                clm_signature         [MD]
+配置域                                合同域                              签后域
+clm_contract_type [public_read]       clm_contract          [private]     clm_obligation    [MD]
+clm_clause        [public_read_write] clm_contract_version  [MD]          clm_payment_plan  [MD]
+clm_approval_rule [public_read]       clm_review            [MD]
+clm_party         [public_read_write] clm_deviation         [MD]
+                                      clm_signature         [MD]
 ```
 
 ### 字段清单
@@ -100,9 +100,9 @@ clm_party         [public_read] clm_deviation         [MD]
 | 对象 | 字段 |
 |---|---|
 | `clm_contract_type` `public_read` | name* · code*（编号前缀，如 `NDA`/`MSA`/`SOW`）· direction* `sales/purchase/other` · category* `nda/sales/purchase/service/lease/employment/framework/dpa/amendment/other` · description · template_file file · intake_fields multiselect（本类型在发起表单上出现的可选字段）· requires_legal_review boolean · execution_formalities multiselect `countersigned_copy/company_seal/notarized/witnessed` · sign_method `esign/wet_ink/either`（默认 esign） · default_term_months · review_sla_days · retention_years · is_active |
-| `clm_clause` `public_read` | title* · category `liability/payment/termination/confidentiality/ip/warranty/dispute/other` · standard_text* richtext · fallback_text richtext · position_note（不可接受的底线，文字）· risk_level `low/medium/high` · applies_to multiselect（合同 category）· requires_legal_head boolean（偏离即需法务负责人）· is_active |
+| `clm_clause` `public_read_write` | title* · category `liability/payment/termination/confidentiality/ip/warranty/dispute/other` · standard_text* richtext · fallback_text richtext · position_note（不可接受的底线，文字）· risk_level `low/medium/high` · applies_to multiselect（合同 category）· requires_legal_head boolean（偏离即需法务负责人）· is_active |
 | `clm_approval_rule` `public_read` | name* · applies_to multiselect（合同 category）· direction `sales/purchase/other/any` · amount_min currency · amount_max currency · only_with_deviation boolean · route_legal_head boolean · route_finance boolean · route_executive boolean · route_gm boolean · priority number · is_active |
-| `clm_party` `public_read` | name* · party_kind `company/individual/government/other` · registration_no（统一登记号）· legal_representative · contact_name · _contact_phone_ · contact_email · address · bank_name · _bank_account_ · crm_account lookup（跨包，可选）· country_code · risk_flag `none/watch/blocked` · risk_note · screening_status（筛查连接器写入，可选）· is_active。唯一索引 `(registration_no)` scope organization |
+| `clm_party` `public_read_write` | name* · party_kind `company/individual/government/other` · registration_no（统一登记号）· legal_representative · contact_name · _contact_phone_ · contact_email · address · bank_name · _bank_account_ · crm_account lookup（跨包，可选）· country_code · risk_flag `none/watch/blocked` · risk_note · screening_status（筛查连接器写入，可选）· is_active。唯一索引 `(registration_no)` scope organization |
 | `clm_contract` `private` | contract_number text（hook 生成 `<type.code>-<YYYY>-<0000>`，按类型按年流水，提交时盖戳后只读，唯一索引 scope organization；§13 Q5）· is_backfilled boolean（补录的已签合同，§13 Q8）· title* · contract_type* lookup · category（自类型盖戳，只读）· direction（同上）· party* lookup · our_entity* lookup `sys_business_unit`（签约主体：`kind = company` 且启用的业务单元；演示种子三家）· department lookup `sys_business_unit`（发起部门：`kind = department`，可选；演示种子七个）· owner_id（业务承办）· legal_owner lookup user · amount currency · currency_code（种子：`USD` 默认、`EUR`、`GBP`、`CNY`、`JPY`）· is_amount_estimated boolean · start_date · end_date · term_months · auto_renew boolean · renewal_notice_days · renewed_from lookup clm_contract · parent_contract lookup clm_contract（框架合同 / 补充协议的主合同）· **status**（§状态机）· risk_level `low/medium/high` · summary richtext · governing_law · jurisdiction · contract_language select（种子，默认 `en`）· payment_terms select · confidentiality_term_months · liability_cap currency · current_turn `internal/counterparty/none` · turn_since datetime · route_legal_head / route_finance / route_executive / route_gm boolean（hook 盖戳，只读）· approval_status（审批节点镜像）· submitted_at · review_started_at · approved_at · signed_at · activated_at · closed_at · termination_reason textarea（`requiredWhen` 状态为 `terminated`；不出现在发起表单，只在终止那一刻问一次）· execution_formalities multiselect（自类型盖戳，只读）· executed_at datetime · ai_summary richtext · ai_risk_score number（0–100）· ai_risk_rationale textarea · ai_reviewed_at datetime（四个 AI 字段只由「采纳建议」动作写入，§07）· is_expiring boolean（日任务盖戳）· archive_no · archived_at · crm_contract lookup（跨包，可选）· 汇总：version_count · open_deviation_count · approved_legal_review_count（`legal` 审查 `approved` 条数）· current_clean_version_count（`kind: clean` 且 `is_current` 的版本条数）· final_signed_version_count（`kind: final_signed` 版本条数）· overdue_obligation_count · planned_amount · actual_amount |
 | `clm_contract_version` `by parent` | display_name（存储镜像 "v<n> · <kind>"，nameField）· contract* MD cascade · version_no* · kind* `draft/internal_redline/counterparty_redline/clean/final_signed` · file* · submitted_by user · turn `internal/counterparty` · notes · is_current boolean（每份合同至多一个当前版本：标记一个即取消其余，hook 强制，各入口一致；新的谈判版本默认为当前；final_signed 不夺取当前标记）|
 | `clm_review` `by parent` | display_name（镜像 "<stage> · <reviewer>"）· contract* MD cascade · reviewer* user · stage* `legal/finance/compliance/business` · decision `pending/approved/changes_requested/rejected` · risk_level_assessed · comments richtext（对发起人可见）· _internal_note_ richtext（仅法务）· started_at · decided_at |
@@ -157,7 +157,7 @@ clm_party         [public_read] clm_deviation         [MD]
 
 ### OWD 与岗位
 
-`clm_contract` `private`；五个子对象 `controlled_by_parent`；四个配置对象 `public_read`，写权限仅管理岗。
+`clm_contract` `private`；五个子对象 `controlled_by_parent`；`clm_contract_type` 与 `clm_approval_rule` `public_read`，写权限仅管理岗；`clm_party` 与 `clm_clause` `public_read_write`（#152 裁决 D）：行级对所有人开放修改，谁能改哪些字段仍由权限集与字段级安全决定（相对方：法务全部字段、财务仅银行信息；条款：仅法务），删除仍仅限所有者。
 
 Position 扁平，七个：`clm_legal_counsel`（法务经办）· `clm_legal_head`（法务负责人）· `clm_finance_controller`（财务负责人）· `clm_executive`（分管领导）· `clm_general_manager`（总经理）· `clm_records_manager`（档案与记录管理员：执行登记、归档、台账）· `clm_admin`。
 
