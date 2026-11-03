@@ -183,7 +183,7 @@ R 读 · C 建 · U 改 · D 删；括号内为行级作用域。
 |---|---|---|---|---|---|
 | clm_contract | RCU（本人发起，`draft`/`submitted` 可改） | RCU（全部） | RU（`approved` 及之后，FLS 锁法律字段） | R（`approved` 及之后）U（`signing` 及之后；执行与归档字段） | RCUD |
 | clm_contract_version | RC（本人合同） | RCU | R | RC（执行副本） | RCUD |
-| clm_review | R（`comments`，不含 `internal_note`） | RCU | RCU（stage=finance） | R | RCUD |
+| clm_review | R（`comments`，不含 `internal_note`） | RCU | RCU（stage=finance）经「记录财务审查」动作 | R | RCUD |
 | clm_deviation | RC（本人合同） | RCU | R | R | RCUD |
 | clm_signature | R（本人合同） | RCU | R | RU（执行形式、执行副本） | RCUD |
 | clm_obligation | RU（本人负责） | RCU | R | R | RCUD |
@@ -334,7 +334,7 @@ Dataset（语义层）：
 | clm_party | 40 | 客户 / 供应商 / 个人 / 政府各有；2 条 `blocked` |
 | clm_contract | 120 | draft 10 · submitted 6 · in_review 12 · in_approval 8 · approved 4 · signing 6 · active 60 · expired 8 · terminated 4 · cancelled 2；其中 10 条 30 天内到期 |
 | clm_contract_version | 300 | 谈判中的合同有 3 到 5 版，含对方红线；文件为 `src/data/fixtures/` 下的演示 PDF（`seedFile`），每份合同恰一个当前版本 |
-| clm_review · clm_deviation | 60 · 25 | 8 条偏离 `open`，让门槛可演示；审查人按环节分派：法务 → 合同法务负责人（无则法务负责人）；财务 → 财务负责人（合同未到 `approved` 时为法务负责人，因财务在此之前不能写审查）；合规 → 法务负责人；业务 → 发起人 |
+| clm_review · clm_deviation | 60 · 25 | 8 条偏离 `open`，让门槛可演示；审查人按环节分派：法务 → 合同法务负责人（无则法务负责人）；财务 → 财务负责人；合规 → 法务负责人；业务 → 发起人 |
 | clm_signature | 30 | 6 条 `sent`，2 条执行形式未齐 |
 | clm_obligation | 200 | 未来 30 天内到期 40 条，逾期 10 条 |
 | clm_payment_plan | 300 | 本月到期 30 条，逾期 12 条 |
