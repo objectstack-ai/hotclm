@@ -1,3 +1,4 @@
+import { F } from '@objectstack/spec';
 import { ObjectSchema, Field } from '@objectstack/spec/data';
 
 /**
@@ -14,8 +15,9 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  * machine (`draft` → `sent` / `completed` / `voided`, `sent` → `completed` /
  * `declined` / `voided`, `declined` → `draft`; wet ink may complete straight
  * from draft) enforced in `contract.hook.ts`; which status a round may be
- * CREATED in is the `signature_initial_status` rule below. `display_name` is a stored
- * mirror ("<method> · <status>") stamped by `mirror.hook.ts`.
+ * CREATED in is the `signature_initial_status` rule below. `display_name` is a
+ * formula ("<method> · <status>") of two `label()` calls: the option labels in
+ * the READER's locale (issue #157, objectstack#26608).
  */
 export const Signature = ObjectSchema.create({
   name: 'clm_signature',
@@ -34,13 +36,12 @@ export const Signature = ObjectSchema.create({
   ],
 
   fields: {
-    display_name: Field.text({
+    display_name: Field.formula({
       label: 'Signature',
       group: 'round',
-      readonly: true,
-      searchable: true,
-      maxLength: 80,
-      description: 'Filled in automatically as "method · status".',
+      returnType: 'text',
+      expression: F`label(record.method) + ' · ' + label(record.status)`,
+      description: 'Composed as "method · status", in the reader\'s language.',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',

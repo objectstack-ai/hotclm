@@ -1,3 +1,4 @@
+import { F } from '@objectstack/spec';
 import { ObjectSchema, Field } from '@objectstack/spec/data';
 
 /**
@@ -10,9 +11,10 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  * Two versions gate the contract's state machine: `approved → signing` needs
  * a current `clean` version, and `signing → active` needs a `final_signed`
  * one (`contract.hook.ts`). At most one version of a contract is current
- * (`contract-version.hook.ts`). `display_name` is a stored mirror ("v<n> · <kind>")
- * stamped by `mirror.hook.ts` — a stored title, never a formula, so the record
- * is searchable and pickable.
+ * (`contract-version.hook.ts`). `display_name` is a formula ("v<n> · <kind>")
+ * whose kind is `label(record.kind)`: the option label in the READER's locale
+ * (`v2 · 清稿` to a zh-CN reader, `v2 · Clean` to an en-US one), on every
+ * surface the server serves the name to (issue #157, objectstack#26608).
  */
 export const ContractVersion = ObjectSchema.create({
   name: 'clm_contract_version',
@@ -33,12 +35,11 @@ export const ContractVersion = ObjectSchema.create({
   ],
 
   fields: {
-    display_name: Field.text({
+    display_name: Field.formula({
       label: 'Version',
       group: 'version',
-      readonly: true,
-      searchable: true,
-      maxLength: 80,
+      returnType: 'text',
+      expression: F`'v' + string(record.version_no) + ' · ' + label(record.kind)`,
       description: 'Filled in automatically from the version number and kind, e.g. "v2 · Clean".',
     }),
     contract: Field.masterDetail('clm_contract', {

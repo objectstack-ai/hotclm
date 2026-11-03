@@ -17,7 +17,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: '审查',
-        help: '自动维护的展示名，形如「环节 · 审查人」。',
+        help: '由环节和审查人组成，按读者的语言显示，形如「法务 · 审查人姓名」。',
       },
       contract: {
         label: '合同',
@@ -85,7 +85,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: '偏离',
-        help: '自动维护的展示名，形如「条款标题 · 状态」。',
+        help: '由条款标题和状态组成，按读者的语言显示，形如「保密义务 · 未决」。',
       },
       contract: {
         label: '合同',
@@ -147,7 +147,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: '签署记录',
-        help: '自动维护的展示名，形如「签署方式 · 状态」。',
+        help: '由签署方式和状态组成，按读者的语言显示，形如「湿签 · 已完成」。',
       },
       contract: {
         label: '合同',
