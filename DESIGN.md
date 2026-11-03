@@ -108,7 +108,7 @@ clm_party         [public_read_write] clm_deviation         [MD]
 | `clm_review` `by parent` | display_name（公式 "label(stage) · <reviewer>"，按读者语言显示）· contract* MD cascade · reviewer* user · stage* `legal/finance/compliance/business` · decision `pending/approved/changes_requested/rejected` · risk_level_assessed · comments richtext（对发起人可见）· _internal_note_ richtext（仅法务）· started_at · decided_at |
 | `clm_deviation` `by parent` | display_name（公式 "<clause> · label(status)"，按读者语言显示）· contract* MD cascade · clause* lookup · deviation_text* · requested_position `standard/fallback/custom` · justification · status `open/accepted/rejected/withdrawn` · decided_by user · decided_at |
 | `clm_signature` `by parent` | display_name（公式 "label(method) · label(status)"，按读者语言显示）· contract* MD cascade · method* `esign/wet_ink` · provider select（DocuSign / Adobe Acrobat Sign / Dropbox Sign；区域包追加）· envelope_id · signers json（`[{side: our|counterparty, name, email, order, status, signed_at}]`；两者的消费者排期在 F8 电子签，hotclm#83 / objectstack-ai/objectstack#25747）· status `draft/sent/completed/declined/voided` · formalities_done multiselect（与类型 `execution_formalities` 同值域）· executed_file file · completed_at |
-| `clm_obligation` `by parent` | display_name（镜像 title）· contract* MD cascade · title* · kind `deliverable/payment/report/renewal/compliance/other` · due_date* · owner lookup user · status `pending/in_progress/done/overdue/waived` · completed_at · evidence file · notes |
+| `clm_obligation` `by parent` | display_name（镜像 title）· contract* MD cascade · title* · kind `deliverable/payment/report/renewal/compliance/other` · due_date* · owner_id（负责人，平台所有者）· status `pending/in_progress/done/overdue/waived` · completed_at · evidence file · notes |
 | `clm_payment_plan` `by parent` | display_name（镜像 "第<seq>期 · <planned_date>"）· contract* MD cascade · seq* · planned_date* · planned_amount* currency · condition · actual_date · actual_amount currency · status `planned/due/partial/paid/overdue` · invoice_no · notes |
 
 ### 状态机（写入层强制，非前端隐藏）
@@ -158,6 +158,8 @@ clm_party         [public_read_write] clm_deviation         [MD]
 ### OWD 与岗位
 
 `clm_contract` `private`；五个子对象 `controlled_by_parent`；`clm_contract_type` 与 `clm_approval_rule` `public_read`，写权限仅管理岗；`clm_party` 与 `clm_clause` `public_read_write`（#152 裁决 D）：行级对所有人开放修改，谁能改哪些字段仍由权限集与字段级安全决定（相对方：法务全部字段、财务仅银行信息；条款：仅法务），删除仍仅限所有者。
+
+履约由其负责人（平台所有者 `owner_id`）更新，只需能读上级合同，不要求上级合同可改；改派负责人需 transfer 授权（法务、管理员）。
 
 Position 扁平，七个：`clm_legal_counsel`（法务经办）· `clm_legal_head`（法务负责人）· `clm_finance_controller`（财务负责人）· `clm_executive`（分管领导）· `clm_general_manager`（总经理）· `clm_records_manager`（档案与记录管理员：执行登记、归档、台账）· `clm_admin`。
 
@@ -245,7 +247,7 @@ RLS 谓词不能跨对象（ADR-0055），所以「同部门可见」无法用 `
 | F7 | `signature_record` | record_change（`clm_signature` 进入 `completed`） | hook 比对 `formalities_done` 与类型 `execution_formalities`：齐备则盖合同 `executed_at` 并由 `executed_file` 建 `final_signed` 版本；缺项则通知法务经办并点名缺哪一项。湿签路径：法务或档案岗在签署记录上传执行副本并勾选形式 |
 | F8 | `esign_dispatch` / `esign_callback` | 动作 + api 触发流 | 「发起电子签」经 durable HTTP 把 clean 版本与签署方送给连接器指定的提供商；回调 api 流按信封状态写 `esign_status`，完成时建 `final_signed` 版本并写 `signed_at` |
 | F9 | `contract_activate` | hook afterUpdate（进入 `active`） | 写 `activated_at`；按类型默认建续签提醒义务；并装 HotCRM 时回写 `crm_contract`（status `activated`、`signed_date`、文件） |
-| F10 | `obligation_due` | 定时（日） | T-7 与 T-0 提醒义务 owner；过期未完成置 `overdue`，父合同汇总 `overdue_obligation_count` 随之变化 |
+| F10 | `obligation_due` | 定时（日） | T-7 与 T-0 提醒义务负责人（`owner_id`）；过期未完成置 `overdue`，父合同汇总 `overdue_obligation_count` 随之变化 |
 | F11 | `payment_overdue` | 定时（日） | `planned_date` 已过且未 `paid`：置 `overdue`，提醒财务负责人与业务承办 |
 | F12 | `renewal_notice` | 定时（日） | `active` 且 `end_date - renewal_notice_days <= today`：置 `is_expiring`，提醒业务承办与法务；动作「发起续签」预填新 draft |
 | F13 | `expiration_sweep` | 定时（日） | `active` 且 `end_date < today`：非自动续签置 `expired`；自动续签则建续签 draft 并提醒 |
