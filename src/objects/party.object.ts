@@ -20,7 +20,10 @@ export const Party = ObjectSchema.create({
   icon: 'building-2',
   description: 'The other party to a contract — company, individual or public body — with registration, contact and banking details.',
 
-  sharingModel: 'public_read',
+  // Shared master data: every row is open to update (#152, ruling D), and the
+  // permission sets decide who writes what — legal every field, finance the
+  // banking pair, requesters and records nothing. Deletes stay owner-only.
+  sharingModel: 'public_read_write',
   nameField: 'name',
   highlightFields: ['name', 'party_kind', 'country_code', 'risk_flag'],
 
