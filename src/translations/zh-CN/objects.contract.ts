@@ -328,6 +328,7 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: '生效',
         description: '让已签署的合同正式生效。系统会写入生效时间，并在有到期日时设好续约提醒。',
         successMessage: '合同已生效。',
+        disabledReason: '须先上传一份「最终签署版」版本，才能生效。',
       },
       executed_upload: {
         label: '补录已签合同',
@@ -455,11 +456,13 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: '送审',
         description: '结束法务审查并开启审批。须有一条通过的法务审查，且没有未决偏离，才能送审。',
         successMessage: '已送审，进入审批。',
+        disabledReason: '须有一条结论为「通过」的法务审查，且没有未决偏离，才能送审。',
       },
       start_signing: {
         label: '发起签署',
         description: '把已批准的合同推进到签署中。当前版本须为清稿，才能发起签署。',
         successMessage: '已进入签署。',
+        disabledReason: '当前版本须为「清稿」，才能发起签署。',
       },
       submit_contract: {
         label: '提交',

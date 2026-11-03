@@ -328,6 +328,7 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: 'Activate',
         description: 'Bring a signed contract into force. Its activation date is recorded and, if it has an end date, a renewal reminder is set up.',
         successMessage: 'Contract activated.',
+        disabledReason: 'A Final Signed version is required before activation.',
       },
       executed_upload: {
         label: 'Backfill Executed Contract',
@@ -455,11 +456,13 @@ export const contract: Record<string, ObjectTranslationData> = {
         label: 'Send for Approval',
         description: 'Close legal review and start approval. Possible once a legal review is approved and no deviation is still open.',
         successMessage: 'Sent for approval.',
+        disabledReason: 'An approved legal review is required, and no deviation may still be open, before the contract enters approval.',
       },
       start_signing: {
         label: 'Start Signing',
         description: 'Move an approved contract into signing. Possible once the current version is a clean copy.',
         successMessage: 'Signing started.',
+        disabledReason: 'A current Clean version is required before signing.',
       },
       submit_contract: {
         label: 'Submit',
