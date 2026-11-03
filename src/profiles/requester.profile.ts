@@ -73,7 +73,8 @@ export const RequesterSet = definePermissionSet({
     clm_signature:        { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
     clm_obligation:       { allowCreate: false, allowRead: true, allowEdit: true,  allowDelete: false },
     clm_payment_plan:     { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
-    // Configuration objects are public_read: everyone reads every row.
+    // Configuration objects are readable by everyone (`public_read`, or
+    // `public_read_write` for clm_party and clm_clause, #152): every row.
     //
     // A requester may CREATE a counterparty, because the intake flow (§06 F1
     // "相对方查找或新建") offers every launcher the inline branch and runs its

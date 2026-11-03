@@ -15,7 +15,10 @@ export const Clause = ObjectSchema.create({
   icon: 'book-open-text',
   description: 'A playbook clause: standard wording, fallback wording, risk level and the contract categories it applies to.',
 
-  sharingModel: 'public_read',
+  // Every clause is open to update (#152, ruling D): legal maintains the
+  // seeded playbook it does not own; the permission sets keep everyone else
+  // read-only. Deletes stay owner-only.
+  sharingModel: 'public_read_write',
   nameField: 'title',
   highlightFields: ['title', 'risk_level', 'is_active'],
 
