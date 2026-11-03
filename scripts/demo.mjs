@@ -273,7 +273,7 @@ console.log('');
 // The demo boot owns the terminal from here on. Its seed deals the demo book to
 // the stack's `demoStaff`, which the platform creates on this boot before the
 // seed runs, so no account is left for the operator to create and nothing is
-// announced after the banner (issue #28). The one step still the operator's —
-// a requester's manager, which a `demoStaff` entry cannot carry — is the
-// README's "Rung 1" section, and the compile's author-time warning names it.
+// announced after the banner (issue #28). The requesters' line manager is
+// declared there too (`manager`, issue #197), so rung 1 of the approval ladder
+// has someone to reach and no step is left to the operator.
 startDemo();
