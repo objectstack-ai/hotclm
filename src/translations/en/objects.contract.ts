@@ -561,8 +561,23 @@ export const contract: Record<string, ObjectTranslationData> = {
       rollup: {
         label: 'Roll-ups',
       },
-      archive: {
-        label: 'Archive',
+      versions: {
+        label: 'Versions',
+      },
+      reviews: {
+        label: 'Reviews',
+      },
+      deviations: {
+        label: 'Deviations',
+      },
+      obligations: {
+        label: 'Obligations',
+      },
+      payments: {
+        label: 'Payment Schedule',
+      },
+      signatures: {
+        label: 'Signature Records',
       },
     },
     _validations: {
@@ -586,6 +601,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: 'Contract',
+        inlineTitle: 'Versions',
       },
       version_no: {
         label: 'Version No.',

@@ -59,6 +59,9 @@ export const PaymentPlan = ObjectSchema.create({
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Payment Plan',
+      // The columns the contract page's list shows (ADR-0085: the record page
+      // derives the list from this relationship since @objectstack 18.3).
+      relatedListColumns: ['display_name', 'seq', 'planned_date', 'planned_amount', 'status', 'actual_date', 'actual_amount', 'invoice_no'],
     }),
     seq: Field.number({
       label: 'Instalment No.',

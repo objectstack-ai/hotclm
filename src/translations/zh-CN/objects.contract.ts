@@ -561,8 +561,23 @@ export const contract: Record<string, ObjectTranslationData> = {
       rollup: {
         label: '汇总',
       },
-      archive: {
-        label: '归档',
+      versions: {
+        label: '版本',
+      },
+      reviews: {
+        label: '审查',
+      },
+      deviations: {
+        label: '偏离',
+      },
+      obligations: {
+        label: '履约义务',
+      },
+      payments: {
+        label: '收付款计划',
+      },
+      signatures: {
+        label: '签署记录',
       },
     },
     _validations: {
@@ -586,6 +601,7 @@ export const contract: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: '合同',
+        inlineTitle: '版本',
       },
       version_no: {
         label: '版本号',

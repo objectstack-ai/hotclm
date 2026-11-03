@@ -44,6 +44,9 @@ export const Review = ObjectSchema.create({
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Reviews',
+      // The columns the contract page's list shows (ADR-0085: the record page
+      // derives the list from this relationship since @objectstack 18.3).
+      relatedListColumns: ['display_name', 'stage', 'reviewer', 'decision', 'risk_level_assessed', 'started_at', 'decided_at'],
     }),
     reviewer: Field.user({
       label: 'Reviewer',
