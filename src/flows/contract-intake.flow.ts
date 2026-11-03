@@ -109,8 +109,8 @@ import { must, ref } from './_values.js';
  *    `create_party` writes only the identity and contact fields the screen
  *    asks for: naming a locked field would refuse the whole write with 403
  *    "Field write denied". A new party is therefore born unflagged and
- *    unscreened, and legal maintains those fields afterwards (on a party
- *    legal does not own, writes are owner-scoped today, see #152). Should the
+ *    unscreened, and legal maintains those fields afterwards (on any party,
+ *    since `clm_party` is `public_read_write`, #152). Should the
  *    create still be refused, the run leaves nothing behind: `create_party`
  *    is the first write, after the last screen.
  *
