@@ -1,3 +1,4 @@
+import { F } from '@objectstack/spec';
 import { ObjectSchema, Field } from '@objectstack/spec/data';
 
 /**
@@ -10,8 +11,10 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  * `open` deviation, and an accepted deviation from a clause that
  * `requires_legal_head` pulls the head of legal into the ladder (F6).
  * `status` is a one-way state machine (`open` → `accepted` / `rejected` /
- * `withdrawn`, enforced in `contract.hook.ts`). `display_name` is a stored
- * mirror ("<clause> · <status>") stamped by `mirror.hook.ts`.
+ * `withdrawn`, enforced in `contract.hook.ts`). `display_name` is a formula
+ * ("<clause> · <status>"): the clause title read through the one reference
+ * hop, and `label(record.status)`, the option label in the READER's locale
+ * (issue #157, objectstack#26608).
  */
 export const Deviation = ObjectSchema.create({
   name: 'clm_deviation',
@@ -30,13 +33,12 @@ export const Deviation = ObjectSchema.create({
   ],
 
   fields: {
-    display_name: Field.text({
+    display_name: Field.formula({
       label: 'Deviation',
       group: 'deviation',
-      readonly: true,
-      searchable: true,
-      maxLength: 200,
-      description: 'Filled in automatically as "clause title · status".',
+      returnType: 'text',
+      expression: F`record.clause.title + ' · ' + label(record.status)`,
+      description: 'Composed as "clause title · status", in the reader\'s language.',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',

@@ -17,7 +17,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Review',
-        help: 'Filled in automatically as "stage · reviewer".',
+        help: 'Composed as "stage · reviewer", in the reader\'s language.',
       },
       contract: {
         label: 'Contract',
@@ -85,7 +85,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Deviation',
-        help: 'Filled in automatically as "clause title · status".',
+        help: 'Composed as "clause title · status", in the reader\'s language.',
       },
       contract: {
         label: 'Contract',
@@ -147,7 +147,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
     fields: {
       display_name: {
         label: 'Signature',
-        help: 'Filled in automatically as "method · status".',
+        help: 'Composed as "method · status", in the reader\'s language.',
       },
       contract: {
         label: 'Contract',

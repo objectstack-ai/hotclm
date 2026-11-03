@@ -1,3 +1,4 @@
+import { F } from '@objectstack/spec';
 import { ObjectSchema, Field } from '@objectstack/spec/data';
 
 /**
@@ -8,8 +9,10 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  *
  * `comments` is what the requester sees; `internal_note` is legal's own
  * working note and is withheld by field-level security (DESIGN.md §04,
- * card 04). `display_name` is a stored mirror ("<stage> · <reviewer>")
- * stamped by `mirror.hook.ts`.
+ * card 04). `display_name` is a formula ("<stage> · <reviewer>"): the stage is
+ * `label(record.stage)`, the option label in the READER's locale, and the
+ * reviewer is the user's name read through the one reference hop (issue #157,
+ * objectstack#26608).
  */
 export const Review = ObjectSchema.create({
   name: 'clm_review',
@@ -28,13 +31,12 @@ export const Review = ObjectSchema.create({
   ],
 
   fields: {
-    display_name: Field.text({
+    display_name: Field.formula({
       label: 'Review',
       group: 'review',
-      readonly: true,
-      searchable: true,
-      maxLength: 160,
-      description: 'Filled in automatically as "stage · reviewer".',
+      returnType: 'text',
+      expression: F`label(record.stage) + ' · ' + record.reviewer.name`,
+      description: 'Composed as "stage · reviewer", in the reader\'s language.',
     }),
     contract: Field.masterDetail('clm_contract', {
       label: 'Contract',
