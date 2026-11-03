@@ -96,7 +96,7 @@ console does not list them; this table is where they are named.
 | `Legal Counsel 1` · `2` | `counsel1@example.com` · `counsel2@example.com` | `clm_legal_counsel` | receives contracts on submission (round-robin by open load) and owns review · the `legal_owner` of every contract legal has accepted — 34 / 34 · all 56 compliance obligations — 29 / 27 · the `decided_by` of all 17 decided deviations — 10 / 7 · the reviewer of their contracts' 34 legal reviews — 16 / 18, the 7 still pending among them — 2 / 5 |
 | `Head of Legal` | `legal.head@example.com` | `clm_legal_head` | rung 2 of the approval ladder whenever `route_legal_head` is stamped · the reviewer of the legal review of the contract handed back to the queue |
 | `Finance Controller` | `finance@example.com` | `clm_finance_controller` | rung 2/3, reads every contract with `route_finance`, and the only position that may edit bank details · the reviewer of all 23 finance reviews, the 7 on contracts still in review or in approval among them, recorded there through **Record Finance Review** (记录财务审查) |
-| `Executive` | `executive@example.com` | `clm_executive` | rung 4, and reads every contract with `route_executive` |
+| `Executive` | `executive@example.com` | `clm_executive` | the three requesters' line manager, so rung 1 of every approval on their contracts · rung 4, and reads every contract with `route_executive` |
 | `General Manager` | `gm@example.com` | `clm_general_manager` | rung 5, and reads every contract with `route_gm` |
 | `Records Manager` | `records@example.com` | `clm_records_manager` | execution formalities, the executed copy and the archive number |
 | `CLM Administrator` | `clm.admin@example.com` | `clm_admin` | maintains the configuration objects and holds full reach over every CLM object: the only position that may write `clm_contract_type` and `clm_approval_rule`, and the only one the app's **Administration** group is served to |
@@ -126,7 +126,8 @@ Three things about where these accounts exist:
   of contracts: it signs in the dev admin and nobody else.
 - **Once.** Running `pnpm demo` again finds every address already there and
   leaves that account exactly as it is — name, password, manager — adding only
-  a position it is missing. No account is duplicated.
+  a position it is missing, and a requester's manager when it has none. No
+  account is duplicated.
 
 Every dataset is an upsert, so `pnpm demo` also runs again on a database that
 already holds the demo, after the daily jobs have run and after you have worked
@@ -185,26 +186,37 @@ none. `src/data/keys.ts` (`reviewerOf`) says why each.
 Every contract sent for approval opens on rung 1: the direct manager of the
 contract's **owner** — the business requester who launched it, not the lawyer
 who pressed **Send for Approval** — read from that account's
-`sys_user.manager_id`. No seed, position or permission set fills that column,
-and neither do the demo staff: a `demoStaff` entry carries a position and
-permission sets and nothing else, so it cannot name a manager. On a fresh
-`pnpm demo` no requester has one, and no contract gets past rung 1 until you
-set it — the one step of the demo that is still yours.
+`sys_user.manager_id`. No seed, position or permission set fills that column.
 
-Set it in **Setup → Users → the user → ⋯ → Set Manager**, for each of the three
-business requesters and for anyone else who launches contracts. Any other
-account in the organization will do — the persona mix has no line managers of
-its own, so point all three at one of the demo staff (`Executive`, say). A
-second `pnpm demo` leaves the manager you set where it is.
+**On the demo it is filled for you.** The three business requesters report to
+`Executive` (`executive@example.com`): each requester's `demoStaff` entry names
+that address as its `manager` (@objectstack 18.3), and the demo boot writes it
+once every demo account exists and before the seed runs. So on the first
+`pnpm demo` a requester's contract opens rung 1 on the Executive, who finds it
+under **我的合同 › 待我处理** (Waiting on Me) as 直属上级 (Direct Manager), with
+nothing for you to do first. The persona mix has no line managers of its own,
+so the one account takes rung 1 for all three; it is also rung 4 when
+`route_executive` is stamped.
 The manager needs nothing more: `approve_contract`, the gate a rung acts
 through, is in `clm_requester`, which every account holds.
 
-Skip it and the request opens on a slot nobody holds — `pending_approvers`
-reads `manager:undefined` (upstream `objectstack-ai/objectstack#22558`) — and
-the contract stays locked for approval. Setting the manager afterwards does not
-reach a request that is already open: its approvers were resolved when the rung
-opened. Only a platform admin moves it on, from **Setup → Approvals → Approvals
-Inbox → All**, with **Override Reassign** (or Override Approve / Reject).
+The boot writes a manager only on an account that has none. A manager you set
+on a requester by hand stays on every later `pnpm demo`; one you clear is
+written again on the next boot. The other demo staff have no manager, and
+nothing on the demo needs them to: rung 1 reads the owner of the contract, and
+the demo deals every contract to a requester.
+
+**On your own organization it is a setup step.** For anyone else who launches
+contracts, set it in **Setup → Users → the user → ⋯ → Set Manager** (or by
+script, below). An owner with no manager does not stall the request: rung 1
+resolves to nobody, so it opens on the organization's administrators instead
+(`onEmptyApprovers: 'admin_rescue'`). Measured on 18.3.0 with the requesters'
+manager unset: `pending_approver_labels` read `Dev Admin` and the request
+recorded the reason "no approver on the node resolved to a person". Setting the
+manager afterwards does not reach a request that is already open: its approvers
+were resolved when the rung opened. A platform admin moves it on from
+**Setup → Approvals → Approvals Inbox → All**, with **Override Reassign** (or
+Override Approve / Reject).
 
 No rung sends its approver a message when it opens — nothing in their inbox,
 no email. They see it waiting in the Console: the bell counts the approvals

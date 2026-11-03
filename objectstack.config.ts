@@ -286,13 +286,25 @@ export default defineStack({
   //   as. The fixture names none of the remaining four; they are reached
   //   through the position, not by name.
   //
-  // ⚠️ A line manager cannot be declared: a `demoStaff` entry carries a
-  // `position` and `permissionSets` and nothing else, and `sys_user.manager_id`
-  // is an admin operation (README, "Rung 1 of the approval ladder is a
-  // manager"). Setting the requesters' manager stays a manual Setup step.
+  // - The three requesters report to the Executive (`manager`, @objectstack
+  //   18.3, issue #197). Rung 1 of F5 is the contract OWNER's direct manager
+  //   (`sys_user.manager_id`), and every demo contract is a requester's, so
+  //   without it no approval gets past rung 1 on a fresh demo. The boot links
+  //   each manager after every account exists and before the seed runs,
+  //   through the same checks as Setup → Users → Set Manager, and only on an
+  //   account with no manager: one set by hand is left as it is. Named by the
+  //   manager's `email`, not its name; the stack refuses an address that is no
+  //   entry's, the entry's own, or a loop. The persona mix has no line
+  //   managers of its own (DESIGN.md §10), so the Executive, who already holds
+  //   rung 4, takes rung 1 for all three (README, "Rung 1 of the approval
+  //   ladder is a manager").
   demoStaff: demoSeedRequested()
     ? [
-        ...CONTRACT_OWNERS.map((name, i) => ({ name, email: `requester${i + 1}@example.com` })),
+        ...CONTRACT_OWNERS.map((name, i) => ({
+          name,
+          email: `requester${i + 1}@example.com`,
+          manager: 'executive@example.com',
+        })),
         ...LEGAL_OWNERS.map((name, i) => ({ name, email: `counsel${i + 1}@example.com`, position: CLM_POSITION.legalCounsel })),
         { name: LEGAL_HEAD,           email: 'legal.head@example.com', position: CLM_POSITION.legalHead },
         { name: FINANCE_CONTROLLER,   email: 'finance@example.com',    position: CLM_POSITION.financeController },
