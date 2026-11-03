@@ -39,6 +39,13 @@ import { must, ref } from './_values.js';
  * date EQUALITY is the anti-pattern `os lint` calls
  * `flow-date-equality-filter` — a date value carries a time component, so
  * `due_date == {7_days_from_now}` silently matches nothing.
+ *
+ * ## The recipient is the obligation's platform owner
+ *
+ * Each stage tells `owner_id`, the person accountable for the obligation
+ * (issue #64, ruled A: one owner concept). It is never empty, so unlike F3's
+ * `legal_owner` this job has no row with nobody to tell; the shared
+ * `hasRecipient` edge stays, because it is the sweep's, not this flow's.
  */
 
 /** The arrears write. One row, addressed by scalar id — no `multi`, no predicate write. */
@@ -76,11 +83,11 @@ export const ObligationDueFlow: Flow = sweepFlow({
         status: { $in: ['pending', 'in_progress'] },
         due_date: { $gte: '{7_days_from_now}', $lt: '{8_days_from_now}' },
       },
-      fields: ['id', 'title', 'contract', 'owner', 'due_date', 'kind', 'status'],
+      fields: ['id', 'title', 'contract', 'owner_id', 'due_date', 'kind', 'status'],
       item: 'obligation',
       body: rowBody({
         id: 'week',
-        recipients: { primary: ref('obligation.owner') },
+        recipients: { primary: ref('obligation.owner_id') },
         notice: {
           topic: 'clm_obligation_due_soon',
           severity: 'info',
@@ -99,11 +106,11 @@ export const ObligationDueFlow: Flow = sweepFlow({
         status: { $in: ['pending', 'in_progress'] },
         due_date: { $gte: '{today}', $lt: '{tomorrow}' },
       },
-      fields: ['id', 'title', 'contract', 'owner', 'due_date', 'kind', 'status'],
+      fields: ['id', 'title', 'contract', 'owner_id', 'due_date', 'kind', 'status'],
       item: 'obligation',
       body: rowBody({
         id: 'today',
-        recipients: { primary: ref('obligation.owner') },
+        recipients: { primary: ref('obligation.owner_id') },
         notice: {
           topic: 'clm_obligation_due_today',
           severity: 'warning',
@@ -124,12 +131,12 @@ export const ObligationDueFlow: Flow = sweepFlow({
         status: { $in: ['pending', 'in_progress'] },
         due_date: { $lt: '{today}' },
       },
-      fields: ['id', 'title', 'contract', 'owner', 'due_date', 'kind', 'status'],
+      fields: ['id', 'title', 'contract', 'owner_id', 'due_date', 'kind', 'status'],
       item: 'obligation',
       body: rowBody({
         id: 'arrears',
         lead: [flagOverdue],
-        recipients: { primary: ref('obligation.owner') },
+        recipients: { primary: ref('obligation.owner_id') },
         notice: {
           topic: 'clm_obligation_overdue',
           severity: 'critical',

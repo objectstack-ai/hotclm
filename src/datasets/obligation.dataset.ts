@@ -31,7 +31,8 @@ export const ObligationDataset = defineDataset({
   dimensions: [
     { name: 'status', label: 'Status', field: 'status', type: 'string' },
     { name: 'kind', label: 'Kind', field: 'kind', type: 'string' },
-    { name: 'owner', label: 'Owner', field: 'owner', type: 'lookup' },
+    // The accountable person is the platform owner (issue #64).
+    { name: 'owner_id', label: 'Owner', field: 'owner_id', type: 'lookup' },
     { name: 'contract_title', label: 'Contract', field: 'contract.title', type: 'string' },
     { name: 'contract_status', label: 'Contract Status', field: 'contract.status', type: 'string' },
     { name: 'counterparty', label: 'Counterparty', field: 'contract.party.name', type: 'string' },

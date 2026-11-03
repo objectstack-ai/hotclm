@@ -146,8 +146,9 @@ twice. The same goes for a contract someone has terminated or archived, or an
 instalment finance has marked paid. Measured after one run of every daily job
 plus those four desk actions: the re-run refused no row and dropped none.
 
-Three limits. Any other column you edited, such as a summary or a reassigned
-legal owner or a review's reviewer, goes back to the fixture's value. A
+Three limits. Any other column you edited, such as a summary, a reassigned
+legal owner or obligation owner, or a review's reviewer, goes back to the
+fixture's value. A
 deviation, signature round or review you decided is not covered yet: the re-run
 puts its fixture status or decision back, and for a deviation or a signature
 round the state machine may refuse that. The lifecycle columns also keep the dates they
@@ -155,11 +156,10 @@ were stamped with, while the fixture's own dates (start, end, due and planned
 dates) move forward on each re-run. To get back to the corpus exactly as
 shipped, start from a clean database: `rm -rf .objectstack/data && pnpm demo`.
 
-**One obligation is deliberately left with no owner** and is not a name you have
-missed. F10 (`obligation_due`) reminds an obligation's owner and takes a "nobody
-to tell" edge when there is none — the demo keeps exactly one unowned row, due
-seven days after boot, so that edge stays exercised. `src/data/plan-children.ts`
-proves it reachable and says why one is both the minimum and the maximum.
+**Every obligation has an owner**, its platform owner (`owner_id`), and that is
+the person accountable for it: the one who finds it under **我负责的履约**, gets
+F10's (`obligation_due`) reminders, and may update its progress. Legal and the
+CLM administrator can hand an obligation to someone else; the owner cannot.
 
 The dev admin is deliberately none of them. Like every member it holds
 `clm_requester`, so it sees 我的合同 and 分析 (`GET /api/v1/meta/app/clm` serves

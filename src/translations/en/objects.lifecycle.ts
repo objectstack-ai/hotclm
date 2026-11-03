@@ -254,9 +254,9 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
         label: 'Due Date',
         help: 'The date the daily check measures arrears against.',
       },
-      owner: {
+      owner_id: {
         label: 'Owner',
-        help: 'Who is accountable for performing it. Empty means unassigned, not the contract owner.',
+        help: 'Who is accountable for performing it. Legal or a CLM administrator can hand it to someone else.',
       },
       status: {
         label: 'Status',

@@ -1,5 +1,6 @@
 import { definePermissionSet } from '@objectstack/spec/security';
 import { Contract } from '../objects/contract.object.js';
+import { Obligation } from '../objects/obligation.object.js';
 import { Party } from '../objects/party.object.js';
 import { Review } from '../objects/review.object.js';
 import { Signature } from '../objects/signature.object.js';
@@ -58,7 +59,9 @@ export const LegalSet = definePermissionSet({
     clm_review:           { allowCreate: true,  allowRead: true, allowEdit: true,  allowDelete: false },
     clm_deviation:        { allowCreate: true,  allowRead: true, allowEdit: true,  allowDelete: false },
     clm_signature:        { allowCreate: true,  allowRead: true, allowEdit: true,  allowDelete: false },
-    clm_obligation:       { allowCreate: true,  allowRead: true, allowEdit: true,  allowDelete: false },
+    // `allowTransfer`: legal hands an obligation to the person accountable
+    // for it, which is a change of its platform owner `owner_id` (issue #64).
+    clm_obligation:       { allowCreate: true,  allowRead: true, allowEdit: true,  allowDelete: false, allowTransfer: true },
     clm_payment_plan:     { allowCreate: true,  allowRead: true, allowEdit: false, allowDelete: false },
     clm_party:            { allowCreate: true,  allowRead: true, allowEdit: true,  allowDelete: false },
     clm_contract_type:    { allowCreate: false, allowRead: true, allowEdit: false, allowDelete: false },
@@ -73,6 +76,9 @@ export const LegalSet = definePermissionSet({
     ...open(Party, ['bank_account', 'contact_phone']),
     // Read-only for clm_requester, which every member holds (#133).
     ...open(Party, PARTY_ASSESSED_FIELDS),
+    // Read-only for clm_requester too (an owner updates progress, not the
+    // contract or the due date, #64); legal re-dates and re-files obligations.
+    ...open(Obligation, ['contract', 'due_date']),
   },
   rowLevelSecurity: [
     {
