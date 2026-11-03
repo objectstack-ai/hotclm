@@ -215,7 +215,7 @@ RLS 谓词不能跨对象（ADR-0055），所以「同部门可见」无法用 `
 | 执行与档案 | `clm_records.access` | 待执行 · 待归档 · 合同台账 | 待执行 grid（`signing` 且签署记录未 `completed` 或执行形式未齐）· 待归档 grid（终态且 `archive_no` 空）· 台账 grid（全字段，可导出） |
 | 管理 | `clm_admin.access` | 审批矩阵 · 相对方 · 签约主体与部门 · 报表 | 配置对象 grid |
 
-**合同详情页**（slotted）：header 挂「提交 / 受理 / 送审 / 发起签署 / 生效 / 终止 / 发起续签」动作，按 status 与门控显隐；highlights：编号 · 相对方 · 金额 · 到期日 · 当前轮次；path 组件显示 draft→submitted→in_review→in_approval→approved→signing→active；tab：概要 / 版本（timeline）/ 审查与偏离 / 审批记录（平台 `sys_approval_request`）/ 履约与收付款 / 签署与归档 / 讨论（平台 discussion slot，评论与 @）。
+**合同详情页**（slotted）：header 挂「提交 / 受理 / 送审 / 发起签署 / 生效 / 终止 / 发起续签」动作，按 status 与门控显隐；highlights：编号 · 相对方 · 金额 · 到期日 · 当前轮次；path 组件显示 draft→submitted→in_review→in_approval→approved→signing→active；正文由平台按对象编排（@objectstack 18.3 起，ADR-0085 记录页 v3 取消了页面自带的 tabs 槽；维护者 2026-11-03 裁定跟随平台）：先是关键条款各字段组（合同 / 签约方与负责人 / 商务条款 / 期限与续约 / 法律条款），再是 版本 · 审查 · 偏离 · 履约义务 · 收付款计划 · 签署记录 六张整宽子表（`clm_contract.fieldGroups` 中的子表组定位，列由各子表外键的 `relatedListColumns` 声明），最后是收起的 路由与审批 / 生命周期 / AI 审阅 / 汇总；右栏是平台的动态（讨论，评论与 @）、续签合同侧卡、附件与审批面板（平台 `sys_approval_request`）。
 
 无匿名公开表单：合同发起必须登录。
 

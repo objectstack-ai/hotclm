@@ -52,10 +52,36 @@ export const Contract = ObjectSchema.create({
     { key: 'commercial', label: 'Commercial Terms',    icon: 'dollar-sign' },
     { key: 'term',       label: 'Term & Renewal',      icon: 'calendar' },
     { key: 'legal',      label: 'Legal',               icon: 'scale' },
+    // Body tables, placed after the key terms (ADR-0085 / objectstack#27069:
+    // a group naming a relationship stands for that list's table). Without
+    // these the record page drew all six tables between the first group and
+    // the parties, pushing the terms below them.
+    { key: 'versions',    label: 'Versions',            icon: 'files',         relatedList: 'clm_contract_version' },
+    { key: 'reviews',     label: 'Reviews',             icon: 'clipboard-check', relatedList: 'clm_review' },
+    { key: 'deviations',  label: 'Deviations',          icon: 'git-compare',   relatedList: 'clm_deviation' },
+    { key: 'obligations', label: 'Obligations',         icon: 'list-checks',   relatedList: 'clm_obligation' },
+    { key: 'payments',    label: 'Payment Schedule',    icon: 'wallet',        relatedList: 'clm_payment_plan' },
+    { key: 'signatures',  label: 'Signature Records',   icon: 'pen-tool',      relatedList: 'clm_signature' },
     { key: 'routing',    label: 'Routing & Approval',  icon: 'route',    defaultExpanded: false },
     { key: 'lifecycle',  label: 'Lifecycle',           icon: 'history',  defaultExpanded: false },
     { key: 'ai',         label: 'AI Review',           icon: 'sparkles', defaultExpanded: false },
     { key: 'rollup',     label: 'Roll-ups',            icon: 'sigma',    defaultExpanded: false },
+  ],
+
+  // The record page's related lists, in the order a contract passes through
+  // them (DESIGN.md §05: versions → review & deviations → performance →
+  // signing), then the renewals that point back here. Since @objectstack 18.3
+  // the record page composes its lists from these relationships (ADR-0085,
+  // objectstack#27053 retired the page's own `tabs` slot), so this list is
+  // where §05's order lives. Approvals are the platform's own panel.
+  relatedLists: [
+    'clm_contract_version',
+    'clm_review',
+    'clm_deviation',
+    'clm_obligation',
+    'clm_payment_plan',
+    'clm_signature',
+    'clm_contract.renewed_from',
   ],
 
   fields: {
@@ -353,11 +379,21 @@ export const Contract = ObjectSchema.create({
       // Written by the start_renewal flow; DESIGN.md §03: renewal is a new
       // contract, not a transition.
       description: 'Set by Start Renewal on the new draft. A renewal is a new contract, not a status change.',
+      // The old contract's page lists its renewals — including the draft
+      // `start_renewal` has just created — so a reader reaches the successor.
+      // A side card, not a body table: as a body table the list draws the
+      // contract's own list actions (Launch Contract, Backfill), which start
+      // an unrelated intake rather than a renewal.
+      relatedListColumns: ['contract_number', 'title', 'status', 'start_date', 'end_date', 'owner_id', 'created_at'],
     }),
     parent_contract: Field.lookup('clm_contract', {
       label: 'Parent Contract',
       group: 'term',
       description: 'The framework agreement this order sits under, or the main contract an amendment modifies.',
+      // Not listed on the parent's page: the record page before 18.3 never
+      // showed it, and two lists both titled "Contracts" on one contract page
+      // would read as the same list twice.
+      relatedList: false,
     }),
     is_expiring: Field.boolean({
       label: 'Expiring Soon',

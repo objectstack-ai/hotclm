@@ -21,6 +21,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: 'Contract',
+        inlineTitle: 'Reviews',
       },
       reviewer: {
         label: 'Reviewer',
@@ -88,6 +89,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: 'Contract',
+        inlineTitle: 'Deviations',
       },
       clause: {
         label: 'Clause',
@@ -149,6 +151,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: 'Contract',
+        inlineTitle: 'Signatures',
       },
       method: {
         label: 'Method',
@@ -229,6 +232,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: 'Contract',
+        inlineTitle: 'Obligations',
       },
       title: {
         label: 'Title',
@@ -307,6 +311,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: 'Contract',
+        inlineTitle: 'Payment Plan',
       },
       seq: {
         label: 'Instalment No.',

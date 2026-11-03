@@ -70,6 +70,9 @@ export const Obligation = ObjectSchema.create({
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Obligations',
+      // The columns the contract page's list shows (ADR-0085: the record page
+      // derives the list from this relationship since @objectstack 18.3).
+      relatedListColumns: ['display_name', 'title', 'kind', 'due_date', 'owner', 'status'],
     }),
     title: Field.text({
       label: 'Title',

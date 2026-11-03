@@ -50,6 +50,9 @@ export const Signature = ObjectSchema.create({
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Signatures',
+      // The columns the contract page's list shows (ADR-0085: the record page
+      // derives the list from this relationship since @objectstack 18.3).
+      relatedListColumns: ['display_name', 'method', 'provider', 'status', 'formalities_done', 'executed_file', 'completed_at'],
     }),
     method: Field.select({
       label: 'Method',

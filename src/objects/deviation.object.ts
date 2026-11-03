@@ -46,6 +46,9 @@ export const Deviation = ObjectSchema.create({
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Deviations',
+      // The columns the contract page's list shows (ADR-0085: the record page
+      // derives the list from this relationship since @objectstack 18.3).
+      relatedListColumns: ['display_name', 'clause', 'requested_position', 'status', 'decided_by', 'decided_at'],
     }),
     clause: Field.lookup('clm_clause', {
       label: 'Clause',

@@ -49,6 +49,9 @@ export const ContractVersion = ObjectSchema.create({
       deleteBehavior: 'cascade',
       inlineEdit: 'grid',
       inlineTitle: 'Versions',
+      // The columns the contract page's list shows (ADR-0085: the record page
+      // derives the list from this relationship since @objectstack 18.3).
+      relatedListColumns: ['display_name', 'version_no', 'kind', 'turn', 'is_current', 'file', 'submitted_by', 'created_at'],
     }),
     version_no: Field.number({
       label: 'Version No.',

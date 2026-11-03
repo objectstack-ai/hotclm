@@ -21,6 +21,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: '合同',
+        inlineTitle: '审查',
       },
       reviewer: {
         label: '审查人',
@@ -88,6 +89,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: '合同',
+        inlineTitle: '偏离',
       },
       clause: {
         label: '条款',
@@ -149,6 +151,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: '合同',
+        inlineTitle: '签署记录',
       },
       method: {
         label: '签署方式',
@@ -229,6 +232,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: '合同',
+        inlineTitle: '履约义务',
       },
       title: {
         label: '标题',
@@ -307,6 +311,7 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
       },
       contract: {
         label: '合同',
+        inlineTitle: '收付款计划',
       },
       seq: {
         label: '期次',

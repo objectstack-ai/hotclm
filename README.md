@@ -218,17 +218,17 @@ step waits on a read-only view of the one record the request is about
 (upstream `objectstack-ai/objectstack#26180`); this app declares nothing for
 it. So a manager who holds no position at all opens the request from
 **我的合同 › Waiting on Me** and lands on the contract page itself, with
-**通过 / 拒绝** above it. Every tab opens: the overview, **版本** (the version's
-PDF opens), **审查与偏离**, **审批记录**, **履约与收付款**, **签署与归档** and **讨论**,
-and each review, deviation, obligation, signature round and version opens on
-its own page. Nothing can be changed: the page has no **编辑**, its **⋯** menu
+**通过 / 拒绝** above it. The whole page opens: the key terms, the **合同版本**
+table (the version's PDF opens), **审查**, **偏离**, **履约义务**, **收付款计划**,
+**签署记录**, the approval panel and the activity feed, and each review,
+deviation, obligation, signature round and version opens on its own page. Nothing can be changed: the page has no **编辑**, its **⋯** menu
 offers only 添加到收藏 and 分享, and a write through the API answers
 `403 PERMISSION_DENIED`.
 
 The read ends with the step. Once the manager approves or rejects, the contract,
-its child rows and its files are closed to them again — the page they decided
-on reads 「未找到记录」 straight away, which means the step is over, not that
-the record is gone. A contract of a report's that is not waiting on them (a
+its child rows and its files are closed to them again — from @objectstack 18.3
+the page they decided on says so straight away (「你的审批决定已记录 · 你的审批环节已结束，
+对此记录的访问权限也随之结束」) with a link back to the approvals inbox. A contract of a report's that is not waiting on them (a
 draft, or one already past rung 1) stays closed too: on the open edition
 being the owner's manager grants no read. The scope that would
 (`own_and_reports`, DESIGN.md §04 `contract_manager_reports`) is an
