@@ -92,6 +92,12 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         refuse_party: { message: '这个相对方不能使用：它不存在，或已被标记为「禁止合作」。相对方禁止合作的合同不予登记，补录也不例外。' },
       },
     },
+    record_finance_review: {
+      refusals: {
+        refuse_no_contract: { message: '财务审查要从它所审查的合同上记录。请打开合同，在那里使用「记录财务审查」。' },
+        refuse_stage: { message: '财务审查在合同处于「审查中」或「审批中」时记录。从「已批准」起，财务直接在合同上修改这条审查。' },
+      },
+    },
     renewal_start: {
       refusals: {
         refuse_existing: { message: '这份合同已有续签草稿（{{ existingRenewal.contract_number }}）。请打开那一份，不要再发起第二份。' },

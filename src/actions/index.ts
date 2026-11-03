@@ -11,3 +11,4 @@ export {
   StartRenewalAction,
 } from './contract-lifecycle.actions.js';
 export { ExecutedUploadAction } from './contract-backfill.actions.js';
+export { RecordFinanceReviewAction } from './finance-review.actions.js';

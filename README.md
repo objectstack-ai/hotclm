@@ -94,8 +94,8 @@ console does not list them; this table is where they are named.
 |---|---|---|---|
 | `Business Requester 1` · `2` · `3` | `requester1@example.com` · `requester2@example.com` · `requester3@example.com` | none — every member holds `clm_requester` | the 120 contracts' `owner_id`, dealt by counterparty — 43 / 43 / 34 · and the 143 delivery and reporting obligations under them — 50 / 53 / 40 · the 2 business reviews — 0 / 1 / 1 |
 | `Legal Counsel 1` · `2` | `counsel1@example.com` · `counsel2@example.com` | `clm_legal_counsel` | receives contracts on submission (round-robin by open load) and owns review · the `legal_owner` of every contract legal has accepted — 34 / 34 · all 56 compliance obligations — 29 / 27 · the `decided_by` of all 17 decided deviations — 10 / 7 · the reviewer of their contracts' 34 legal reviews — 16 / 18, the 7 still pending among them — 2 / 5 |
-| `Head of Legal` | `legal.head@example.com` | `clm_legal_head` | rung 2 of the approval ladder whenever `route_legal_head` is stamped · the reviewer of 8 reviews: the legal review of the contract handed back to the queue, and the 7 finance reviews on contracts not yet approved |
-| `Finance Controller` | `finance@example.com` | `clm_finance_controller` | rung 2/3, reads every contract with `route_finance`, and the only position that may edit bank details · the reviewer of the 16 finance reviews on approved-or-later contracts |
+| `Head of Legal` | `legal.head@example.com` | `clm_legal_head` | rung 2 of the approval ladder whenever `route_legal_head` is stamped · the reviewer of the legal review of the contract handed back to the queue |
+| `Finance Controller` | `finance@example.com` | `clm_finance_controller` | rung 2/3, reads every contract with `route_finance`, and the only position that may edit bank details · the reviewer of all 23 finance reviews, the 7 on contracts still in review or in approval among them, recorded there through **Record Finance Review** (记录财务审查) |
 | `Executive` | `executive@example.com` | `clm_executive` | rung 4, and reads every contract with `route_executive` |
 | `General Manager` | `gm@example.com` | `clm_general_manager` | rung 5, and reads every contract with `route_gm` |
 | `Records Manager` | `records@example.com` | `clm_records_manager` | execution formalities, the executed copy and the archive number |
@@ -172,11 +172,13 @@ reminders go to somebody who is not going to act on them.
 
 The 60 reviews are dealt to the desk whose stage they are. A legal review is the
 contract's lawyer's, or the head of legal's on the one contract handed back to
-the queue. A finance review is the finance controller's once its contract is
-approved, and the head of legal's before that, because finance edits a contract
-(and so its reviews) only from `approved` onward. A business review is the
-requester's who launched the contract. A compliance review would be the head of
-legal's; the demo deals none. `src/data/keys.ts` (`reviewerOf`) says why each.
+the queue. A finance review is the finance controller's, before approval as well
+as after: finance edits a contract (and so writes its reviews directly) only
+from `approved` onward, so on a contract still in review or in approval it
+records its review through the **Record Finance Review** (记录财务审查) button
+on the contract instead. A business review is the requester's who launched the
+contract. A compliance review would be the head of legal's; the demo deals
+none. `src/data/keys.ts` (`reviewerOf`) says why each.
 
 ### Rung 1 of the approval ladder is a manager
 

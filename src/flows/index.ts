@@ -10,6 +10,7 @@ import { PaymentOverdueFlow } from './payment-overdue.flow.js';
 import { RenewalNoticeFlow, RenewalStartFlow, renewalDraft, renewalWindow } from './renewal-notice.flow.js';
 import { ExpirationSweepFlow } from './expiration-sweep.flow.js';
 import { ExecutedUploadFlow, backfillStamps } from './executed-upload.flow.js';
+import { FinanceReviewFlow } from './finance-review.flow.js';
 
 // F1–F16 of DESIGN.md §06; this barrel is what `defineStack({ flows })` reads.
 // F8 (e-signature) and F15 (CRM hand-off) are not built yet; both arrive with
@@ -24,6 +25,7 @@ export { PaymentOverdueFlow } from './payment-overdue.flow.js';
 export { RenewalNoticeFlow, RenewalStartFlow } from './renewal-notice.flow.js';
 export { ExpirationSweepFlow } from './expiration-sweep.flow.js';
 export { ExecutedUploadFlow } from './executed-upload.flow.js';
+export { FinanceReviewFlow } from './finance-review.flow.js';
 
 export const allFlows: Flow[] = [
   ContractIntakeFlow,
@@ -41,6 +43,9 @@ export const allFlows: Flow[] = [
   ExpirationSweepFlow,
   RenewalStartFlow,
   ExecutedUploadFlow,
+  // Finance's own review before approval (issue #190, ruling D): the door
+  // the 记录财务审查 button starts.
+  FinanceReviewFlow,
 ];
 
 /**
