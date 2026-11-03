@@ -176,7 +176,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     legal_workbench: {
       label: 'Legal Workbench',
-      description: 'Intake queue, review load, negotiation stalls, pipeline shape and stage durations for the legal team.',
+      description: 'Intake queue, review load and SLA breaches, negotiation stalls, pipeline shape and stage durations for the legal team.',
       widgets: {
         awaiting_intake: {
           title: 'Awaiting Intake',
@@ -186,9 +186,9 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
           title: 'In Review',
           description: 'Contracts a lawyer has accepted and not yet routed',
         },
-        review_ageing: {
-          title: 'In Review Over 30 Days',
-          description: 'A fixed 30-day threshold, not each contract type\'s own review SLA.',
+        review_over_sla: {
+          title: 'In Review Over SLA',
+          description: 'Contracts in review for longer than their contract type\'s review SLA.',
         },
         negotiation_stalled: {
           title: 'Waiting on Counterparty',
@@ -217,6 +217,10 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         days_to_activation: {
           title: 'Signed → Active (Avg Days)',
           description: 'Average days from signature to the contract coming into force.',
+        },
+        review_over_sla_by_type: {
+          title: 'In Review Over SLA by Contract Type',
+          description: 'Contracts in review for longer than their type\'s review SLA, per contract type. A type with none over its SLA is not shown.',
         },
       },
     },
@@ -296,6 +300,9 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         route_gm_count: {
           label: 'Routes: General Manager',
+        },
+        review_over_sla_count: {
+          label: 'In Review Over SLA',
         },
       },
     },

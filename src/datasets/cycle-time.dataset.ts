@@ -42,16 +42,13 @@ import { defineDataset } from '@objectstack/spec/ui';
  * per-row difference. ⛔ Do not reintroduce a `derived` difference of two
  * stamp aggregates.
  *
- * ## What it does NOT carry: the per-type「超 SLA」
+ * ## Where the per-type「超 SLA」 lives instead
  *
- * The review SLA is per contract TYPE (`clm_contract_type.review_sla_days`).
- * Comparing `review_started_at` against "now minus that type's SLA" needs the
- * `$now` anchor's offset to read a column across the `contract_type` lookup,
- * and 18.2.0's anchor (`objectstack-ai/objectstack#25808`, ruling A) reads a
- * numeric column of the SAME record only — a dotted path is refused. The one
- * remaining route, a per-contract SLA column the app stamps, is the route
- * DESIGN.md §09 forbids. The legal workbench therefore keeps its fixed 30-day
- * tile, threshold in the title.
+ * Not here. It is a COUNT of contracts, not a duration, so it is
+ * `review_over_sla_count` on `contract_metrics` (#31): `review_started_at`
+ * against the `$now` anchor shifted by the contract's stored
+ * `review_sla_days_offset`. The `review_sla_days` dimension below still reads
+ * the type's SLA through the join, which a dimension may do.
  */
 export const CycleTimeDataset = defineDataset({
   name: 'contract_cycle_time',

@@ -73,7 +73,7 @@ import type { Dashboard } from '@objectstack/spec/ui';
 export const LegalDashboard: Dashboard = {
   name: 'legal_workbench',
   label: 'Legal Workbench',
-  description: 'Intake queue, review load, negotiation stalls, pipeline shape and stage durations for the legal team.',
+  description: 'Intake queue, review load and SLA breaches, negotiation stalls, pipeline shape and stage durations for the legal team.',
 
   columns: 12,
   gap: 4,
@@ -152,49 +152,27 @@ export const LegalDashboard: Dashboard = {
     },
     {
       /**
-       * The review-ageing tile, at a FIXED 30-day threshold written into its
-       * own title — which is the brick §09 prescribes here, not a degraded
-       * stand-in for one. §09 places the per-type「超 SLA」 outside the V1.0
-       * delivery surface (维护者裁定 2026-09-09, PR #40 `1127e52`; §09 as
-       * merged, PR #70 `30fd863`) and asks in its place for exactly this: a
-       * fixed threshold, self-declared in the brick's title.
+       * DESIGN.md §09's「审查超 SLA」 — contracts in review past their OWN
+       * type's review SLA (`clm_contract_type.review_sla_days`: 2, 3, 5 or 10
+       * days across the nine seeded types). It replaces the fixed 30-day tile
+       * that stood in this slot while the per-type comparison could not be
+       * written (decision #31: 2B held the stand-in, ruling C kept the goal).
        *
-       * The SLA is PER TYPE (`clm_contract_type.review_sla_days`: 2, 3, 5 or
-       * 10 days across the nine seeded types), and a breach is a row-wise
-       * comparison of `review_started_at` against "now minus that type's SLA".
-       * 18.2.0 added the now-anchored comparand
-       * (`{ $now: true, addDays: { $field } }`, objectstack#25808), but its
-       * offset reads a numeric column of the SAME record only. Measured on
-       * 18.2.0 as the head of legal, `addDays: { $field:
-       * 'contract_type.review_sla_days' }` answers `400 INVALID_FILTER` — as a
-       * runtime filter "the addDays offset … is a dotted path, and SQL
-       * push-down compiles same-table column references only", and as a
-       * measure filter the same code with the reason withheld — while
-       * `os validate` passes it. The same anchor with a literal `-30` answers
-       * 200. So the per-type breach is still not expressible, and this tile
-       * stays.
-       *
-       * ⛔ The remaining route — a persisted `review_due_at` stamped by a daily
-       * job, the §12 gap-#7 shape — is closed for this metric, and not merely
-       * unbuilt: §09 forbids filling the per-type breach from an
-       * application-side job because that replicates a platform rule inside the
-       * application, and decision #31 ruled the same way on the notification
-       * side (1C + 2B, 2026-09-09 — see `legal-review-sla.flow.ts`, whose F3
-       * reminder fires on this same fixed 30 days so the tile and the reminder
-       * cannot tell two stories).
-       *
-       * So the threshold is FIXED, stated in the title, and above every seeded
-       * SLA: a review older than 30 days is late under any of the nine. The
-       * title says "Over 30 Days" and not "Over SLA" precisely so the tile
-       * cannot be read as the per-type breach it is not.
+       * The count is `review_over_sla_count` on `contract_metrics`, one
+       * definition for this tile and the per-type chart below. It compares
+       * `review_started_at` with the platform's `$now` anchor shifted by the
+       * contract's own `review_sla_days_offset`, which the engine stores from
+       * the contract type on every write (platform 18.3.0; the anchor's offset
+       * reads a column of the same record only, objectstack#25808 / #26601).
+       * Nothing in the app stamps it: no hook, no job (§09's ⛔ on app-side
+       * stamping holds).
        */
-      id: 'review_ageing',
-      title: 'In Review Over 30 Days',
-      description: 'A fixed 30-day threshold, not each contract type\'s own review SLA.',
+      id: 'review_over_sla',
+      title: 'In Review Over SLA',
+      description: 'Contracts in review for longer than their contract type\'s review SLA.',
       type: 'metric',
       dataset: 'contract_metrics',
-      values: ['contract_count'],
-      filter: { status: 'in_review', review_started_at: { $lt: '{30_days_ago}' } },
+      values: ['review_over_sla_count'],
       colorVariant: 'danger',
       layout: { x: 6, y: 0, w: 3, h: 2 },
     },
@@ -279,7 +257,7 @@ export const LegalDashboard: Dashboard = {
        * The criterion that does discriminate, and the one this filter now
        * states: WHETHER LEGAL HAS WORK TO DO ON THE STAGE. This is a work-queue
        * board — its first five widgets are `awaiting_intake`, `in_review`,
-       * `review_ageing`, `negotiation_stalled` and `approval_turnaround`, each
+       * `review_over_sla`, `negotiation_stalled` and `approval_turnaround`, each
        * one a queue or a turnaround. `draft` … `signing` are contracts legal is
        * moving; `active`, `expired`, `terminated`, `cancelled` and `rejected`
        * are contracts legal has finished moving. Legal's work on an in-force
@@ -461,6 +439,34 @@ export const LegalDashboard: Dashboard = {
       dataset: 'contract_cycle_time',
       values: ['avg_days_to_activation'],
       layout: { x: 9, y: 6, w: 3, h: 2 },
+    },
+
+    // ─── Row 4: 超 SLA by contract type ──────────────────────────────────
+    {
+      /**
+       * The over-SLA count split by contract type: each type is judged
+       * against its own SLA, so this is where a reader sees WHICH SLA is being
+       * missed. A type with no contract over its SLA is not drawn — measured:
+       * selected alone, the measure's filter narrows the rows, so such a type
+       * returns no row rather than a zero. Largest count first, like the
+       * pipeline chart, so no label decides the order in any locale.
+       */
+      // `chart-config-missing` suppressed for the reason measured on
+      // `stage_funnel` above: a dataset-bound widget derives its series from
+      // `dimensions` and `values`.
+      id: 'review_over_sla_by_type',
+      title: 'In Review Over SLA by Contract Type',
+      description: 'Contracts in review for longer than their type\'s review SLA, per contract type. A type with none over its SLA is not shown.',
+      type: 'horizontal-bar',
+      dataset: 'contract_metrics',
+      dimensions: ['contract_type_name'],
+      values: ['review_over_sla_count'],
+      options: {
+        sortBy: 'review_over_sla_count',
+        sortOrder: 'desc',
+      },
+      suppressWarnings: ['chart-config-missing'],
+      layout: { x: 0, y: 8, w: 12, h: 4 },
     },
   ],
 };
