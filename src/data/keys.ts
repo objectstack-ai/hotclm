@@ -1,7 +1,6 @@
 // Copyright (c) 2026 ObjectStack. Licensed under the Apache-2.0 license.
 
 import { STRINGS } from './demo-locale.js';
-import { POST_APPROVAL_STATUSES } from '../sharing/_lifecycle.js';
 import type { ObligationPlan, ReviewPlan, VersionPlan } from './plan-children.js';
 import { CONTRACT_PLAN, type ContractPlan, type DeviationPlan } from './plan-contracts.js';
 import { assertUniqueKeys } from './_shared.js';
@@ -348,7 +347,8 @@ export const FINANCE_CONTROLLER = 'Finance Controller';
  *    nobody (the contract handed back to the queue), the head of legal, who
  *    receives that queue's escalations.
  *  - **finance** — the finance controller, whose `clm_finance` holds
- *    `RCU（stage=finance）` on this object.
+ *    `RCU（stage=finance）` on this object, on every contract the matrix
+ *    routed to it, approved or not (see below).
  *  - **compliance** — the head of legal: compliance is legal's work (the
  *    argument {@link obligationOwnerOf} makes for compliance obligations) and
  *    a high-risk contract's compliance sign-off is the senior lawyer's.
@@ -357,22 +357,21 @@ export const FINANCE_CONTROLLER = 'Finance Controller';
  *  - **business** — the requester who launched the contract, {@link ownerOf}:
  *    the business review is the launching desk's own sign-off.
  *
- * ## Where the rule bends, measured on 18.2.0
+ * ## A finance review before approval is still finance's
  *
- * A finance review on a contract that has not reached `approved` goes to the
- * head of legal, not the finance controller. `clm_review` is
- * `controlled_by_parent`, so writing one needs EDIT on its contract, and
+ * 7 of the 23 finance reviews sit on a contract that has not reached
+ * `approved` (6 `in_review`, 1 `in_approval`, every one routed to finance).
+ * Finance cannot WRITE a review there directly: `clm_review` is
+ * `controlled_by_parent`, so a direct write needs edit on its contract, and
  * finance edits contracts only from `approved` onward
- * (`contract_finance_post_approval`); before that it READS the contracts the
- * matrix routed to it (`contract_finance_routed`) and no more. Measured: the
- * finance controller's `PATCH` of a finance review on an `in_review` or an
- * `in_approval` contract answers `403 PERMISSION_DENIED` ("requires edit
- * access to its master record"), the same write on an `active` contract `200`.
- * So on those rows the finance controller could neither have decided the
- * review it would be named for nor change it now; the head of legal can
- * (`review_legal_update_any_stage`, and `contract_legal_all_head` edits every
- * contract), and is the account the rule already falls back to. 7 of the 23
- * finance reviews sit on such a contract.
+ * (`contract_finance_post_approval`) — measured on 18.2.0, finance@'s
+ * `PATCH` of such a review answers `403` "requires edit access to its master
+ * record". Until issue #190 those 7 went to the head of legal, who could.
+ * Since #190 (ruling D) finance records and updates its own review there
+ * through the 记录财务审查 action (`record_finance_review`,
+ * `src/flows/finance-review.flow.ts`), which is shown on exactly those two
+ * states, so the finance controller is the reviewer on all 23, and the review
+ * the account is named for is one it can change.
  *
  * A business review stays the requester's although a requester cannot change
  * it: `clm_requester` holds `R` on this object (§04), and both seeded business
@@ -388,7 +387,7 @@ export const reviewerOf = (review: ReviewPlan): string => {
     case 'legal':
       return legalOwnerOf(contract) ?? LEGAL_HEAD;
     case 'finance':
-      return POST_APPROVAL_STATUSES.includes(contract.status) ? FINANCE_CONTROLLER : LEGAL_HEAD;
+      return FINANCE_CONTROLLER;
     case 'compliance':
       return LEGAL_HEAD;
     case 'business':

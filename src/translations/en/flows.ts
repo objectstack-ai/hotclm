@@ -92,6 +92,12 @@ export const flowSurface: Pick<TranslationData, 'flows'> = {
         refuse_party: { message: 'That counterparty cannot be used: it is either missing or flagged blocked. A contract with a blocked counterparty is not recorded, even retrospectively.' },
       },
     },
+    record_finance_review: {
+      refusals: {
+        refuse_no_contract: { message: 'A finance review is recorded from the contract it reviews. Open the contract and use Record Finance Review there.' },
+        refuse_stage: { message: 'A finance review is recorded while the contract is In Review or In Approval. From Approved onward, finance edits the review on the contract directly.' },
+      },
+    },
     renewal_start: {
       refusals: {
         refuse_existing: { message: 'This contract already has a renewal draft ({{ existingRenewal.contract_number }}). Open that one instead of starting a second.' },

@@ -4,7 +4,7 @@
  * `clm_contract` and its document versions — 234 + 25 of this bundle's keys,
  * a third of the whole thing, so they get their own file on size alone.
  *
- * The contract carries the only `_actions` group in the bundle: the eight header
+ * The contract carries the only `_actions` group in the bundle: the nine header
  * actions of the record page plus the two list-toolbar actions (launch and
  * backfill), each with its label, its description and — for the actions that
  * open a dialog — the parameter labels and help that dialog draws.
@@ -438,6 +438,16 @@ export const contract: Record<string, ObjectTranslationData> = {
           },
           submit_now: {
             label: 'Submit now',
+          },
+        },
+      },
+      record_finance_review: {
+        label: 'Record Finance Review',
+        description: 'Record your finance review of this contract. Pressing it again updates the review you already gave; a field left empty keeps what the review says. The contract itself is not changed.',
+        successMessage: 'Finance review recorded.',
+        params: {
+          comments: {
+            helpText: 'Visible to the requester.',
           },
         },
       },
