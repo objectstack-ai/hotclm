@@ -115,6 +115,8 @@ export const ContractDetailPage: Page = {
      * header, so an action not named here is unreachable from the record —
      * MEASURED: `start_renewal` was declared, translated and wired to its flow
      * and still had no button on the contract page until it was named here.
+     * `record_finance_review` (记录财务审查) is the same: declared on the
+     * object, reachable only once listed here.
      */
     header: {
       type: 'page:header',
@@ -131,6 +133,10 @@ export const ContractDetailPage: Page = {
           'activate_contract',
           'terminate_contract',
           'start_renewal',
+          // Finance's own review while the contract is in review or in
+          // approval (issue #190, ruling D). Not a status write: it files the
+          // caller's finance-stage review and leaves the contract as it is.
+          'record_finance_review',
         ],
       },
     },
