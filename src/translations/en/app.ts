@@ -369,7 +369,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         kind: {
           label: 'Kind',
         },
-        owner: {
+        owner_id: {
           label: 'Owner',
         },
         contract_title: {

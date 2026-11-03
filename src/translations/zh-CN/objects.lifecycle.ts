@@ -254,9 +254,9 @@ export const lifecycle: Record<string, ObjectTranslationData> = {
         label: '到期日',
         help: '每日检查以这个日期判断是否逾期。',
       },
-      owner: {
+      owner_id: {
         label: '负责人',
-        help: '由谁负责完成。留空表示尚未指派，不代表由合同负责人承担。',
+        help: '由谁负责完成。法务或 CLM 管理员可以改派给其他人。',
       },
       status: {
         label: '状态',

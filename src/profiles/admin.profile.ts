@@ -91,7 +91,10 @@ export const AdminSet = definePermissionSet({
     clm_review:           full,
     clm_deviation:        full,
     clm_signature:        full,
-    clm_obligation:       full,
+    // `allowTransfer` (implied by `modifyAllRecords`, authored so it is
+    // readable here): the administrator reassigns an obligation's accountable
+    // person, its platform owner `owner_id` (issue #64).
+    clm_obligation:       { ...full, allowTransfer: true },
     clm_payment_plan:     full,
     clm_party:            config,
     clm_contract_type:    config,

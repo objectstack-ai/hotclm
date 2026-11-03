@@ -31,7 +31,7 @@ import { assertUniqueKeys } from './_shared.js';
  * The account the demo is driven as — the platform's dev admin.
  *
  * No REFERENCE names it any more. `clm_contract.legal_owner` left for
- * {@link LEGAL_OWNERS}, `clm_obligation.owner` for {@link obligationOwnerOf},
+ * {@link LEGAL_OWNERS}, `clm_obligation.owner_id` for {@link obligationOwnerOf},
  * `clm_deviation.decided_by` for {@link deviationDeciderOf}, and the last one,
  * the `required` `clm_review.reviewer`, for {@link reviewerOf} (#186).
  * Enumerated rather than sampled: `grep -rn DEMO_USER src` over this tree
@@ -140,7 +140,7 @@ export const LEGAL_OWNERS: readonly string[] = [
  * The lawyer who knows this counterparty — the one rule every column that
  * names a lawyer is dealt by, extracted so there is one of it. Enumerated,
  * those columns are three: `clm_contract.legal_owner` ({@link legalOwnerOf}),
- * the compliance share of `clm_obligation.owner`
+ * the compliance share of `clm_obligation.owner_id`
  * ({@link obligationOwnerOf}) and `clm_deviation.decided_by`
  * ({@link deviationDeciderOf}).
  *
@@ -169,8 +169,8 @@ export const legalOwnerOf = (contract: ContractPlan): string | null =>
   contract.hasLegalOwner ? counselFor(contract) : null;
 
 /**
- * Who is accountable for PERFORMING an obligation — or `null` for the one row
- * this fixture deliberately leaves unassigned.
+ * Who is accountable for PERFORMING an obligation — the row's platform owner
+ * `owner_id` (issue #64, ruled A: `clm_obligation.owner` is retired).
  *
  * ## Why not {@link DEMO_USER}, which is what this column held before
  *
@@ -186,14 +186,14 @@ export const legalOwnerOf = (contract: ContractPlan): string | null =>
  * hides 我负责的履约 from it, and F10's reminder is the one kind of notice whose
  * whole point is that the person receiving it goes and does the thing.
  *
- * `owner` is optional (DESIGN.md §03, and the field's own description: "Empty
- * means unassigned, not the contract owner"), so like the other two optional
- * references a name no account carries lands NULL, silently, and never
- * refuses the row. The five accounts it names are declared demo staff
- * (`demoStaff`, PR #171), created by the platform on the demo boot before the
- * seed runs, so the obligations reach them on the first `pnpm demo`. The deal
- * names NO new account: it spends only the five the fixture already deals
- * contracts to.
+ * Every row names someone: `owner_id` is never empty. Like the contract's
+ * `owner_id`, a name no account carries would resolve to nothing and the
+ * seed-settle claim would hand the row to the platform admin (see
+ * `contract.seed.ts`), silently. The five accounts it names are declared demo
+ * staff (`demoStaff`, PR #171), created by the platform on the demo boot
+ * before the seed runs, so the obligations reach them on the first
+ * `pnpm demo`. The deal names NO new account: it spends only the five the
+ * fixture already deals contracts to.
  *
  * ## The rule: the desk that performs it, and the counterparty decides which
  *
@@ -215,22 +215,22 @@ export const legalOwnerOf = (contract: ContractPlan): string | null =>
  * contract's `owner_id`. DESIGN.md §03 declines to default this column to the
  * contract owner; a fixture that put all 200 on the launching requester would
  * assert by construction the very thing §03 refuses to assert by default, and
- * a reader could no longer tell from the data that the two columns are
- * independent. Dealing the compliance third away from the business owner is
- * what makes that independence visible — and it is why `obligation_metrics`
- * (§09's third dataset, whose first dimension after status and kind is
- * `owner`) reads as five bars rather than one.
+ * a reader could no longer tell from the data that the two are independent.
+ * Dealing the compliance third away from the business owner is what makes
+ * that independence visible — and it is why `obligation_metrics` (§09's third
+ * dataset, whose first dimension after status and kind is `owner_id`) reads as
+ * five bars rather than one.
  *
- * ⚠️ Nothing here claims to reproduce a flow. No flow assigns this column:
- * F9 creates renewal obligations from the type's defaults and leaves the owner
- * to a person, and S5's `extract_obligations` proposes a 负责人 that a person
- * confirms (§07). The deal states a rule a legal desk would recognise, in the
+ * ⚠️ Nothing here claims to reproduce a flow. The one flow that assigns this
+ * column is F9, and only for the renewal obligation it opens on activation,
+ * which goes to the contract's business owner (the renewal decision is
+ * theirs); S5's `extract_obligations` proposes a 负责人 that a person confirms
+ * (§07). The deal states a rule a legal desk would recognise, in the
  * same counterparty-relationship style {@link ownerOf} and {@link legalOwnerOf}
  * already use — so `demo-en` and `demo-zh` deal identically, no locale bundle
  * being consulted for any of it.
  */
-export const obligationOwnerOf = (obligation: ObligationPlan): string | null => {
-  if (!obligation.hasOwner) return null;
+export const obligationOwnerOf = (obligation: ObligationPlan): string => {
   const contract = CONTRACT_PLAN[obligation.contractIndex]!;
   return obligation.kind === 'compliance' ? counselFor(contract) : ownerOf(contract);
 };
@@ -288,10 +288,11 @@ export const obligationOwnerOf = (obligation: ObligationPlan): string | null => 
  *
  * ## No deliberate unassigned set here, and that is not an oversight
  *
- * {@link legalOwnerOf} and {@link obligationOwnerOf} both keep one deliberately
- * empty because a FLOW takes a "nobody to tell" edge over that column — F3 over
- * `legal_owner`, F10 over `owner` — and an empty column is what exercises it.
- * No flow reads `decided_by`: it is written once and displayed. An empty one
+ * {@link legalOwnerOf} keeps one deliberately empty because a FLOW takes a
+ * "nobody to tell" edge over that column — F3 over `legal_owner` — and an empty
+ * column is what exercises it. (F10 used to do the same over the obligation's
+ * `owner`; its accountable person is now `owner_id`, which is never empty, so
+ * that edge left with the column, issue #64.) No flow reads `decided_by`: it is written once and displayed. An empty one
  * would exercise nothing and would instead assert the one thing this column
  * cannot mean, that a decided deviation was decided by nobody. So every decided
  * row names a lawyer and every open row is `null` — which is not an unassigned

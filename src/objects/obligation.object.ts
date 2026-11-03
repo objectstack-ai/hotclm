@@ -39,14 +39,15 @@ export const Obligation = ObjectSchema.create({
   // on one. Only a by-id update is opened: creating, deleting, and moving an
   // obligation to another contract still need edit on the contract.
   //
-  // ⚠️ The platform's owner is the injected `owner_id`, NOT the `owner` field
-  // below that 我负责的履约, F10 and `obligation_requester_own` key on. All
-  // 200 demo obligations carry `owner_id` = the dev admin, and F9 inserts its
-  // renewal obligation as a system write, so on its own this admits no
-  // requester (measured on 18.2.0, issue #64).
+  // The accountable person IS that platform owner, `owner_id` (issue #64,
+  // ruled A): one owner concept, the one the platform's gate, the
+  // `obligation_requester_own` policy, 我负责的履约 and F10's reminder all
+  // read. Handing an obligation to someone else is a change of `owner_id`,
+  // which needs the transfer grant (`allowTransfer`), held by legal and the
+  // administrator only — the owner cannot give their own obligation away.
   sharing: { controlledByParent: { ownerMayEdit: true } },
   nameField: 'display_name',
-  highlightFields: ['display_name', 'kind', 'due_date', 'owner', 'status'],
+  highlightFields: ['display_name', 'kind', 'due_date', 'owner_id', 'status'],
 
   fieldGroups: [
     { key: 'obligation', label: 'Obligation', icon: 'list-checks' },
@@ -72,7 +73,7 @@ export const Obligation = ObjectSchema.create({
       inlineTitle: 'Obligations',
       // The columns the contract page's list shows (ADR-0085: the record page
       // derives the list from this relationship since @objectstack 18.3).
-      relatedListColumns: ['display_name', 'title', 'kind', 'due_date', 'owner', 'status'],
+      relatedListColumns: ['display_name', 'title', 'kind', 'due_date', 'owner_id', 'status'],
     }),
     title: Field.text({
       label: 'Title',
@@ -103,10 +104,20 @@ export const Obligation = ObjectSchema.create({
       storage: { notNull: true },
       description: 'The date the daily check measures arrears against.',
     }),
-    owner: Field.user({
+    // `owner_id` is the platform ownership anchor, and here it is also the
+    // person accountable for performing the obligation (see `sharing` above).
+    // Declared (rather than left to injection) so validate resolves it, the
+    // label says what it means on this object and it sits in the obligation
+    // group; `system: true` keeps the injected marker, the same declaration
+    // `clm_contract.owner_id` makes. No defaultValue: the security middleware
+    // stamps the acting user on an insert that leaves it empty, and a system
+    // write (the seed, F9) names the person explicitly.
+    owner_id: Field.lookup('sys_user', {
       label: 'Owner',
       group: 'obligation',
-      description: 'Who is accountable for performing it. Empty means unassigned, not the contract owner.',
+      system: true,
+      readonly: false,
+      description: 'Who is accountable for performing it. Legal or a CLM administrator can hand it to someone else.',
     }),
 
     status: Field.select({

@@ -790,7 +790,13 @@ const contractActivate: Hook = {
       title: `Renewal decision: ${typeof title === 'string' && title ? title : 'contract'}`.slice(0, 200),
       kind: 'renewal',
       due_date: dueDate,
-      owner: typeof owner === 'string' && owner ? owner : null,
+      // The contract's business owner is accountable for the renewal
+      // decision, so they are the obligation's platform owner (issue #64).
+      // This is a system write, which the platform does not stamp with an
+      // acting user, so the owner is named here. Every contract carries an
+      // `owner_id`; the key is left out rather than written empty if one
+      // ever does not.
+      ...(typeof owner === 'string' && owner ? { owner_id: owner } : {}),
       status: 'pending',
       notes: `Opened by F9 on activation. Decide renewal or notice by ${dueDate} — ${noticeDays} days before the contract ends.`,
     });

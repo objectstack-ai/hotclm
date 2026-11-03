@@ -1,5 +1,6 @@
 import { definePermissionSet } from '@objectstack/spec/security';
 import { Contract } from '../objects/contract.object.js';
+import { Obligation } from '../objects/obligation.object.js';
 import { Party } from '../objects/party.object.js';
 import { Review } from '../objects/review.object.js';
 import { REQUESTER_EDITABLE_STATUSES } from '../sharing/_lifecycle.js';
@@ -154,6 +155,13 @@ export const RequesterSet = definePermissionSet({
     ...readOnly(Contract, [CONTRACT_TERMINATION_REASON]),
     // Legal's working note; the conclusion for the requester goes in `comments`.
     ...hidden(Review, ['internal_note']),
+    // The owner of an obligation updates its progress (`status`, `notes`,
+    // `evidence`, `completed_at`), not what it is a commitment to or when it
+    // falls due: re-dating it would move F10's reminders and the arrears
+    // sweep, and re-pointing it would move it under another contract. Legal
+    // opens both again in its own set; handing it to someone else is the
+    // transfer grant this set does not hold.
+    ...readOnly(Obligation, ['contract', 'due_date']),
     // Payment and contact details are the easiest to leak (§04 FLS table).
     ...hidden(Party, ['bank_account', 'contact_phone']),
     // Assessed by legal, or stamped by the screening connector (§08), never
@@ -174,11 +182,15 @@ export const RequesterSet = definePermissionSet({
     {
       name: 'obligation_requester_own',
       label: 'Requesters update the obligations they own',
-      // DESIGN.md §04: RU（本人负责）.
+      // DESIGN.md §04: RU（本人负责）. Keyed on `owner_id`, the platform owner,
+      // because that is the column the controlled_by_parent opt-in on
+      // `clm_obligation` (`ownerMayEdit`) admits without edit on the contract
+      // (issue #64): keyed on anything else, this policy only narrows contract
+      // editors and admits no requester at all.
       description: 'A requester sees the obligations of the contracts they can see, and updates only the ones assigned to them.',
       object: 'clm_obligation',
       operation: 'update',
-      using: 'owner == current_user.id',
+      using: 'owner_id == current_user.id',
     },
   ],
 });

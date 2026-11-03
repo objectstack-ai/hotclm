@@ -33,10 +33,11 @@ const obligationRecords = OBLIGATION_PLAN.map((obligation) => ({
   kind: obligation.kind,
   due_date: dayOffset(obligation.dueDate),
   // The desk that performs it — a requester for deliverables and reports, the
-  // counterparty's lawyer for compliance filings, and `null` on the one row
-  // `leaveUnassigned` keeps F10's "nobody to tell" edge alive with. See
-  // `keys.ts` for why it is not the dev admin any more.
-  owner: obligationOwnerOf(obligation),
+  // counterparty's lawyer for compliance filings — as the row's platform
+  // owner, which is the accountable person (issue #64). The seed is a system
+  // write, so the platform stamps no acting user and the name is given here.
+  // See `keys.ts` for why it is not the dev admin.
+  owner_id: obligationOwnerOf(obligation),
   status: obligation.status,
   completed_at: obligation.completedAt === null ? null : dayOffset(obligation.completedAt),
   // Proof of performance on the 90 obligations that are done, and on no
