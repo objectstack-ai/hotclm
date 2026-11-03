@@ -1,4 +1,4 @@
-import { P } from '@objectstack/spec';
+import { F, P } from '@objectstack/spec';
 import { ObjectSchema, Field } from '@objectstack/spec/data';
 
 /**
@@ -18,7 +18,9 @@ import { ObjectSchema, Field } from '@objectstack/spec/data';
  *     `archived_at`) — the state machine and the F2/F5/F9–F14 flows;
  *   - the four `ai_*` fields — the "adopt suggestion" action only (DESIGN.md
  *     §07: AI proposes, a person adopts, the field is written on adoption);
- *   - `is_backfilled` — the F16 `executed_upload` action only (§13 Q8).
+ *   - `is_backfilled` — the F16 `executed_upload` action only (§13 Q8);
+ *   - `review_sla_days_offset` — no app writer at all: a stored `expression`
+ *     the ENGINE computes from the contract type on every write (#31).
  *
  * The eight roll-ups (`version_count`, `open_deviation_count`,
  * `approved_legal_review_count`, `current_clean_version_count`,
@@ -141,6 +143,41 @@ export const Contract = ObjectSchema.create({
         { label: 'Purchase', value: 'purchase', color: '#3B82F6' },
         { label: 'Other',    value: 'other',    color: '#94A3B8' },
       ],
+    }),
+    // The contract type's review SLA, as the NEGATIVE whole-day offset the
+    // legal workbench's over-SLA count reads (#31). Two platform facts shape it,
+    // both measured on 18.3.0:
+    //
+    //  - The analytics `$now` anchor (`{ $now: true, addDays: { $field } }`,
+    //    objectstack#25808, ruling A; #26601 / #26753 declined the one-hop
+    //    offset) reads its offset from a numeric column of the SAME record, so
+    //    the type's `review_sla_days` has to be on the contract.
+    //  - `addDays` ADDS the column's value and has no `subDays`, so "now minus
+    //    the SLA" is a column holding the negative number — the platform's own
+    //    documented spelling for exactly this count (filter.zod.ts, the `$now`
+    //    example, `review_sla_days_offset`).
+    //
+    // A stored `expression`, not a hook stamp: the ENGINE computes it from the
+    // row each write stores — on every insert, and on every update by id, so
+    // re-picking the type recomputes it — and a client-sent value never stands.
+    // It reads one hop through `contract_type`. It does NOT follow an edit of
+    // the type's own SLA: contracts already in flight keep the SLA they were
+    // filed under until the contract itself is next written.
+    //
+    // `hidden`: a negative number of days means nothing on the record page.
+    // Identity group, beside the other type-derived fields, and outside the
+    // `lifecycle`/`routing`/`ai` groups the FLS stamp lock is derived from: a
+    // stored expression needs no lock (the engine replaces any sent value).
+    review_sla_days_offset: Field.number({
+      label: 'Review SLA Offset (days)',
+      group: 'identity',
+      readonly: true,
+      hidden: true,
+      scale: 0,
+      min: -90,
+      max: 0,
+      expression: F`0 - record.contract_type.review_sla_days`,
+      description: 'The contract type\'s review SLA as a negative number of days, for the over-SLA count. Computed from the contract type on every save.',
     }),
     status: Field.select({
       label: 'Status',

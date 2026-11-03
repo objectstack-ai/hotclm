@@ -53,6 +53,10 @@ export const contract: Record<string, ObjectTranslationData> = {
           other: '其他',
         },
       },
+      review_sla_days_offset: {
+        label: '审查时限偏移（天）',
+        help: '合同类型的审查时限，取负的天数，供「审查超时限」统计使用。每次保存时按合同类型重新计算。',
+      },
       status: {
         label: '状态',
         help: '合同所处的生命周期环节。状态只能按规定的路径流转；已到期、已终止、已作废是终态。',

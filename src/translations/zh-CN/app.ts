@@ -176,7 +176,7 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
     },
     legal_workbench: {
       label: '法务工作台',
-      description: '面向法务团队的待受理队列、审查负荷、谈判停滞、各阶段合同分布与各段时长。',
+      description: '面向法务团队的待受理队列、审查负荷与超时限、谈判停滞、各阶段合同分布与各段时长。',
       widgets: {
         awaiting_intake: {
           title: '待受理',
@@ -186,9 +186,9 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
           title: '审查中',
           description: '已被法务受理、尚未送审的合同',
         },
-        review_ageing: {
-          title: '审查超过 30 天',
-          description: '固定的 30 天阈值，不是各合同类型自己的审查时限。',
+        review_over_sla: {
+          title: '审查超时限',
+          description: '审查用时已超出本类型时限的合同。',
         },
         negotiation_stalled: {
           title: '等待对方',
@@ -217,6 +217,10 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         days_to_activation: {
           title: '签署 → 生效（平均天数）',
           description: '从签署到合同生效，平均用了多少天。',
+        },
+        review_over_sla_by_type: {
+          title: '审查超时限（按合同类型）',
+          description: '按合同类型统计审查时间已超过该类型审查时限的合同。没有超时限合同的类型不显示。',
         },
       },
     },
@@ -296,6 +300,9 @@ export const appSurface: Pick<TranslationData, 'apps' | 'dashboards' | 'datasets
         },
         route_gm_count: {
           label: '需经：总经理',
+        },
+        review_over_sla_count: {
+          label: '审查超时限',
         },
       },
     },

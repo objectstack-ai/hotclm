@@ -83,5 +83,30 @@ export const ContractDataset = defineDataset({
     { name: 'route_finance_count', label: 'Routes: Finance Controller', aggregate: 'count', filter: { route_finance: true } },
     { name: 'route_executive_count', label: 'Routes: Executive', aggregate: 'count', filter: { route_executive: true } },
     { name: 'route_gm_count', label: 'Routes: General Manager', aggregate: 'count', filter: { route_gm: true } },
+
+    // DESIGN.md §09's「审查超 SLA」, per contract type (#31): contracts in review
+    // whose review started more than their type's `review_sla_days` ago. The
+    // comparand is the platform's `$now` anchor (objectstack#25808): the instant
+    // the query runs, shifted by the contract's own `review_sla_days_offset`,
+    // the type's SLA as a negative number of days, stored on the contract by
+    // the engine from its type (see the field). Its offset may only name a
+    // column of the SAME record — a `contract_type.review_sla_days` path is
+    // refused at `os validate` (objectstack#26601) — hence the stored copy.
+    //
+    // A measure filter, not a widget filter, so that every widget counting it
+    // reads one definition (ADR-0021). The anchor is a cross-field comparand,
+    // which the native-SQL strategy declines, so this measure is served by the
+    // engine path, where the SQL driver compiles it. The datetime target keeps
+    // its time of day: a review started at 09:00 three days ago is over a
+    // three-day SLA from 09:00 today.
+    {
+      name: 'review_over_sla_count',
+      label: 'In Review Over SLA',
+      aggregate: 'count',
+      filter: {
+        status: 'in_review',
+        review_started_at: { $lt: { $now: true, addDays: { $field: 'review_sla_days_offset' } } },
+      },
+    },
   ],
 });

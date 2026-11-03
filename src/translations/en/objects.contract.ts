@@ -53,6 +53,10 @@ export const contract: Record<string, ObjectTranslationData> = {
           other: 'Other',
         },
       },
+      review_sla_days_offset: {
+        label: 'Review SLA Offset (days)',
+        help: 'The contract type\'s review SLA as a negative number of days, for the over-SLA count. Computed from the contract type on every save.',
+      },
       status: {
         label: 'Status',
         help: 'Where the contract is in its lifecycle. Status changes follow fixed rules; Expired, Terminated and Cancelled are final.',
