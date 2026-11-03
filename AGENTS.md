@@ -88,8 +88,11 @@ Two rules about what that evidence may claim:
 - **Never set `namespace` or `tableName` on an object.** Prefix lives in `name`.
 - **Every object authors `sharingModel`** — `private` · `public_read` · `public_read_write` ·
   `controlled_by_parent`. Which one is decided in `DESIGN.md` §03/§04.
-- **Every object resolves a title.** A stored `name`/`title` field, or a **stored** `display_name`
-  mirror declared as `nameField` — never a formula (formulas are not searchable).
+- **Every object resolves a title.** A stored `name`/`title` field; a **stored** `display_name`
+  mirror declared as `nameField`; or, for a name composed of select option labels, a text formula
+  `display_name` that renders each option with `label(record.FIELD)` in the reader's locale (18.3,
+  objectstack#26608). A formula is not searchable: use it only for a name nothing searches by its
+  parts, and never for a name a stored string can carry in every language.
 - **`required` is not a column constraint.** A field whose `required: true` maps to a real column
   also declares `storage: { notNull: true }`. ADR-0113 split the two axes: `required` is the
   write-time contract the engine enforces (and what the Console form reads), `storage.notNull` is
