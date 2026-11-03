@@ -24,13 +24,9 @@ import {
  * refuses it. What no seed can do is produce the HISTORY that state normally
  * implies — F5 opens a `sys_approval_request` on entering `in_approval`, and
  * `skipTriggers` means F5 never fires over a seeded row. Even if it did, it
- * could not complete: rung 1 is `type: 'manager'`, and at seed time there is
- * nobody for it to resolve — every contract is launched by one of the three
- * business requesters (`keys.ts`), and although the platform creates them
- * before the seed runs (`demoStaff`, PR #171), a `demoStaff` entry cannot
- * carry a manager: `sys_user.manager_id` stays the operator's one manual step
- * (README, "Rung 1 of the approval ladder is a manager"), so on a fresh
- * database no owner has a manager for rung 1 to resolve.
+ * would open a fresh request at rung 1 (resolvable since #197: the three
+ * business requesters in `keys.ts` declare a manager, `demoStaff[].manager`),
+ * not the decisions the seeded state implies.
  * WHICH boot mints the dev admin is a separate fact, measured in exactly one
  * place — `scripts/demo.mjs` — and this argument does not rest on it: #21's
  * two-boot handover primes that account BEFORE the seed runs. `pnpm validate`

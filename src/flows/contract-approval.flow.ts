@@ -195,8 +195,9 @@ const RUNG_POLICY = {
   //
   // The rung an install hits FIRST is the manager rung: its slate is
   // `sys_user.manager_id`, runtime data no seed, position or permission set
-  // fills. Its remedy is operator setup, named in the README ("Rung 1 of the
-  // approval ladder is a manager"), not a policy here.
+  // fills. The demo declares it on its staff (`demoStaff[].manager`, #197);
+  // a real install sets it as operator setup, named in the README ("Rung 1 of
+  // the approval ladder is a manager"), not a policy here.
   onEmptyApprovers: 'admin_rescue' as const,
   lockRecord: true,
   approvalStatusField: 'approval_status',
@@ -277,9 +278,10 @@ export const ContractApprovalFlow: Flow = {
       config: {
         // No `value`: the engine resolves the contract OWNER's
         // `sys_user.manager_id` (`record[value] ?? record.owner_id` — see the
-        // header), never the submitter's. Only an operator fills that column,
-        // which is why the README's operator setup names the step; re-measured
-        // on 17.7.0 (#93): unset, the request opens on `manager:undefined`.
+        // header), never the submitter's. The demo fills that column from
+        // `demoStaff[].manager` (#197); elsewhere an operator does, which is
+        // why the README names the step. Unset on 18.3, the request falls to
+        // `admin_rescue` (the org administrators).
         approvers: [{ type: 'manager' }],
         behavior: 'first_response',
         ...RUNG_POLICY,
