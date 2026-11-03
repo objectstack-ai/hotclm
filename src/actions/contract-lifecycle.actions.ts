@@ -70,6 +70,8 @@ const transition = (
     confirmText?: string;
     /** Grey the button out while a precondition the hook will refuse is unmet (see below). */
     disabled?: ReturnType<typeof P>;
+    /** What the greyed button says on hover: the precondition `disabled` mirrors. Only beside `disabled`. */
+    disabledReason?: string;
   },
 ): Action => ({
   name,
@@ -155,9 +157,17 @@ const transition = (
   // guard it mirrors. Like `visible` it is a convenience, not a control: the
   // guards in contract.hook.ts read the children directly and keep refusing.
   //
-  // The console shows its generic reason on hover (「对此记录不可用」 / "Not
-  // available for this record"): ActionSchema has no key for an authored one.
+  // `disabledReason` is what the greyed button says on hover and to a screen
+  // reader (issue #195; ActionSchema key since 18.3.0, objectstack#26619).
+  // Without it the console says only 「对此记录不可用」 / "Not available for
+  // this record". It is fixed copy, not an expression: it cannot tell WHICH
+  // half of an `||` predicate is true, so a reason names every condition its
+  // predicate tests. It mirrors the hook's refusal sentence for the same
+  // guard, in the reader's words. Translated at
+  // `objects.clm_contract._actions.ACTION.disabledReason`. Display only — the
+  // hook still decides.
   ...(options?.disabled ? { disabled: options.disabled } : {}),
+  ...(options?.disabledReason ? { disabledReason: options.disabledReason } : {}),
   // The status this button writes is the status the header shows, and the
   // status every one of these `visible` predicates reads. The spec defaults
   // `refreshAfter` to `false` (materialized at parse), and the record page
@@ -238,7 +248,10 @@ export const SendForApprovalAction: Action = transition(
   'Close legal review and start approval. Possible once a legal review is approved and no deviation is still open.',
   'Sent for approval.',
   ['clm_legal.access'],
-  { disabled: P`record.open_deviation_count > 0 || record.approved_legal_review_count == 0` },
+  {
+    disabled: P`record.open_deviation_count > 0 || record.approved_legal_review_count == 0`,
+    disabledReason: 'An approved legal review is required, and no deviation may still be open, before the contract enters approval.',
+  },
 );
 
 /** 发起签署 — approved, now get it signed. The hook refuses it unless the
@@ -249,7 +262,10 @@ export const StartSigningAction: Action = transition(
   'Move an approved contract into signing. Possible once the current version is a clean copy.',
   'Signing started.',
   ['execute_contract'],
-  { disabled: P`record.current_clean_version_count == 0` },
+  {
+    disabled: P`record.current_clean_version_count == 0`,
+    disabledReason: 'A current Clean version is required before signing.',
+  },
 );
 
 /** 生效 — the execution formalities are complete. F9 (`contract_activate`)
@@ -274,7 +290,10 @@ export const ActivateContractAction: Action = transition(
   'Bring a signed contract into force. Its activation date is recorded and, if it has an end date, a renewal reminder is set up.',
   'Contract activated.',
   ['execute_contract'],
-  { disabled: P`record.final_signed_version_count == 0` },
+  {
+    disabled: P`record.final_signed_version_count == 0`,
+    disabledReason: 'A Final Signed version is required before activation.',
+  },
 );
 
 /**
