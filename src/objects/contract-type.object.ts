@@ -142,11 +142,12 @@ export const ContractType = ObjectSchema.create({
       min: 0,
       max: 90,
       defaultValue: 5,
-      // DESIGN.md §06 F3 reads this per type, but the reminder fires at a fixed
-      // 30 days until the platform can compare dates (decision #31, 1C + 2B — see
-      // legal-review-sla.flow.ts), so the help text must not promise a per-type
-      // reminder.
-      description: 'Calendar days legal has to finish reviewing a contract of this type. The overdue reminder does not use this value: it currently fires at a fixed 30 days.',
+      // Read per contract, not here: the engine stores it on each contract as
+      // `review_sla_days_offset` (a stored expression, contract.object.ts) on
+      // every write of that contract, and both the workbench's over-SLA tile and
+      // F3 (legal-review-sla.flow.ts) read that copy. So an edit here reaches a
+      // contract already in review only when that contract is next saved.
+      description: 'Calendar days legal has to finish reviewing a contract of this type. Past it, the legal owner gets a daily reminder; past twice it, the head of legal is copied. A contract keeps the value it was last saved with.',
     }),
 
     template_file: Field.file({

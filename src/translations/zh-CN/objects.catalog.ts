@@ -87,7 +87,7 @@ export const catalog: Record<string, ObjectTranslationData> = {
       },
       review_sla_days: {
         label: '审查时限（天）',
-        help: '法务完成这种类型合同审查的自然日天数。催办提醒目前不按这个值，而是固定在 30 天时触发。',
+        help: '法务完成这种类型合同审查的自然日天数。超过后每天提醒法务经办人；超过一倍时同时抄送法务负责人。合同沿用它最近一次保存时的值。',
       },
       template_file: {
         label: '模板',

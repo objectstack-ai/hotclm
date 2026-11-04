@@ -3,7 +3,7 @@ import { ContractApprovedTemplates, ContractRejectedTemplates } from './contract
 import { ExecutionCopyMissingTemplates, ExecutionFormalitiesMissingTemplates } from './signature-record.email-template.js';
 import { RenewalNoticeDueTemplates } from './renewal-notice.email-template.js';
 import { ContractAutoRenewedTemplates, ContractExpiredTemplates } from './expiration-sweep.email-template.js';
-import { LegalReviewOver30DaysTemplates, LegalReviewOver60DaysTemplates } from './legal-review-sla.email-template.js';
+import { LegalReviewOverSlaTemplates, LegalReviewOverDoubleSlaTemplates } from './legal-review-sla.email-template.js';
 import { TurnStalledTemplates } from './turn-stalled.email-template.js';
 import { ObligationDueSoonTemplates, ObligationDueTodayTemplates, ObligationOverdueTemplates } from './obligation-due.email-template.js';
 import { PaymentOverdueTemplates } from './payment-overdue.email-template.js';
@@ -21,8 +21,8 @@ export const allEmailTemplates: EmailTemplateDefinition[] = [
   ...RenewalNoticeDueTemplates,
   ...ContractExpiredTemplates,
   ...ContractAutoRenewedTemplates,
-  ...LegalReviewOver30DaysTemplates,
-  ...LegalReviewOver60DaysTemplates,
+  ...LegalReviewOverSlaTemplates,
+  ...LegalReviewOverDoubleSlaTemplates,
   ...TurnStalledTemplates,
   ...ObligationDueSoonTemplates,
   ...ObligationDueTodayTemplates,

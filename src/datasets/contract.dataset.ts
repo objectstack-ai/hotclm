@@ -99,12 +99,20 @@ export const ContractDataset = defineDataset({
     // engine path, where the SQL driver compiles it. The datetime target keeps
     // its time of day: a review started at 09:00 three days ago is over a
     // three-day SLA from 09:00 today.
+    //
+    // `review_sla_days_offset: { $ne: null }`: the driver reads a NULL offset
+    // column as ZERO days (18.3.0, the #25808 conformance table), and the
+    // column is NULL on an upgraded database until the contract is next
+    // written (the platform does not backfill a stored expression,
+    // objectstack#29961). A contract with no stored SLA is not counted over
+    // one — the same rows F3 (legal-review-sla.flow.ts) reminds about (#203).
     {
       name: 'review_over_sla_count',
       label: 'In Review Over SLA',
       aggregate: 'count',
       filter: {
         status: 'in_review',
+        review_sla_days_offset: { $ne: null },
         review_started_at: { $lt: { $now: true, addDays: { $field: 'review_sla_days_offset' } } },
       },
     },
