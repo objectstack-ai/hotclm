@@ -240,7 +240,7 @@ RLS 谓词不能跨对象（ADR-0055），所以「同部门可见」无法用 `
 |---|---|---|---|
 | F1 | `contract_intake` | screen flow（发起表单） | 选类型 → 按类型 `intake_fields` 显示条件字段 → 相对方查找或新建 → 上传首版或标记「按模板」→ 建合同（`draft`）与版本 v1 → 可选一键提交。`ai.exposed`，输入变量齐全时可由 MCP 调用 |
 | F2 | `contract_route` | hook beforeUpdate（进入 `submitted`） | 自类型盖戳 `category`/`direction`/`execution_formalities`；按 `clm_approval_rule` 命中项盖 `route_*`；写 `submitted_at`；`requires_legal_review` 时在 `clm_legal_counsel` 中按未结合同数最少轮询分配 `legal_owner` 并进 `in_review`，否则直进 `in_approval` |
-| F3 | `legal_review_sla` | 定时（日） | `in_review` 超过类型 `review_sla_days`：提醒 `legal_owner`，超一倍抄送 `clm_legal_head` |
+| F3 | `legal_review_sla` | 定时（日） | `in_review` 超过类型 `review_sla_days`（按合同上存储的 `review_sla_days_offset` 判定，与法务工作台「审查超时限」同一规则；该值为空的合同不提醒）：提醒 `legal_owner`，超一倍抄送 `clm_legal_head`；每份合同每次运行只发一条 |
 | F4 | `turn_stalled` | 定时（日） | `current_turn == counterparty` 且 `turn_since` 超 7 天：提醒业务承办催对方 |
 | F5 | `contract_approval` | record_change（进入 `in_approval`），`runAs: 'system'` | 台阶 1 直接主管（`type: 'manager'`）→ decision 按 `route_legal_head` / `route_finance` 决定台阶 2 是否为法务加财务**会签**（`per_group`）或单方 → decision `route_executive` → 台阶 4 分管领导（position）→ decision `route_gm` → 台阶 5 总经理。`lockRecord: true`，`approvalStatusField: approval_status`；approve → `approved` + `approved_at`；reject → `rejected`；send-back → `draft` |
 | F6 | `deviation_gate` | hook beforeUpdate | 存在 `open` 偏离时拒绝进入 `in_approval`；接受了 `requires_legal_head` 条款的偏离即置 `route_legal_head = true` |
