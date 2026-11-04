@@ -60,6 +60,10 @@ Two rules about what that evidence may claim:
   degraded capabilities`, `no such table`, or a plugin that failed to load each mean the app is
   running as something other than the product; a card that ships on top of that state has not been
   verified. This is not hypothetical — see the fixture in `pnpm-workspace.yaml`.
+  One by-design exception: with scheduled work off (the platform default, kept for `pnpm dev`),
+  boot lists the daily sweeps as `NOT bound — disabled by deployment policy`; that notice is not a
+  failing boot. `pnpm demo` sets `OS_AUTOMATION_SCHEDULED_WORK_ENABLED=true` and binds them (#82,
+  ruling C).
 - **Report what the browser did, not what you expect it to do.** "The list should render" is not
   evidence. `GET /api/v1/data/clm_contract → 200 {"total":0}` is.
 
@@ -84,8 +88,11 @@ Two rules about what that evidence may claim:
 - **Never set `namespace` or `tableName` on an object.** Prefix lives in `name`.
 - **Every object authors `sharingModel`** — `private` · `public_read` · `public_read_write` ·
   `controlled_by_parent`. Which one is decided in `DESIGN.md` §03/§04.
-- **Every object resolves a title.** A stored `name`/`title` field, or a **stored** `display_name`
-  mirror declared as `nameField` — never a formula (formulas are not searchable).
+- **Every object resolves a title.** A stored `name`/`title` field; a **stored** `display_name`
+  mirror declared as `nameField`; or, for a name composed of select option labels, a text formula
+  `display_name` that renders each option with `label(record.FIELD)` in the reader's locale (18.3,
+  objectstack#26608). A formula is not searchable: use it only for a name nothing searches by its
+  parts, and never for a name a stored string can carry in every language.
 - **`required` is not a column constraint.** A field whose `required: true` maps to a real column
   also declares `storage: { notNull: true }`. ADR-0113 split the two axes: `required` is the
   write-time contract the engine enforces (and what the Console form reads), `storage.notNull` is
